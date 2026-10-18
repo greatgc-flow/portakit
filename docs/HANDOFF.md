@@ -1,3 +1,8 @@
-# HANDOFF
-Goal: build `portakit` (from src_pkg Engram v4.1 Lean plan) via TDD. Spec: portakit/docs/SPEC.md (unanimous r1-r2). Peerhub: use --db .peerhub/core.db, streams r1-*, r2-*; ag needs --writable. ag returned empty on r1 (diag OK).
-Status: DONE v0.1 (66 tests, hashes verified, cc review fixed). Next: Windows-only PyPI/release, more catalog tools, optional ag edge tests.
+# HANDOFF (2026-10-18)
+Goal (user, standing): 끝장토론 to unanimity (cc,cx,ag) on design+roles BEFORE TDD, then TDD, finish. Rules: memory file feedback-operating-rules; tokens minimal; English between AIs; Korean to user.
+State: v0.1.0-pre-ratify tag = working MVP (83 tests OK, pushed). Ratification gate re-opened because roles were agreed post-hoc.
+Ratify round 1 (rat1-*): cc APPROVE w/ deltas, cx REJECT w/ deltas, ag empty reply. Deltas to fold into SPEC v2 (NOT yet written; SPEC.md still v1):
+1 .portakit-lock exclusive root lock; fix unlocked state writes + shared digest.part race. 2 state "schema":1. 3 JSON envelope+exit-code table content. 4 --root default; acceptance path portable\jq\jq.exe. 5 update same-version = no-op unless --force; pinned updates. 6 .old crash recovery; cleanupPending shown; retained backups must not block ops (reconcile with code). 7 preserveOnUpdate vs defaultConfig precedence; uninstall/cache/backup semantics. 8 catalog rejects TODO hashes. 9 README reqs. 10 list catalog fields (sha256 source, version), define github kind/defaultConfig. 11 ratify side-amendments formally; deepthink advisory.
+BLOCKER: cx quota exhausted (ask_refusal, reset time unknown; `peerhub diag quota`). Stream build-cx is ask_uncertain-blocked: use NEW streams. ag returns empty on long/writable prompts (peerhub#169): short read-only votes with --json only.
+Next: (a) have cc.effort (writable, new stream) write SPEC v2 with deltas above; (b) vote cc,cx(after reset),ag until all APPROVE; (c) TDD code deltas (tests first), run `python -I -m unittest discover -s tests` yourself; (d) commit/push, update docs/DECISIONS.md+LOG.md; (e) cleanup workspace.
+Cmd: peerhub --db D:\Engram2\workspace\.peerhub\core.db ask <peer> --query-file F --profile P --stream NEW --request-id NEW [--writable] --json

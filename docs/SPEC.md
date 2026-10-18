@@ -28,6 +28,7 @@ Cut: `kind`/github fields (every tool is a plain `url`+`sha256` entry; a GitHub 
 
 **Path rule** (syntax only; dest, preserve paths, `<id>.exe`, zip members): nonempty; `/` or `\` separators; no empty/`.`/`..` segments; no absolute/UNC/drive; no `:<>"|?*` or control chars; no segment ending in `.` or space; no device names (CON, PRN, AUX, NUL, COM1-9, LPT1-9, with or without extension); stays inside its base.
 **Link rule** (use time): reparse points/junctions/symlinks are never followed. If any existing component of a path being read, written or copied is one, the op aborts (exit 5; zip members: exit 4). Deletion never recurses through a link: a link is removed with `os.rmdir`/`os.unlink` only (read-only bits cleared first).
+For every command, reject `--root` if it or any ancestor is a reparse point (exit 5), checking components before resolving links or `..` and before any other filesystem operation, including catalog/state reads, mkdir, lock creation, cleanup, or state writes.
 **Precedence** (update): preserved > packaged.
 
 ## 4. Envelope and exit codes

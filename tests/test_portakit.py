@@ -280,7 +280,7 @@ class DownloadTests(Workspace):
     def test_download_failure_deletes_partial(self):
         def fail(url, dest):
             dest.write_bytes(b"partial")
-            raise OSError("offline")
+            raise urllib.error.URLError("offline")
         with self.assertRaisesRegex(pk.PortakitError, "offline") as caught:
             pk.install(entry(), self.root, fail)
         self.assertEqual(caught.exception.code, "fetch")
@@ -581,7 +581,7 @@ class UpdateTests(InstallWorkspace):
         (self.root / "demo").rename(self.root / "demo.old")
         tool, _ = self.package("2")
         with self.assertRaisesRegex(pk.PortakitError, "offline") as caught:
-            pk.update(tool, self.root, mock.Mock(side_effect=OSError("offline")))
+            pk.update(tool, self.root, mock.Mock(side_effect=urllib.error.URLError("offline")))
         self.assertEqual(caught.exception.code, "fetch")
         self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
         self.assertEqual(self.state_bytes(), previous)

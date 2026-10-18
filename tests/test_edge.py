@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import io
 from pathlib import Path
@@ -149,6 +150,110 @@ class FilesystemEdges(fixtures.InstallWorkspace):
         self.assertFalse((self.root / "demo.old").exists())
         pk.remove("demo", self.root)
         self.assertEqual(pk.read_state(self.root), {})
+
+
+class LocalFilesystemClassificationTests(fixtures.InstallWorkspace):
+    def test_catalog_filesystem_errors_are_state_5(self):
+        for command in (("list",), ("install", "demo")):
+            for error in (FileNotFoundError("missing catalog"),
+                          PermissionError("catalog access denied"), OSError("catalog disk error")):
+                with self.subTest(command=command, error=error), \
+                        mock.patch.object(Path, "read_text", side_effect=error):
+                    code, result = self.call(*command)
+                    self.assertEqual((code, result["error"]["code"]), (5, "state"))
+                    self.assertIn(str(error), result["error"]["message"])
+        self.assertFalse((self.root / ".portakit-lock").exists())
+
+    def test_download_filesystem_errors_are_state_5(self):
+        real_open, real_stat = Path.open, Path.stat
+        for index, phase in enumerate(("open", "write", "stat", "read", "hash", "injected")):
+            with self.subTest(phase=phase), contextlib.ExitStack() as patches:
+                self.root = self.base / f"local-{index}"
+                self.root.mkdir()
+                tool, _ = self.package()
+                self.write_catalog([tool])
+                pk.write_state(self.root, {})
+                previous = self.state_bytes()
+                target = self.root / ".portakit-dl-demo.tmp"
+                failure = PermissionError("local disk failure")
+                writer = mock.mock_open()
+                writer.return_value.write.side_effect = failure
+
+                def opened(path, mode="r", *args, **kwargs):
+                    if path == target:
+                        if (phase == "open" and mode == "wb") or (phase == "read" and mode == "rb"):
+                            raise failure
+                        if phase == "write" and mode == "wb":
+                            return writer()
+                    return real_open(path, mode, *args, **kwargs)
+
+                stat_failures = [failure] if phase == "stat" else []
+                def stated(path, *args, **kwargs):
+                    if path == target and stat_failures:
+                        raise stat_failures.pop()
+                    return real_stat(path, *args, **kwargs)
+
+                patches.enter_context(mock.patch.object(Path, "open", opened))
+                patches.enter_context(mock.patch.object(Path, "stat", stated))
+                if phase == "hash":
+                    patches.enter_context(mock.patch.object(pk.hashlib, "file_digest", side_effect=failure))
+                response = io.BytesIO(b"downloaded")
+                response.headers = {}
+                patches.enter_context(mock.patch.object(pk.urllib.request, "urlopen", return_value=response))
+                downloader = mock.Mock(side_effect=failure) if phase == "injected" else None
+                code, result = self.call("install", "demo", downloader=downloader)
+                self.assertEqual((code, result["error"]["code"]), (5, "state"))
+                self.assertIn(str(failure), result["error"]["message"])
+                self.assertEqual(self.state_bytes(), previous)
+                self.assertFalse((self.root / "demo").exists())
+                self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
+
+    def test_network_oserrors_remain_fetch_3(self):
+        self.write_catalog([fixtures.entry()])
+        for phase in ("connect", "read"):
+            with self.subTest(phase=phase), contextlib.ExitStack() as patches:
+                response = mock.MagicMock()
+                response.__enter__.return_value = response
+                response.headers = {}
+                response.read.side_effect = ConnectionResetError("network disconnected")
+                patches.enter_context(mock.patch.object(
+                    pk.urllib.request, "urlopen", return_value=response,
+                    side_effect=ConnectionResetError("network disconnected") if phase == "connect" else None))
+                code, result = self.call("install", "demo")
+                self.assertEqual((code, result["error"]["code"]), (3, "fetch"))
+                self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
+
+
+class DestinationOwnershipTests(fixtures.InstallWorkspace):
+    def assert_owned_destination_rejected(self, cli):
+        for index, dest in enumerate(("demo", "DEMO")):
+            with self.subTest(dest=dest):
+                self.root = self.base / f"owned-{index}"
+                self.root.mkdir()
+                # The owner's directory is missing and the owner is absent from the catalog.
+                pk.write_state(self.root, {"owner": {"version": "1", "dest": "demo"}})
+                previous = self.state_bytes()
+                tool, download = self.package(dest=dest)
+                download = mock.Mock(wraps=download)
+                if cli:
+                    self.write_catalog([tool])
+                    code, result = self.call("install", "demo", downloader=download)
+                    self.assertEqual((code, result["error"]["code"] if result["error"] else None),
+                                     (5, "state"))
+                else:
+                    with self.assertRaises(pk.PortakitError) as caught:
+                        pk.install(tool, self.root, download)
+                    self.assertEqual(caught.exception.code, "state")
+                download.assert_not_called()
+                self.assertEqual(self.state_bytes(), previous)
+                self.assertFalse((self.root / dest).exists())
+                self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
+
+    def test_install_rejects_destination_owned_by_another_state_entry(self):
+        self.assert_owned_destination_rejected(cli=False)
+
+    def test_cli_install_rejects_destination_owned_by_another_state_entry(self):
+        self.assert_owned_destination_rejected(cli=True)
 
 
 class DownloadEdges(fixtures.InstallWorkspace):

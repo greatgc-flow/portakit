@@ -11,6 +11,7 @@ import re
 import shutil
 import stat
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -38,6 +39,14 @@ def is_reparse(path):
         return False
 
 
+def check_links(path):
+    """Check every component before resolution or access; retain '..' components."""
+    absolute = Path.cwd() / path
+    for component in (*reversed(absolute.parents), absolute):
+        if is_reparse(component):
+            raise PortakitError("state", f"Reparse path rejected: {component}")
+
+
 def path_parts(value, field, code="catalog"):
     """Path rule (syntax only): returns the segments of a safe relative path."""
     if not isinstance(value, str) or not value:
@@ -53,6 +62,7 @@ def path_parts(value, field, code="catalog"):
 def safe_path(root, value, field, code="catalog"):
     """Path rule plus link rule: no existing component may be a reparse point."""
     parts = path_parts(value, field, code)
+    check_links(root)
     root = Path(root).resolve()
     target = root.joinpath(*parts)
     current = root
@@ -76,9 +86,12 @@ def check_dest(value, field="dest", code="catalog"):
 
 
 def load_catalog(path, root=None):
+    check_links(path)
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+    except OSError as exc:
+        raise PortakitError("state", f"catalog: {exc}") from exc
+    except ValueError as exc:
         raise PortakitError("catalog", f"catalog: {exc}") from exc
     if not isinstance(data, dict) or not isinstance(data.get("tools"), list):
         raise PortakitError("catalog", "catalog.tools: expected a list")
@@ -127,13 +140,25 @@ def check_download_size(size):
 
 
 def download(url, destination):
-    with urllib.request.urlopen(url, timeout=60) as response:
+    check_links(destination)
+    try:
+        response = urllib.request.urlopen(url, timeout=60)
+    except OSError as exc:
+        raise urllib.error.URLError(exc) from exc
+    with response:
         length = response.headers.get("Content-Length", "")
         if length.isdigit():
             check_download_size(int(length))
         total = 0
+        check_links(destination)
         with Path(destination).open("wb") as out:
-            while chunk := response.read(min(64 * 1024, MAX_DOWNLOAD_BYTES - total + 1)):
+            while True:
+                try:
+                    chunk = response.read(min(64 * 1024, MAX_DOWNLOAD_BYTES - total + 1))
+                except OSError as exc:
+                    raise urllib.error.URLError(exc) from exc
+                if not chunk:
+                    break
                 total += len(chunk)
                 check_download_size(total)
                 out.write(chunk)
@@ -142,19 +167,25 @@ def download(url, destination):
 def fetch_archive(tool, target, downloader=None):
     """Download straight to the dl temp and verify its SHA256 before anything is extracted."""
     try:
+        check_links(target)
         (downloader or download)(tool["url"], target)
+        check_links(target)
         check_download_size(target.stat().st_size)
         with target.open("rb") as source:
             actual = hashlib.file_digest(source, "sha256").hexdigest()
     except PortakitError:
         raise
-    except (OSError, http.client.HTTPException) as exc:
+    except (urllib.error.URLError, http.client.HTTPException) as exc:
         raise PortakitError("fetch", f"download: {exc}") from exc
+    except OSError as exc:
+        raise PortakitError("state", f"download: {exc}") from exc
     if actual != tool["sha256"].lower():
         raise PortakitError("fetch", "SHA256 mismatch; nothing installed")
 
 
 def extract(artifact, tool, destination):
+    check_links(artifact)
+    check_links(destination)
     destination = Path(destination)
     if tool["artifact"] == "exe":
         target = safe_path(destination, tool["id"] + ".exe", "id")
@@ -209,6 +240,7 @@ def extract(artifact, tool, destination):
 
 def read_state(root):
     path = Path(root) / ".portakit-state.json"
+    check_links(path)
     if not path.exists():
         return {}
     try:
@@ -234,10 +266,14 @@ def read_state(root):
 def write_state(root, state):
     target = Path(root) / ".portakit-state.json"
     temporary = target.with_name(f".portakit-state.{uuid.uuid4().hex}.tmp")
+    check_links(target)
+    check_links(temporary)
     try:
         with temporary.open("x", encoding="utf-8") as out:
             json.dump(state, out, indent=2)
             out.write("\n")
+        check_links(target)
+        check_links(temporary)
         os.replace(temporary, target)
     finally:
         temporary.unlink(missing_ok=True)
@@ -292,6 +328,7 @@ def _delete(path):
 
 
 def remove_tree(path):
+    check_links(Path(path).parent)  # The leaf itself may be a link to unlink.
     _delete(path)
 
 
@@ -348,6 +385,8 @@ def deploy(tool, root, state, downloader, update_mode):
     stage = root / f".portakit-stage-{identifier}.tmp"
     entry = dict(version=tool["version"], sha256=tool["sha256"].lower(), dest=name)
     moved_old = staged = False
+    for temporary in (dl, stage):
+        check_links(temporary)
     try:
         for leftover in (dl, stage):
             if os.path.lexists(leftover):
@@ -385,11 +424,15 @@ def deploy(tool, root, state, downloader, update_mode):
 
 
 def install(tool, root, downloader=None):
+    check_links(root)
     root = Path(root).resolve()
     state = read_state(root)
     identifier = tool["id"]
     if identifier in state:
         raise PortakitError("state", f"{identifier}: already installed; use update {identifier}")
+    for owner, installed in state.items():
+        if installed["dest"].lower() == tool["dest"].lower():
+            raise PortakitError("state", f"{tool['dest']}: destination already owned by {owner}")
     dest, old = dest_paths(root, tool["dest"])
     check_dest_kind(dest)
     for path in (dest, old):
@@ -399,6 +442,7 @@ def install(tool, root, downloader=None):
 
 
 def update(tool, root, downloader=None):
+    check_links(root)
     root = Path(root).resolve()
     state = read_state(root)
     identifier = tool["id"]
@@ -413,6 +457,7 @@ def update(tool, root, downloader=None):
         raise PortakitError("state", f"{dest} and {old} both exist; if {dest} is good delete {old}, "
                             f"else delete {dest} and rename {old} to {dest}")
     if has_old:
+        check_links(old)
         rename(old, dest)
     check_dest_kind(dest)
     sha256 = tool["sha256"].lower()
@@ -423,6 +468,7 @@ def update(tool, root, downloader=None):
 
 
 def remove(identifier, root):
+    check_links(root)
     root = Path(root).resolve()
     state = read_state(root)
     if identifier not in state:
@@ -456,6 +502,7 @@ class RootLock:
         self.fd = None
 
     def __enter__(self):
+        check_links(self.path)
         fd = os.open(self.path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
         try:
             msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
@@ -475,6 +522,7 @@ class RootLock:
 
 
 def cleanup_temps(root):
+    check_links(root)
     with os.scandir(root) as entries:
         names = [entry.path for entry in entries
                  if entry.name.startswith(".portakit-") and entry.name.endswith(".tmp")]
@@ -484,6 +532,7 @@ def cleanup_temps(root):
 
 def execute(args, downloader):
     command, root, identifier = args.command, args.root, args.id
+    check_links(root)
     if command == "list":
         return {"items": list(load_catalog(DEFAULT_CATALOG, root).values())}
     catalog = None if command == "remove" else load_catalog(DEFAULT_CATALOG, root)

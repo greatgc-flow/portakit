@@ -523,6 +523,65 @@ class CrashRecoveryTests(fixtures.InstallWorkspace):
 
 
 @unittest.skipUnless(os.name == "nt", "Windows junctions")
+class RootLinkTests(fixtures.Workspace):
+    def setUp(self):
+        super().setUp()
+        self.write_catalog([entry()])
+        self.outside = self.base / "outside"
+        self.outside.mkdir()
+        (self.outside / ".portakit-state.json").write_text("{}")
+        (self.outside / ".portakit-keep.tmp").write_text("precious")
+
+    def assert_root_rejected(self):
+        before = {p.relative_to(self.outside): p.read_bytes()
+                  for p in self.outside.rglob("*") if p.is_file()}
+        for command in ("list", "install", "update", "remove"):
+            with self.subTest(command=command), \
+                    mock.patch.object(pk, "RootLock", wraps=pk.RootLock) as lock, \
+                    mock.patch.object(pk, "read_state", wraps=pk.read_state) as state, \
+                    mock.patch.object(pk, "load_catalog", wraps=pk.load_catalog) as catalog, \
+                    mock.patch.object(Path, "mkdir", autospec=True) as mkdir:
+                args = (command,) if command == "list" else (command, "demo")
+                code, result = self.call(*args, downloader=mock.Mock())
+                self.assertEqual((code, result["error"]["code"] if result["error"] else None),
+                                 (5, "state"))
+                self.assertIn("reparse", result["error"]["message"].lower())
+                mkdir.assert_not_called()
+                lock.assert_not_called()
+                state.assert_not_called()
+                catalog.assert_not_called()
+        after = {p.relative_to(self.outside): p.read_bytes()
+                 for p in self.outside.rglob("*") if p.is_file()}
+        self.assertEqual(after, before)
+
+    def test_root_junction_rejected_before_filesystem_work(self):
+        self.junction(self.root, self.outside)
+        self.assert_root_rejected()
+
+    def test_ancestor_junction_rejected_for_existing_and_missing_root(self):
+        self.junction(self.root, self.outside)
+        (self.outside / "existing").mkdir()
+        for suffix in ("existing", "missing/nested"):
+            with self.subTest(suffix=suffix):
+                self.root = self.base / "root" / suffix
+                self.assert_root_rejected()
+        self.assertFalse((self.outside / "missing").exists())
+
+    def test_relative_root_with_junction_before_dotdot_is_rejected(self):
+        self.junction(self.root, self.outside)
+        self.root = Path(os.path.relpath(self.root)) / ".." / "safe"
+        self.assert_root_rejected()
+
+    def test_root_directory_symlink_rejected(self):
+        try:
+            self.root.symlink_to(self.outside, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f"directory symlinks unavailable: {exc}")
+        self.addCleanup(self.drop_junction, self.root)
+        self.assert_root_rejected()
+
+
+@unittest.skipUnless(os.name == "nt", "Windows junctions")
 class LinkRuleTests(fixtures.InstallWorkspace):
     def setUp(self):
         super().setUp()
@@ -538,6 +597,36 @@ class LinkRuleTests(fixtures.InstallWorkspace):
         shutil.rmtree(self.root / "demo")
         self.junction(self.root / "demo", self.outside)
         return previous
+
+    def assert_reparse_backup_rejected_before_recovery(self, cli):
+        previous = self.installed()
+        dest, old = self.root / "demo", self.root / "demo.old"
+        shutil.rmtree(dest)
+        self.junction(old, self.outside)
+        tool, _ = self.package("2")
+        download = mock.Mock(side_effect=AssertionError("download"))
+        with mock.patch.object(pk, "rename", wraps=pk.rename) as renamed:
+            if cli:
+                self.write_catalog([tool])
+                code, result = self.call("update", "demo", downloader=download)
+                self.assertEqual((code, result["error"]["code"]), (5, "state"))
+            else:
+                with self.assertRaises(pk.PortakitError) as caught:
+                    pk.update(tool, self.root, download)
+                self.assertEqual(caught.exception.code, "state")
+            renamed.assert_not_called()
+        download.assert_not_called()
+        self.assertTrue(pk.is_reparse(old))
+        self.assertFalse(os.path.lexists(dest))
+        self.assertEqual(self.state_bytes(), previous)
+        self.assert_outside_intact()
+        self.assertEqual(list(self.outside.iterdir()), [self.outside / "secret.txt"])
+
+    def test_update_rejects_reparse_backup_before_recovery(self):
+        self.assert_reparse_backup_rejected_before_recovery(cli=False)
+
+    def test_cli_update_rejects_reparse_backup_before_recovery(self):
+        self.assert_reparse_backup_rejected_before_recovery(cli=True)
 
     def test_update_with_junction_at_dest_aborts_state(self):
         previous = self.link_at_dest()

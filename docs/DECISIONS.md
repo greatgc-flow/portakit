@@ -14,3 +14,5 @@ Roles/models/effort were agreed in r4-r5 AFTER implementation began (r1-r3 cover
 
 ## Ratification outcome (v0.2.1)
 Deadlock on over-engineering settled by cc.deepthink arbiter ruling (see SPEC). Roles agreed (r4-r5, post-hoc). Final code votes: cc APPROVE, cx APPROVE (after 6 fix rounds: reparse root/state/lock/temp, dest ownership, exit-code mapping, recovery link check). ag: APPROVE on SPEC (r13); on final code ag returned empty replies (peerhub#169), so no fresh ag vote. 166 tests, run by orchestrator.
+
+ag final vote (v0.2.1): APPROVE x2, on a summary of the implementation (ag did not read the code; empty replies occur when it tries tools — prefix "Do not use tools. Reply in plain text only." makes it answer). Final: cc, cx, ag APPROVE.

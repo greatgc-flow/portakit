@@ -1,0 +1,207 @@
+import hashlib
+import io
+from pathlib import Path
+import stat
+import struct
+import unittest
+from unittest import mock
+import warnings
+import zipfile
+import zlib
+
+import test_portakit as fixtures
+
+
+pk = fixtures.pk
+
+
+class ArchiveEdges(fixtures.InstallWorkspace):
+    def check_archive_error(self, payload):
+        tool = fixtures.entry(sha256=hashlib.sha256(payload).hexdigest())
+        with self.assertRaises(pk.PortakitError) as caught:
+            pk.install(tool, self.root, lambda url, dest: dest.write_bytes(payload))
+        self.assertEqual(caught.exception.code, "archive")
+        self.assertFalse((self.root / "demo").exists())
+        self.assertFalse((self.root / ".portakit-state.json").exists())
+        self.assertEqual(list(self.root.glob(".portakit-stage-*")), [])
+
+    def test_symlink_and_reparse_entries(self):
+        for attribute in [(stat.S_IFLNK | 0o777) << 16, 0x400]:
+            link = zipfile.ZipInfo("package/link")
+            link.create_system = 3
+            link.external_attr = attribute
+            with self.subTest(attribute=attribute):
+                self.check_archive_error(fixtures.zip_bytes([("package/good", b"ok"), (link, b"../outside")]))
+
+    def test_absolute_and_drive_letter_paths(self):
+        for name in ["/absolute", "C:/absolute", "C:relative", "\\absolute", "\\\\host\\share\\file"]:
+            with self.subTest(name=name):
+                self.check_archive_error(fixtures.zip_bytes([("good", b"ok"), (name, b"no")]))
+
+    def test_duplicate_members(self):
+        for name in ["good", "GOOD"]:
+            with self.subTest(name=name), warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                self.check_archive_error(fixtures.zip_bytes([("good", b"one"), (name, b"two")]))
+
+    def test_empty_and_truncated_zip(self):
+        for payload in [fixtures.zip_bytes([]), b"PK\x03\x04", b"not a zip"]:
+            with self.subTest(payload=payload):
+                self.check_archive_error(payload)
+
+    def test_invalid_deflate_stream_maps_zlib_error_to_archive(self):
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("demo.exe", b"payload" * 20)
+        damaged = bytearray(output.getvalue())
+        name_length, extra_length = struct.unpack_from("<HH", damaged, 26)
+        # BTYPE=3 is invalid, giving a real zlib.error during extraction.
+        damaged[30 + name_length + extra_length] = 0x07
+        with zipfile.ZipFile(io.BytesIO(damaged)) as archive, self.assertRaises(zlib.error):
+            archive.read("demo.exe")
+        self.check_archive_error(bytes(damaged))
+
+    def test_eoferror_from_member_read_maps_to_archive(self):
+        with mock.patch.object(pk.zipfile.ZipExtFile, "read", side_effect=EOFError("truncated member")):
+            self.check_archive_error(fixtures.zip_bytes([("demo.exe", b"payload")]))
+
+
+class FilesystemEdges(fixtures.InstallWorkspace):
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(self.clear_readonly_for_fixture_cleanup)
+
+    def clear_readonly_for_fixture_cleanup(self):
+        for path in self.base.rglob("*"):
+            if path.is_file():
+                path.chmod(path.stat().st_mode | stat.S_IWRITE)
+
+    def test_locked_existing_directory_during_swap(self):
+        previous = self.installed()
+        tool, download = self.package("2")
+        rename = Path.rename
+        def locked(path, target):
+            if path == self.root / "demo":
+                raise PermissionError("running executable")
+            return rename(path, target)
+        with mock.patch.object(Path, "rename", locked):
+            with self.assertRaises(pk.PortakitError) as caught:
+                pk.update(tool, self.root, download)
+        self.assertEqual(caught.exception.code, "filesystem")
+        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+        self.assertEqual((self.root / ".portakit-state.json").read_bytes(), previous)
+        self.assertFalse((self.root / "demo.old").exists())
+
+    def test_corrupt_state_rejected_without_touching_managed_files(self):
+        self.installed()
+        path = self.root / ".portakit-state.json"
+        for content in [b"{", b"[]", b"\xff", b'{"demo":{"dest":"demo"}}']:
+            path.write_bytes(content)
+            with self.subTest(content=content), self.assertRaises(pk.PortakitError) as caught:
+                pk.remove("demo", self.root)
+            self.assertEqual(caught.exception.code, "state")
+            self.assertEqual(path.read_bytes(), content)
+            self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+
+    def test_unicode_root_members_configs_update_and_remove(self):
+        self.root = self.base / "도구 日本語"
+        tool, download = self.package(members=[("패키지/실행.exe", b"exe")], dest="편집기",
+                                      defaultConfig={"설정/사용자.ini": "안녕하세요\n"},
+                                      preserveOnUpdate=["설정"])
+        pk.install(tool, self.root, download)
+        self.assertEqual((self.root / "편집기/실행.exe").read_bytes(), b"exe")
+        tool, download = self.package("2", dest="편집기", preserveOnUpdate=["설정"])
+        pk.update(tool, self.root, download)
+        self.assertEqual((self.root / "편집기/설정/사용자.ini").read_text(encoding="utf-8"), "안녕하세요\n")
+        pk.remove("demo", self.root)
+        self.assertFalse((self.root / "편집기").exists())
+        self.assertEqual(pk.read_state(self.root), {})
+
+    def test_readonly_old_files_are_deleted_after_update(self):
+        self.installed()
+        (self.root / "demo/demo.exe").chmod(stat.S_IREAD)
+        tool, download = self.package("2")
+        result = pk.update(tool, self.root, download)
+        self.assertNotIn("cleanupPending", result)
+        self.assertFalse((self.root / "demo.old").exists())
+
+    def test_readonly_stage_is_deleted_after_extraction_failure(self):
+        tool, download = self.package()
+        def fail(artifact, tool, stage):
+            path = stage / "readonly"
+            path.write_bytes(b"partial")
+            path.chmod(stat.S_IREAD)
+            raise pk.PortakitError("archive", "broken zip")
+        with mock.patch.object(pk, "extract", fail):
+            with self.assertRaises(pk.PortakitError) as caught:
+                pk.install(tool, self.root, download)
+        self.assertEqual(caught.exception.code, "archive")
+        self.assertEqual(list(self.root.glob(".portakit-stage-*")), [])
+
+    def test_remove_recovers_orphan_old_then_removes_it(self):
+        self.installed()
+        (self.root / "demo").rename(self.root / "demo.old")
+        pk.remove("demo", self.root)
+        self.assertFalse((self.root / "demo").exists())
+        self.assertFalse((self.root / "demo.old").exists())
+        self.assertEqual(pk.read_state(self.root), {})
+
+    def test_remove_recovery_survives_state_write_failure(self):
+        previous = self.installed()
+        (self.root / "demo").rename(self.root / "demo.old")
+        with mock.patch.object(pk, "write_state", side_effect=OSError("locked state")):
+            with self.assertRaises(pk.PortakitError):
+                pk.remove("demo", self.root)
+        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+        self.assertEqual((self.root / ".portakit-state.json").read_bytes(), previous)
+
+
+class DownloadEdges(fixtures.Workspace):
+    def fetch(self, payload, downloader=None):
+        tool = fixtures.entry(sha256=hashlib.sha256(payload).hexdigest())
+        return pk.fetch(tool, self.root, downloader)
+
+    def test_streamed_download_cap_without_content_length(self):
+        response = io.BytesIO(b"123456789")
+        response.headers = {}
+        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
+                pk.urllib.request, "urlopen", return_value=response):
+            with self.assertRaises(pk.PortakitError) as caught:
+                self.fetch(b"123456789")
+        self.assertEqual(caught.exception.code, "download")
+        self.assertIn("size", str(caught.exception).lower())
+        self.assertFalse(any(path.is_file() for path in self.root.rglob("*")))
+
+    def test_oversized_content_length_rejected_before_read(self):
+        response = io.BytesIO(b"123456789")
+        response.headers = {"Content-Length": "9"}
+        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
+                pk.urllib.request, "urlopen", return_value=response), mock.patch.object(
+                response, "read", side_effect=AssertionError("body must not be read")):
+            with self.assertRaises(pk.PortakitError) as caught:
+                self.fetch(b"123456789")
+        self.assertEqual(caught.exception.code, "download")
+
+    def test_injected_downloader_and_cache_cannot_bypass_cap(self):
+        payload = b"123456789"
+        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8):
+            with self.assertRaises(pk.PortakitError) as caught:
+                self.fetch(payload, lambda url, dest: dest.write_bytes(payload))
+            self.assertEqual(caught.exception.code, "download")
+        path = self.fetch(payload, lambda url, dest: dest.write_bytes(payload))
+        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8):
+            with self.assertRaises(pk.PortakitError) as caught:
+                self.fetch(payload, mock.Mock(side_effect=AssertionError("network")))
+            self.assertEqual(caught.exception.code, "download")
+        self.assertFalse(path.exists())
+
+    def test_exact_size_limit_is_allowed(self):
+        response = io.BytesIO(b"12345678")
+        response.headers = {"Content-Length": "8"}
+        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
+                pk.urllib.request, "urlopen", return_value=response):
+            self.assertEqual(self.fetch(b"12345678").read_bytes(), b"12345678")
+
+
+if __name__ == "__main__":
+    unittest.main()

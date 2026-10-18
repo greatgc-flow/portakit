@@ -20,7 +20,8 @@ Local asset downloads and `jq.exe --version` verification remain blocked by
 the sandbox's unavailable proxy; these are published hashes, not locally
 computed hashes. TODO hashes, if added, block downloads.
 
-Downloads are verified before extraction, including cache hits. ZIPs reject
+Downloads are capped at 100 MiB, including cache hits and injected downloaders,
+and verified before extraction. ZIPs reject
 unsafe paths and links; a single enclosing folder is flattened. EXE artifacts
 become `ID.exe`. Updates replace the managed folder and preserve the exact
 files or directories in `preserveOnUpdate` (directories replace packaged copies).
@@ -42,7 +43,7 @@ state writes restore the previous install. Close running apps before changing
 them. After a successful commit, a locked `.old` backup may remain; JSON
 `data.cleanupPending` names it. Inspect and delete it before retrying.
 If a managed folder is missing, its `.old` backup is restored at the next
-install/update attempt. If both folders exist, inspect them before retrying.
+install/update/remove attempt. If both folders exist, inspect them before retrying.
 Run one portakit command at a time.
 
 `--json` returns `{ok, command, data, error}`; errors contain `code` and `message`.

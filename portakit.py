@@ -13,9 +13,11 @@ import urllib.request
 import urllib.parse
 import uuid
 import zipfile
+import zlib
 
 
 DEFAULT_CATALOG = Path(__file__).with_name("catalog.json")
+MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 EXIT_CODES = dict(ok=0, usage=2, catalog=3, download=4, integrity=5,
                   archive=6, filesystem=7, state=8, not_found=9)
 
@@ -142,9 +144,22 @@ class Parser(argparse.ArgumentParser):
         raise PortakitError("usage", message)
 
 
+def check_download_size(size):
+    if size > MAX_DOWNLOAD_BYTES:
+        raise PortakitError("download", f"Download size exceeds {MAX_DOWNLOAD_BYTES} bytes")
+
+
 def download(url, destination):
-    with urllib.request.urlopen(url, timeout=60) as response, destination.open("wb") as out:
-        shutil.copyfileobj(response, out)
+    with urllib.request.urlopen(url, timeout=60) as response:
+        length = response.headers.get("Content-Length", "")
+        if length.isdigit():
+            check_download_size(int(length))
+        total = 0
+        with destination.open("wb") as out:
+            while chunk := response.read(min(64 * 1024, MAX_DOWNLOAD_BYTES - total + 1)):
+                total += len(chunk)
+                check_download_size(total)
+                out.write(chunk)
 
 
 def fetch(tool, root, downloader=None):
@@ -161,6 +176,9 @@ def fetch(tool, root, downloader=None):
             candidate = partial
         else:
             candidate = target
+        if candidate.stat().st_size > MAX_DOWNLOAD_BYTES:
+            candidate.unlink()
+            check_download_size(MAX_DOWNLOAD_BYTES + 1)
         with candidate.open("rb") as source:
             actual = hashlib.file_digest(source, "sha256").hexdigest()
         if actual != expected:
@@ -224,7 +242,7 @@ def extract(artifact, tool, destination):
                         shutil.copyfileobj(source, out)
     except PortakitError as exc:
         raise PortakitError("archive", str(exc)) from exc
-    except (zipfile.BadZipFile, RuntimeError, NotImplementedError) as exc:
+    except (zipfile.BadZipFile, RuntimeError, NotImplementedError, zlib.error, EOFError) as exc:
         raise PortakitError("archive", f"zip: {exc}") from exc
 
 
@@ -266,6 +284,16 @@ def reject_links(path):
             reject_links(child)
 
 
+def remove_tree(path):
+    def onerror(function, filename, info):
+        if not isinstance(info[1], PermissionError):
+            raise info[1]
+        target = Path(filename)
+        target.chmod(target.stat().st_mode | stat.S_IWRITE)
+        function(filename)
+    shutil.rmtree(path, onerror=onerror)
+
+
 def preserve_paths(tool, source, stage):
     for relative in tool.get("preserveOnUpdate", []):
         original = safe_path(source, relative, "preserveOnUpdate")
@@ -274,7 +302,7 @@ def preserve_paths(tool, source, stage):
         reject_links(original)
         target = safe_path(stage, relative, "preserveOnUpdate")
         if target.is_dir():
-            shutil.rmtree(target)
+            remove_tree(target)
         elif target.exists():
             target.unlink()
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -299,7 +327,7 @@ def rollback_swap(dest, old, stage=None):
             dest.rename(stage)
         except OSError:
             try:
-                shutil.rmtree(dest)
+                remove_tree(dest)
             except OSError:
                 pass  # Still attempt backup restoration independently.
     if old.exists():
@@ -355,11 +383,11 @@ def install(tool, root, downloader=None, *, preserve=False):
         raise PortakitError("filesystem", f"install: {exc}.{hint}") from exc
     finally:
         if stage.exists():
-            shutil.rmtree(stage)
+            remove_tree(stage)
     result = dict(id=identifier, version=tool["version"], dest=str(dest))
     if moved_old:
         try:
-            shutil.rmtree(old)
+            remove_tree(old)
         except OSError:
             # Commit succeeded. Keep a locked backup for manual cleanup.
             result["cleanupPending"] = str(old)
@@ -378,7 +406,9 @@ def remove(identifier, root):
     if identifier not in state:
         raise PortakitError("not_found", f"{identifier}: not installed")
     dest = managed_dest(root, state[identifier]["dest"])
-    old = dest.with_name(dest.name + ".old")
+    old = safe_path(root, state[identifier]["dest"] + ".old", "backup")
+    if old.exists() and not dest.exists():
+        old.rename(dest)
     if old.exists():
         raise PortakitError("filesystem", f"Backup already exists: {old}; inspect it before retrying")
     moved = False
@@ -397,7 +427,7 @@ def remove(identifier, root):
     result = dict(id=identifier)
     if moved:
         try:
-            shutil.rmtree(old)
+            remove_tree(old)
         except OSError:
             result["cleanupPending"] = str(old)
     return result

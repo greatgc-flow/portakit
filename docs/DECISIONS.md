@@ -8,3 +8,6 @@ Name `portakit`; SPEC.md unanimous (r3b). Roles/profiles unanimous APPROVE (r4 a
 - Log per-task peer/profile/tokens (from CLI usage output) in docs/LOG.md.
 Note: r5 side-amendments (cx: test-per-change, usage-based token log; cc: pin vote inputs) were adopted as additive; not re-voted.
 Test files must match test*.py.
+
+## Process deviation (lesson)
+Roles/models/effort were agreed in r4-r5 AFTER implementation began (r1-r3 covered name, scope, SPEC only). Future: vote roles/profiles/effort in the first round, before any build. Cannot be undone retroactively.

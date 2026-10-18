@@ -23,7 +23,7 @@ class ArchiveEdges(fixtures.InstallWorkspace):
         self.assertEqual(caught.exception.code, "archive")
         self.assertFalse((self.root / "demo").exists())
         self.assertFalse((self.root / ".portakit-state.json").exists())
-        self.assertEqual(list(self.root.glob(".portakit-stage-*")), [])
+        self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
 
     def test_symlink_and_reparse_entries(self):
         for attribute in [(stat.S_IFLNK | 0o777) << 16, 0x400]:
@@ -76,20 +76,18 @@ class FilesystemEdges(fixtures.InstallWorkspace):
             if path.is_file():
                 path.chmod(path.stat().st_mode | stat.S_IWRITE)
 
-    def test_locked_existing_directory_during_swap(self):
+    def test_locked_existing_directory_during_swap_is_busy(self):
         previous = self.installed()
         tool, download = self.package("2")
-        rename = Path.rename
-        def locked(path, target):
-            if path == self.root / "demo":
+        def locked(src, dst):
+            if src == self.root / "demo":
                 raise PermissionError("running executable")
-            return rename(path, target)
-        with mock.patch.object(Path, "rename", locked):
+        with self.patch_rename(locked):
             with self.assertRaises(pk.PortakitError) as caught:
                 pk.update(tool, self.root, download)
-        self.assertEqual(caught.exception.code, "filesystem")
+        self.assertEqual(caught.exception.code, "busy")
         self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
-        self.assertEqual((self.root / ".portakit-state.json").read_bytes(), previous)
+        self.assertEqual(self.state_bytes(), previous)
         self.assertFalse((self.root / "demo.old").exists())
 
     def test_corrupt_state_rejected_without_touching_managed_files(self):
@@ -103,13 +101,14 @@ class FilesystemEdges(fixtures.InstallWorkspace):
             self.assertEqual(path.read_bytes(), content)
             self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
 
-    def test_unicode_root_members_configs_update_and_remove(self):
+    def test_unicode_root_members_update_and_remove(self):
         self.root = self.base / "도구 日本語"
-        tool, download = self.package(members=[("패키지/실행.exe", b"exe")], dest="편집기",
-                                      defaultConfig={"설정/사용자.ini": "안녕하세요\n"},
-                                      preserveOnUpdate=["설정"])
+        self.root.mkdir()
+        tool, download = self.package(members=[("패키지/실행.exe", b"exe")], dest="편집기")
         pk.install(tool, self.root, download)
         self.assertEqual((self.root / "편집기/실행.exe").read_bytes(), b"exe")
+        (self.root / "편집기/설정").mkdir()
+        (self.root / "편집기/설정/사용자.ini").write_text("안녕하세요\n", encoding="utf-8")
         tool, download = self.package("2", dest="편집기", preserveOnUpdate=["설정"])
         pk.update(tool, self.root, download)
         self.assertEqual((self.root / "편집기/설정/사용자.ini").read_text(encoding="utf-8"), "안녕하세요\n")
@@ -122,7 +121,7 @@ class FilesystemEdges(fixtures.InstallWorkspace):
         (self.root / "demo/demo.exe").chmod(stat.S_IREAD)
         tool, download = self.package("2")
         result = pk.update(tool, self.root, download)
-        self.assertNotIn("cleanupPending", result)
+        self.assertEqual(set(result), {"id", "version", "dest", "changed"})
         self.assertFalse((self.root / "demo.old").exists())
 
     def test_readonly_stage_is_deleted_after_extraction_failure(self):
@@ -136,71 +135,61 @@ class FilesystemEdges(fixtures.InstallWorkspace):
             with self.assertRaises(pk.PortakitError) as caught:
                 pk.install(tool, self.root, download)
         self.assertEqual(caught.exception.code, "archive")
-        self.assertEqual(list(self.root.glob(".portakit-stage-*")), [])
+        self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
 
-    def test_remove_recovers_orphan_old_then_removes_it(self):
-        self.installed()
-        (self.root / "demo").rename(self.root / "demo.old")
-        pk.remove("demo", self.root)
-        self.assertFalse((self.root / "demo").exists())
-        self.assertFalse((self.root / "demo.old").exists())
-        self.assertEqual(pk.read_state(self.root), {})
-
-    def test_remove_recovery_survives_state_write_failure(self):
+    def test_remove_with_orphan_old_deletes_it_even_when_state_write_fails(self):
         previous = self.installed()
         (self.root / "demo").rename(self.root / "demo.old")
         with mock.patch.object(pk, "write_state", side_effect=OSError("locked state")):
             with self.assertRaises(pk.PortakitError):
                 pk.remove("demo", self.root)
-        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
-        self.assertEqual((self.root / ".portakit-state.json").read_bytes(), previous)
+        # The entry is kept (state written last); a retry finishes.
+        self.assertEqual(self.state_bytes(), previous)
+        self.assertFalse((self.root / "demo").exists())
+        self.assertFalse((self.root / "demo.old").exists())
+        pk.remove("demo", self.root)
+        self.assertEqual(pk.read_state(self.root), {})
 
 
-class DownloadEdges(fixtures.Workspace):
-    def fetch(self, payload, downloader=None):
-        tool = fixtures.entry(sha256=hashlib.sha256(payload).hexdigest())
-        return pk.fetch(tool, self.root, downloader)
+class DownloadEdges(fixtures.InstallWorkspace):
+    def response(self, body, length=None):
+        response = io.BytesIO(body)
+        response.headers = {} if length is None else {"Content-Length": str(length)}
+        return response
 
     def test_streamed_download_cap_without_content_length(self):
-        response = io.BytesIO(b"123456789")
-        response.headers = {}
         with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
-                pk.urllib.request, "urlopen", return_value=response):
+                pk.urllib.request, "urlopen", return_value=self.response(b"123456789")):
             with self.assertRaises(pk.PortakitError) as caught:
-                self.fetch(b"123456789")
-        self.assertEqual(caught.exception.code, "download")
+                pk.download("https://example.com/x", self.base / "dl.tmp")
+        self.assertEqual(caught.exception.code, "fetch")
         self.assertIn("size", str(caught.exception).lower())
-        self.assertFalse(any(path.is_file() for path in self.root.rglob("*")))
 
     def test_oversized_content_length_rejected_before_read(self):
-        response = io.BytesIO(b"123456789")
-        response.headers = {"Content-Length": "9"}
+        response = self.response(b"123456789", length=9)
         with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
                 pk.urllib.request, "urlopen", return_value=response), mock.patch.object(
                 response, "read", side_effect=AssertionError("body must not be read")):
             with self.assertRaises(pk.PortakitError) as caught:
-                self.fetch(b"123456789")
-        self.assertEqual(caught.exception.code, "download")
+                pk.download("https://example.com/x", self.base / "dl.tmp")
+        self.assertEqual(caught.exception.code, "fetch")
 
-    def test_injected_downloader_and_cache_cannot_bypass_cap(self):
+    def test_injected_downloader_cannot_bypass_cap(self):
         payload = b"123456789"
+        tool = fixtures.entry(sha256=hashlib.sha256(payload).hexdigest())
         with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8):
             with self.assertRaises(pk.PortakitError) as caught:
-                self.fetch(payload, lambda url, dest: dest.write_bytes(payload))
-            self.assertEqual(caught.exception.code, "download")
-        path = self.fetch(payload, lambda url, dest: dest.write_bytes(payload))
-        with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8):
-            with self.assertRaises(pk.PortakitError) as caught:
-                self.fetch(payload, mock.Mock(side_effect=AssertionError("network")))
-            self.assertEqual(caught.exception.code, "download")
-        self.assertFalse(path.exists())
+                pk.install(tool, self.root, lambda url, dest: dest.write_bytes(payload))
+        self.assertEqual(caught.exception.code, "fetch")
+        self.assertIn("size", str(caught.exception).lower())
+        self.assertEqual(list(self.root.rglob("*")), [])
 
     def test_exact_size_limit_is_allowed(self):
-        response = io.BytesIO(b"12345678")
-        response.headers = {"Content-Length": "8"}
+        target = self.base / "dl.tmp"
         with mock.patch.object(pk, "MAX_DOWNLOAD_BYTES", 8), mock.patch.object(
-                pk.urllib.request, "urlopen", return_value=response):
-            self.assertEqual(self.fetch(b"12345678").read_bytes(), b"12345678")
+                pk.urllib.request, "urlopen", return_value=self.response(b"12345678", length=8)):
+            pk.download("https://example.com/x", target)
+        self.assertEqual(target.read_bytes(), b"12345678")
 
 
 if __name__ == "__main__":

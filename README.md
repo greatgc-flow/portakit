@@ -1,68 +1,61 @@
 # portakit
 
-Small Windows portable app manager. Python 3.11+, standard library only.
+Small Windows portable app manager. Python 3.11+, standard library only. Windows only; run one operation at a time.
+
+## Quickstart
 
 ```powershell
 python -I portakit.py list
-python -I portakit.py --root portable install jq
+python -I portakit.py install jq
 .\portable\jq\jq.exe --version
-python -I portakit.py --root portable update jq
-python -I portakit.py --root portable remove jq
-python -I portakit.py --json list
+python -I portakit.py update jq
+python -I portakit.py remove jq
 ```
 
-`catalog.json` pins GitHub release assets and SHA256 digests. The asset URLs
-were checked against GitHub release metadata. Hash sources:
-[Notepad++ release notes](https://github.com/notepad-plus-plus/notepad-plus-plus/releases/tag/v8.7.5),
-[WinMerge manifest](https://github.com/ScoopInstaller/Extras/blob/777b50f8467b011b55f20a8790f2d8712b839663/bucket/winmerge.json),
-[jq manifest](https://github.com/ScoopInstaller/Main/blob/da6f69ed0016a805c16d9d3d78386068a409da3a/bucket/jq.json).
-Local asset downloads and `jq.exe --version` verification remain blocked by
-the sandbox's unavailable proxy; these are published hashes, not locally
-computed hashes. TODO hashes, if added, block downloads.
+The default root is `portable`, relative to the current directory. No PATH edits, no shims.
 
-Downloads are capped at 100 MiB, including cache hits and injected downloaders,
-and verified before extraction. ZIPs reject
-unsafe paths and links; a single enclosing folder is flattened. EXE artifacts
-become `ID.exe`. Updates replace the managed folder and preserve the exact
-files or directories in `preserveOnUpdate` (directories replace packaged copies).
-Installing an already installed ID is refused; use `update ID` instead.
+## Commands
 
-The `github` plugin uses `kind: "github"`, `repo: "owner/repository"`, `tag`,
-and `asset` to build the pinned download URL without an API request. An optional
-`url` must match. Every catalog record must declare `kind: "github"`.
-Edit the version, tag, asset, URL (if present), and digest together to update a pin.
+`list | install ID | update ID | remove ID`. Global flags: `--json`, `--root DIR`, `-h/--help` (human text, exit 0, never an envelope).
 
-`defaultConfig` maps relative file paths to UTF-8 text. Missing files are seeded
-in staging after extraction and preservation; packaged and preserved files stay
-intact. Notepad++ gets its `doLocalConf.xml` marker. WinMerge gets an empty
-`WinMerge.ini`; use it with `WinMergeU.exe /inifile PATH\TO\WinMerge.ini`
-([WinMerge manual](https://manual.winmerge.org/en/Command_line.html)).
+- `install ID` downloads the pinned asset, verifies its SHA256, extracts it into a stage folder and renames the stage to `ROOT\<dest>`. An installed ID is refused (use `update`); an existing `dest` or `dest.old` is treated as unmanaged and refused (delete or rename it).
+- `update ID` compares the installed `version` and `sha256` with the catalog pin. Any difference (up, down, or a new digest at the same version) updates; identical with the folder present is a no-op (`changed: false`); a missing folder is repaired. Files and folders listed in `preserveOnUpdate` are copied from the old folder over the packaged copies. To force a reinstall of an identical pin, `remove` then `install` (preserved paths are not kept).
+- `remove ID` deletes `dest`, then `dest.old`, then the state entry last, and removes everything in `dest` including user data. It never loads the catalog and touches nothing else.
 
-State and cache live inside `--root` (default: `portable`). Failed swaps or
-state writes restore the previous install. Close running apps before changing
-them. After a successful commit, a locked `.old` backup may remain; JSON
-`data.cleanupPending` names it. Inspect and delete it before retrying.
-If a managed folder is missing, its `.old` backup is restored at the next
-install/update/remove attempt. If both folders exist, inspect them before retrying.
-Run one portakit command at a time.
+## Layout, lock, state
 
-`--json` returns `{ok, command, data, error}`; errors contain `code` and `message`.
+Under the root: `<dest>\`, `<dest>.old` (the only backup name), `.portakit-state.json` (`{"id":{"version","sha256","dest"}}`), `.portakit-lock` (held for the whole operation; a second portakit exits 6) and temporary `.portakit-*.tmp` files, wiped at the start of every operation. `list` takes no lock.
 
-| Exit | Meaning |
-| --- | --- |
-| 0 | Success |
-| 2 | Usage |
-| 3 | Catalog |
-| 4 | Download |
-| 5 | Integrity |
-| 6 | Archive |
-| 7 | Filesystem |
-| 8 | State |
-| 9 | Unknown or uninstalled ID |
+An update renames `dest` to `dest.old`, renames the stage to `dest`, writes the state, then deletes `dest.old`. If a crash leaves only `dest.old`, the next `update` renames it back. If both `dest` and `dest.old` exist, the operation stops with exit 5 and the message `... both exist; if <dest> is good delete <dest>.old, else delete <dest> and rename <dest>.old to <dest>`. Do that, then retry. A `dest.old` that could not be deleted after a successful update is reported as one `warning:` line on stderr.
+
+## Envelope and exit codes
+
+With `--json`, stdout is exactly one object `{"ok","command","data","error"}`; `error` is `null` or `{"code","message"}`. Without it, results go to stdout and errors to stderr.
+
+`data`: `list` -> `{"items":[catalog entries]}` (human: `id<TAB>version`); install/update -> `{"id","version","dest","changed"}`; remove -> `{"id"}`.
+
+| Exit | error.code | Meaning |
+| --- | --- | --- |
+| 0 | - | success (including a no-op update) |
+| 1 | usage | bad args, flags or arity; unknown ID for install |
+| 2 | catalog | invalid catalog |
+| 3 | fetch | network, HTTP, size cap or SHA256 mismatch |
+| 4 | archive | corrupt zip, zip-slip, links, duplicates |
+| 5 | state | bad state; already installed / not installed / not in catalog; dest changed; dest is a file, link or unmanaged folder; `dest` and `dest.old` both exist; any other filesystem failure |
+| 6 | busy | lock held by another portakit, or the target is in use by a running app |
+
+## Catalog
+
+`catalog.json` holds `{"tools": [...]}`. Every entry is `id`, `version`, `url` (a pinned release asset), `sha256` (64 hex), `artifact` (`zip` or `exe`; an exe installs as `ID.exe`), `dest` (one folder name) and optional `preserveOnUpdate`. Downloads are capped at 100 MiB and verified before extraction; every install or update downloads again (no cache).
+
+Digests: the notepad++ digest comes from the [release notes](https://github.com/notepad-plus-plus/notepad-plus-plus/releases/tag/v8.7.5), winmerge from the [Scoop manifest](https://github.com/ScoopInstaller/Extras/blob/777b50f8467b011b55f20a8790f2d8712b839663/bucket/winmerge.json) and jq from the [Scoop manifest](https://github.com/ScoopInstaller/Main/blob/da6f69ed0016a805c16d9d3d78386068a409da3a/bucket/jq.json). These are published hashes, not locally computed ones.
+
+To bump a pin, edit `version`, `url` and `sha256` together. Config seeding is not implemented (deferred).
+
+## Tests
 
 ```powershell
 python -I -m unittest discover -s tests
 ```
 
-Tests use temporary folders, mock ZIPs, and injected downloaders; no network.
-SPEC steps 1–8 are implemented. Shims and offline bundles are deferred.
+Tests use temporary folders, mock ZIPs and injected downloaders; no network.

@@ -2,3 +2,4 @@ __pycache__/
 *.py[cod]
 /portable/
 /tests/tmp*/
+.test_out.txt

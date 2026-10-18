@@ -1,0 +1,45 @@
+{
+  "tools": [
+    {
+      "id": "notepad++",
+      "version": "8.7.5",
+      "kind": "github",
+      "repo": "notepad-plus-plus/notepad-plus-plus",
+      "tag": "v8.7.5",
+      "asset": "npp.8.7.5.portable.x64.zip",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.5/npp.8.7.5.portable.x64.zip",
+      "sha256": "63e57c907ba20e3a29753810945b42528beff1c029c2f0723a2882458994ed8e",
+      "artifact": "zip",
+      "dest": "notepad++",
+      "preserveOnUpdate": ["config.xml", "shortcuts.xml", "session.xml", "plugins/Config"],
+      "defaultConfig": {"doLocalConf.xml": ""}
+    },
+    {
+      "id": "winmerge",
+      "version": "2.16.46",
+      "kind": "github",
+      "repo": "WinMerge/winmerge",
+      "tag": "v2.16.46",
+      "asset": "winmerge-2.16.46-x64-exe.zip",
+      "url": "https://github.com/WinMerge/winmerge/releases/download/v2.16.46/winmerge-2.16.46-x64-exe.zip",
+      "sha256": "0cf5ceaca5d4de1e7e3b97481d9310a71bca75c2209d07d20ba412f9bc03f44a",
+      "artifact": "zip",
+      "dest": "winmerge",
+      "preserveOnUpdate": ["WinMerge.ini"],
+      "defaultConfig": {"WinMerge.ini": ""}
+    },
+    {
+      "id": "jq",
+      "version": "1.7.1",
+      "kind": "github",
+      "repo": "jqlang/jq",
+      "tag": "jq-1.7.1",
+      "asset": "jq-windows-amd64.exe",
+      "url": "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-amd64.exe",
+      "sha256": "7451fbbf37feffb9bf262bd97c54f0da558c63f0748e64152dd87b0a07b6d6ab",
+      "artifact": "exe",
+      "dest": "jq",
+      "preserveOnUpdate": []
+    }
+  ]
+}

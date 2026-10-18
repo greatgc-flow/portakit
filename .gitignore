@@ -3,3 +3,10 @@ __pycache__/
 /portable/
 /tests/tmp*/
 .test_out.txt
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.portakit-*

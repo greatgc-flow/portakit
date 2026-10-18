@@ -34,7 +34,8 @@ class PortakitError(Exception):
 def is_reparse(path):
     try:
         info = Path(path).lstat()
-        return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
+        return stat.S_ISLNK(info.st_mode) or bool(
+            getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)
     except FileNotFoundError:
         return False
 
@@ -70,8 +71,6 @@ def safe_path(root, value, field, code="catalog"):
         current = current / part
         if is_reparse(current):
             raise PortakitError(code, f"{field}: reparse path rejected")
-    if not target.resolve().is_relative_to(root):
-        raise PortakitError(code, f"{field}: path escapes root")
     return target
 
 
@@ -85,7 +84,7 @@ def check_dest(value, field="dest", code="catalog"):
     return name
 
 
-def load_catalog(path, root=None):
+def load_catalog(path):
     check_links(path)
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -110,6 +109,8 @@ def load_catalog(path, root=None):
             url = urllib.parse.urlsplit(tool["url"])
             if url.scheme != "https" or not url.hostname or any(c.isspace() for c in tool["url"]):
                 raise ValueError("expected HTTPS URL with a host")
+            if "latest" in urllib.parse.unquote(url.path).lower().split("/"):
+                raise ValueError("expected a pinned release URL; latest is mutable")
         except ValueError as exc:
             raise PortakitError("catalog", f"url: {exc}") from exc
         if not re.fullmatch(r"[a-fA-F0-9]{64}", tool["sha256"]):
@@ -202,7 +203,7 @@ def extract(artifact, tool, destination):
                 name = name[:-1] if directory else name
                 safe_path(destination, name, "zip member")
                 mode = info.external_attr >> 16
-                if (info.external_attr & 0x400 or stat.S_ISLNK(mode)
+                if (info.external_attr & stat.FILE_ATTRIBUTE_REPARSE_POINT or stat.S_ISLNK(mode)
                         or stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR)):
                     raise PortakitError("archive", "zip member: reparse or special file")
                 key = name.lower()
@@ -423,10 +424,11 @@ def deploy(tool, root, state, downloader, update_mode):
     return dict(id=identifier, version=tool["version"], dest=str(dest), changed=True)
 
 
-def install(tool, root, downloader=None):
+def install(tool, root, downloader=None, *, state=None):
     check_links(root)
     root = Path(root).resolve()
-    state = read_state(root)
+    if state is None:
+        state = read_state(root)
     identifier = tool["id"]
     if identifier in state:
         raise PortakitError("state", f"{identifier}: already installed; use update {identifier}")
@@ -441,10 +443,11 @@ def install(tool, root, downloader=None):
     return deploy(tool, root, state, downloader, update_mode=False)
 
 
-def update(tool, root, downloader=None):
+def update(tool, root, downloader=None, *, state=None):
     check_links(root)
     root = Path(root).resolve()
-    state = read_state(root)
+    if state is None:
+        state = read_state(root)
     identifier = tool["id"]
     if identifier not in state:
         raise PortakitError("state", f"{identifier}: not installed")
@@ -467,10 +470,11 @@ def update(tool, root, downloader=None):
     return deploy(tool, root, state, downloader, update_mode=True)
 
 
-def remove(identifier, root):
+def remove(identifier, root, *, state=None):
     check_links(root)
     root = Path(root).resolve()
-    state = read_state(root)
+    if state is None:
+        state = read_state(root)
     if identifier not in state:
         raise PortakitError("state", f"{identifier}: not installed")
     name = check_dest(state[identifier]["dest"], "dest", "state")
@@ -534,8 +538,8 @@ def execute(args, downloader):
     command, root, identifier = args.command, args.root, args.id
     check_links(root)
     if command == "list":
-        return {"items": list(load_catalog(DEFAULT_CATALOG, root).values())}
-    catalog = None if command == "remove" else load_catalog(DEFAULT_CATALOG, root)
+        return {"items": list(load_catalog(DEFAULT_CATALOG).values())}
+    catalog = None if command == "remove" else load_catalog(DEFAULT_CATALOG)
     root.mkdir(parents=True, exist_ok=True)
     with RootLock(root):
         cleanup_temps(root)
@@ -543,14 +547,14 @@ def execute(args, downloader):
         if command == "install":
             if identifier not in catalog:
                 raise PortakitError("usage", f"Unknown ID: {identifier}")
-            return install(catalog[identifier], root, downloader)
+            return install(catalog[identifier], root, downloader, state=state)
         if command == "update":
             if identifier not in state:
                 raise PortakitError("state", f"{identifier}: not installed")
             if identifier not in catalog:
                 raise PortakitError("state", f"{identifier}: not in catalog; run remove {identifier}")
-            return update(catalog[identifier], root, downloader)
-        return remove(identifier, root)
+            return update(catalog[identifier], root, downloader, state=state)
+        return remove(identifier, root, state=state)
 
 
 def main(argv=None, downloader=None):
@@ -558,11 +562,24 @@ def main(argv=None, downloader=None):
     command = None
     args = None
     try:
-        parser = Parser(description=__doc__, allow_abbrev=False)
-        parser.add_argument("--json", action="store_true")
-        parser.add_argument("--root", type=Path, default=Path("portable"))
-        parser.add_argument("command", choices=("list", "install", "update", "remove"))
-        parser.add_argument("id", nargs="?")
+        parser = Parser(
+            description=__doc__, allow_abbrev=False,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=("Commands:\n"
+                    "  list        Show catalog pins; takes no ID.\n"
+                    "  install ID  Download, verify and install a catalog pin.\n"
+                    "  update ID   Apply the catalog pin; identical installs skip download.\n"
+                    "  remove ID   Delete the installed folder, backup and all user data,\n"
+                    "              then forget the state entry; no catalog needed.\n"
+                    "install/update/remove require ID."))
+        parser.add_argument("--json", action="store_true",
+                            help="emit one JSON result envelope (help stays human text)")
+        parser.add_argument("--root", type=Path, default=Path("portable"), metavar="DIR",
+                            help="install root (default: portable in the current directory)")
+        parser.add_argument("command", choices=("list", "install", "update", "remove"),
+                            help="operation to perform (see Commands below)")
+        parser.add_argument("id", nargs="?", metavar="ID",
+                            help="tool ID; required except for list")
         try:
             args = parser.parse_args(argv)
         except SystemExit as exc:  # -h/--help: human text, no envelope

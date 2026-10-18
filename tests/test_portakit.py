@@ -95,12 +95,12 @@ class Workspace(unittest.TestCase):
 class CatalogTests(Workspace):
     def load(self, tools):
         self.write_catalog(tools)
-        return pk.load_catalog(self.catalog, self.root)
+        return pk.load_catalog(self.catalog)
 
     def test_shipped_catalog_is_plain_url_sha_entries(self):
         path = Path(pk.__file__).with_name("catalog.json")
         raw = json.loads(path.read_text(encoding="utf-8"))
-        catalog = pk.load_catalog(path, self.root)
+        catalog = pk.load_catalog(path)
         self.assertEqual(set(catalog), {"notepad++", "winmerge", "jq"})
         for tool in raw["tools"]:
             with self.subTest(id=tool["id"]):
@@ -112,6 +112,20 @@ class CatalogTests(Workspace):
 
     def test_valid_catalog(self):
         self.assertEqual(self.load([entry()])["demo"]["version"], "1")
+
+    def test_mutable_latest_urls_are_catalog_errors(self):
+        for path in ("latest/demo.zip", "releases/latest/download/demo.zip",
+                     "releases/LATEST/demo.zip", "%6catest/demo.zip"):
+            with self.subTest(path=path):
+                self.write_catalog([entry(url="https://example.com/" + path)])
+                code, result = self.call("list")
+                self.assertEqual(code, 2)
+                self.assertEqual(result["error"]["code"], "catalog")
+                self.assertIn("url", result["error"]["message"])
+
+    def test_latest_substring_in_pinned_filename_is_allowed(self):
+        tool = entry(url="https://example.com/v1/latest-demo.zip")
+        self.assertEqual(self.load([tool])["demo"]["url"], tool["url"])
 
     def test_bad_fields_are_named(self):
         for field, value in [("id", ""), ("id", "."), ("version", 1), ("version", ""),
@@ -166,15 +180,25 @@ class CatalogTests(Workspace):
     def test_malformed_json_names_catalog(self):
         self.catalog.write_text("{", encoding="utf-8")
         with self.assertRaisesRegex(pk.PortakitError, "catalog"):
-            pk.load_catalog(self.catalog, self.root)
+            pk.load_catalog(self.catalog)
 
     def test_tools_must_be_a_list(self):
         self.catalog.write_text('{"tools": false}', encoding="utf-8")
         with self.assertRaisesRegex(pk.PortakitError, "tools"):
-            pk.load_catalog(self.catalog, self.root)
+            pk.load_catalog(self.catalog)
 
 
 class EnvelopeTests(Workspace):
+    def test_help_explains_commands_flags_and_data_loss(self):
+        code, out, err = self.run_main("--help")
+        self.assertEqual(code, 0)
+        self.assertEqual(err, "")
+        for text in ("list", "install ID", "update ID", "remove ID",
+                     "require ID", "current directory", "portable", "--root",
+                     "--json", "JSON", "user data", "catalog"):
+            with self.subTest(text=text):
+                self.assertIn(text, " ".join(out.split()))
+
     def test_exit_codes_are_stable(self):
         self.assertEqual(pk.EXIT_CODES, dict(ok=0, usage=1, catalog=2, fetch=3,
                                              archive=4, state=5, busy=6))

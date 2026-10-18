@@ -1,4 +1,7 @@
-# HANDOFF
-portakit v0.2.1 done: SPEC (docs/SPEC.md) ratified (see DECISIONS.md), 166 tests OK (`python -I -m unittest discover -s tests`). Repo greatgc-flow/portakit (private), main.
-Open: ag empty replies (peerhub#169); repo still private; optional: more catalog tools, release/PyPI, ag re-vote when fixed.
-Process: roles/profiles in DECISIONS.md; run tests yourself after each peer task; new stream after ask_uncertain.
+# Open work
+
+- Part B: restructure tests; keep existing coverage and behavior.
+- Decide whether to make the repository public and publish a release or PyPI package.
+- Optional: expand the catalog.
+- Deferred features: config seeding, offline bundles, doctor, pip tools, shims, nested/plugin destinations, and installed status in `list`.
+- Track ag empty tool replies (peerhub#169); obtain a direct code review when resolved.

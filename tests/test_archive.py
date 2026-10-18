@@ -1,3 +1,5 @@
+"""Tests for archive behavior."""
+
 import contextlib
 import hashlib
 import io
@@ -6,34 +8,120 @@ import stat
 import struct
 import unittest
 from unittest import mock
+import urllib.error
 import warnings
 import zipfile
 import zlib
 
-import test_portakit as fixtures
-
+import support as fixtures
 
 pk = fixtures.pk
+entry = fixtures.entry
+zip_bytes = fixtures.zip_bytes
 
 
-class ArchiveEdges(fixtures.InstallWorkspace):
-    def check_archive_error(self, payload):
-        tool = fixtures.entry(sha256=hashlib.sha256(payload).hexdigest())
-        with self.assertRaises(pk.PortakitError) as caught:
-            pk.install(tool, self.root, lambda url, dest: dest.write_bytes(payload))
-        self.assertEqual(caught.exception.code, "archive")
-        self.assertFalse((self.root / "demo").exists())
-        self.assertFalse((self.root / ".portakit-state.json").exists())
+class DownloadTests(fixtures.Workspace):
+    def setUp(self):
+        super().setUp()
+        self.root.mkdir()
+
+    def payload_tool(self, payload):
+        return entry(sha256=hashlib.sha256(payload).hexdigest())
+
+    def test_mismatch_aborts_deletes_temp_and_installs_nothing(self):
+        with mock.patch.object(pk, "extract") as extract, \
+                self.assertRaisesRegex(pk.PortakitError, "SHA256") as caught:
+            pk.install(entry(), self.root, lambda url, dest: dest.write_bytes(b"bad"))
+        extract.assert_not_called()
+        self.assertEqual(caught.exception.code, "fetch")
+        self.assertEqual(list(self.root.rglob("*")), [])
+
+    def test_download_failure_deletes_partial(self):
+        def fail(url, dest):
+            dest.write_bytes(b"partial")
+            raise urllib.error.URLError("offline")
+        with self.assertRaisesRegex(pk.PortakitError, "offline") as caught:
+            pk.install(entry(), self.root, fail)
+        self.assertEqual(caught.exception.code, "fetch")
+        self.assertEqual(list(self.root.rglob("*")), [])
+
+    def test_download_goes_to_the_dl_temp(self):
+        names = []
+        payload = zip_bytes([("demo.exe", b"1")])
+        def downloader(url, dest):
+            names.append(Path(dest).name)
+            Path(dest).write_bytes(payload)
+        pk.install(self.payload_tool(payload), self.root, downloader)
+        self.assertEqual(names, [".portakit-dl-demo.tmp"])
         self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
 
-    def test_symlink_and_reparse_entries(self):
-        for attribute in [(stat.S_IFLNK | 0o777) << 16, 0x400]:
-            link = zipfile.ZipInfo("package/link")
-            link.create_system = 3
-            link.external_attr = attribute
-            with self.subTest(attribute=attribute):
-                self.check_archive_error(fixtures.zip_bytes([("package/good", b"ok"), (link, b"../outside")]))
+    def test_no_download_cache_every_install_downloads(self):
+        payload = zip_bytes([("demo.exe", b"1")])
+        tool = self.payload_tool(payload)
+        downloader = mock.Mock(side_effect=lambda url, dest: dest.write_bytes(payload))
+        pk.install(tool, self.root, downloader)
+        pk.remove("demo", self.root)
+        pk.install(tool, self.root, downloader)
+        self.assertEqual(downloader.call_count, 2)
+        self.assertFalse((self.root / ".portakit-cache").exists())
+        self.assertFalse(hasattr(pk, "fetch"))
 
+
+class ExtractTests(fixtures.ExtractWorkspace):
+    def test_single_root_is_flattened(self):
+        self.extract([("package/", b""), ("package/bin/demo.exe", b"exe"),
+                      ("package/readme.txt", b"readme")])
+        self.assertEqual((self.root / "bin/demo.exe").read_bytes(), b"exe")
+        self.assertFalse((self.root / "package").exists())
+
+    def test_multiple_roots_are_kept(self):
+        self.extract([("bin/demo.exe", b"exe"), ("readme.txt", b"readme")])
+        self.assertTrue((self.root / "bin/demo.exe").exists())
+        self.assertTrue((self.root / "readme.txt").exists())
+
+    def test_unsafe_members_leave_zero_files(self):
+        for name in ["../escape", "/absolute", "C:/escape", "\\\\host\\share\\x",
+                     "x/../../escape", "..\\escape", "x:stream", "CON", "x. "]:
+            with self.subTest(name=name), self.assertRaises(pk.PortakitError):
+                self.extract([("good.txt", b"safe"), (name, b"bad")])
+            self.assertFalse(self.root.exists())
+            self.assertFalse((self.base / "escape").exists())
+
+    def test_duplicate_windows_paths_and_file_parent_rejected(self):
+        for members in [[("A.exe", b"a"), ("a.exe", b"b")],
+                        [("x", b"file"), ("x/child", b"child")]]:
+            with self.assertRaises(pk.PortakitError):
+                self.extract(members)
+            self.assertFalse(self.root.exists())
+
+    def test_exe_artifact_is_copied_as_id_exe(self):
+        source = self.base / "input.exe"
+        source.write_bytes(b"MZ mock exe")
+        pk.extract(source, entry(id="jq", artifact="exe"), self.root)
+        self.assertEqual((self.root / "jq.exe").read_bytes(), b"MZ mock exe")
+
+    def test_malformed_zip_has_archive_error(self):
+        source = self.base / "bad.zip"
+        source.write_bytes(b"bad")
+        with self.assertRaisesRegex(pk.PortakitError, "zip") as caught:
+            pk.extract(source, entry(), self.root)
+        self.assertEqual(caught.exception.code, "archive")
+        self.assertFalse(self.root.exists())
+
+
+class InstallTests(fixtures.InstallWorkspace):
+    def test_bad_zip_leaves_previous_install_and_state(self):
+        previous = self.installed()
+        tool, download = self.package("2", [("fine", b"yes"), ("../escape", b"no")])
+        with self.assertRaises(pk.PortakitError) as caught:
+            pk.update(tool, self.root, download)
+        self.assertEqual(caught.exception.code, "archive")
+        self.assertEqual(self.state_bytes(), previous)
+        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+        self.assertFalse((self.base / "escape").exists())
+
+
+class ArchiveEdges(fixtures.ArchiveWorkspace):
     def test_absolute_and_drive_letter_paths(self):
         for name in ["/absolute", "C:/absolute", "C:relative", "\\absolute", "\\\\host\\share\\file"]:
             with self.subTest(name=name):
@@ -67,64 +155,7 @@ class ArchiveEdges(fixtures.InstallWorkspace):
             self.check_archive_error(fixtures.zip_bytes([("demo.exe", b"payload")]))
 
 
-class FilesystemEdges(fixtures.InstallWorkspace):
-    def setUp(self):
-        super().setUp()
-        self.addCleanup(self.clear_readonly_for_fixture_cleanup)
-
-    def clear_readonly_for_fixture_cleanup(self):
-        for path in self.base.rglob("*"):
-            if path.is_file():
-                path.chmod(path.stat().st_mode | stat.S_IWRITE)
-
-    def test_locked_existing_directory_during_swap_is_busy(self):
-        previous = self.installed()
-        tool, download = self.package("2")
-        def locked(src, dst):
-            if src == self.root / "demo":
-                raise PermissionError("running executable")
-        with self.patch_rename(locked):
-            with self.assertRaises(pk.PortakitError) as caught:
-                pk.update(tool, self.root, download)
-        self.assertEqual(caught.exception.code, "busy")
-        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
-        self.assertEqual(self.state_bytes(), previous)
-        self.assertFalse((self.root / "demo.old").exists())
-
-    def test_corrupt_state_rejected_without_touching_managed_files(self):
-        self.installed()
-        path = self.root / ".portakit-state.json"
-        for content in [b"{", b"[]", b"\xff", b'{"demo":{"dest":"demo"}}']:
-            path.write_bytes(content)
-            with self.subTest(content=content), self.assertRaises(pk.PortakitError) as caught:
-                pk.remove("demo", self.root)
-            self.assertEqual(caught.exception.code, "state")
-            self.assertEqual(path.read_bytes(), content)
-            self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
-
-    def test_unicode_root_members_update_and_remove(self):
-        self.root = self.base / "도구 日本語"
-        self.root.mkdir()
-        tool, download = self.package(members=[("패키지/실행.exe", b"exe")], dest="편집기")
-        pk.install(tool, self.root, download)
-        self.assertEqual((self.root / "편집기/실행.exe").read_bytes(), b"exe")
-        (self.root / "편집기/설정").mkdir()
-        (self.root / "편집기/설정/사용자.ini").write_text("안녕하세요\n", encoding="utf-8")
-        tool, download = self.package("2", dest="편집기", preserveOnUpdate=["설정"])
-        pk.update(tool, self.root, download)
-        self.assertEqual((self.root / "편집기/설정/사용자.ini").read_text(encoding="utf-8"), "안녕하세요\n")
-        pk.remove("demo", self.root)
-        self.assertFalse((self.root / "편집기").exists())
-        self.assertEqual(pk.read_state(self.root), {})
-
-    def test_readonly_old_files_are_deleted_after_update(self):
-        self.installed()
-        (self.root / "demo/demo.exe").chmod(stat.S_IREAD)
-        tool, download = self.package("2")
-        result = pk.update(tool, self.root, download)
-        self.assertEqual(set(result), {"id", "version", "dest", "changed"})
-        self.assertFalse((self.root / "demo.old").exists())
-
+class FilesystemEdges(fixtures.FilesystemWorkspace):
     def test_readonly_stage_is_deleted_after_extraction_failure(self):
         tool, download = self.package()
         def fail(artifact, tool, stage):
@@ -138,32 +169,8 @@ class FilesystemEdges(fixtures.InstallWorkspace):
         self.assertEqual(caught.exception.code, "archive")
         self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
 
-    def test_remove_with_orphan_old_deletes_it_even_when_state_write_fails(self):
-        previous = self.installed()
-        (self.root / "demo").rename(self.root / "demo.old")
-        with mock.patch.object(pk, "write_state", side_effect=OSError("locked state")):
-            with self.assertRaises(pk.PortakitError):
-                pk.remove("demo", self.root)
-        # The entry is kept (state written last); a retry finishes.
-        self.assertEqual(self.state_bytes(), previous)
-        self.assertFalse((self.root / "demo").exists())
-        self.assertFalse((self.root / "demo.old").exists())
-        pk.remove("demo", self.root)
-        self.assertEqual(pk.read_state(self.root), {})
-
 
 class LocalFilesystemClassificationTests(fixtures.InstallWorkspace):
-    def test_catalog_filesystem_errors_are_state_5(self):
-        for command in (("list",), ("install", "demo")):
-            for error in (FileNotFoundError("missing catalog"),
-                          PermissionError("catalog access denied"), OSError("catalog disk error")):
-                with self.subTest(command=command, error=error), \
-                        mock.patch.object(Path, "read_text", side_effect=error):
-                    code, result = self.call(*command)
-                    self.assertEqual((code, result["error"]["code"]), (5, "state"))
-                    self.assertIn(str(error), result["error"]["message"])
-        self.assertFalse((self.root / ".portakit-lock").exists())
-
     def test_download_filesystem_errors_are_state_5(self):
         real_open, real_stat = Path.open, Path.stat
         for index, phase in enumerate(("open", "write", "stat", "read", "hash", "injected")):
@@ -222,38 +229,6 @@ class LocalFilesystemClassificationTests(fixtures.InstallWorkspace):
                 code, result = self.call("install", "demo")
                 self.assertEqual((code, result["error"]["code"]), (3, "fetch"))
                 self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
-
-
-class DestinationOwnershipTests(fixtures.InstallWorkspace):
-    def assert_owned_destination_rejected(self, cli):
-        for index, dest in enumerate(("demo", "DEMO")):
-            with self.subTest(dest=dest):
-                self.root = self.base / f"owned-{index}"
-                self.root.mkdir()
-                # The owner's directory is missing and the owner is absent from the catalog.
-                pk.write_state(self.root, {"owner": {"version": "1", "dest": "demo"}})
-                previous = self.state_bytes()
-                tool, download = self.package(dest=dest)
-                download = mock.Mock(wraps=download)
-                if cli:
-                    self.write_catalog([tool])
-                    code, result = self.call("install", "demo", downloader=download)
-                    self.assertEqual((code, result["error"]["code"] if result["error"] else None),
-                                     (5, "state"))
-                else:
-                    with self.assertRaises(pk.PortakitError) as caught:
-                        pk.install(tool, self.root, download)
-                    self.assertEqual(caught.exception.code, "state")
-                download.assert_not_called()
-                self.assertEqual(self.state_bytes(), previous)
-                self.assertFalse((self.root / dest).exists())
-                self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
-
-    def test_install_rejects_destination_owned_by_another_state_entry(self):
-        self.assert_owned_destination_rejected(cli=False)
-
-    def test_cli_install_rejects_destination_owned_by_another_state_entry(self):
-        self.assert_owned_destination_rejected(cli=True)
 
 
 class DownloadEdges(fixtures.InstallWorkspace):

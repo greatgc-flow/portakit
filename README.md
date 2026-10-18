@@ -60,6 +60,10 @@ python -I -m unittest discover -s tests
 
 Tests use temporary folders, mock ZIPs and injected downloaders; no network.
 
+## Docs
+
+See `docs/SPEC.md` (contract), `docs/DECISIONS.md` (ratified decisions), `docs/HANDOFF.md` (open work).
+
 ## License
 
 [MIT](LICENSE), copyright 2026 greatgc-flow.

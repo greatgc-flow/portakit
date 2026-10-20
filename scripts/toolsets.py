@@ -170,6 +170,12 @@ class Evidence:
     def close(self):
         self.stream.close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
+
 
 class BatchLock:
     """Second byte-0 lock serializes entire category runs, not just individual tools."""
@@ -198,6 +204,9 @@ class BatchLock:
 
 def apply(plan, recommended, log, runner=subprocess.run):
     root = Path(plan["root"])
+    if not plan["tools"]:
+        print("NO_OP: selected toolsets contain no verified pinned tools")
+        return {"installed": [], "skipped": [], "failed": None}
     if any(row["status"].startswith("blocked-") for row in plan["tools"]):
         raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
     root.mkdir(parents=True, exist_ok=True)
@@ -226,8 +235,14 @@ def apply(plan, recommended, log, runner=subprocess.run):
                 if recommended and row["recommended_available"]:
                     cmd.append("--recommended")
                 evidence.emit("INSTALL: " + name + " (catalog SHA-pinned)")
-                completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
-                                   errors="replace", check=False)
+                try:
+                    completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
+                                       errors="replace", check=False)
+                except OSError as exc:
+                    result["failed"] = name
+                    evidence.emit("STOP: " + name + " launcher error: " + str(exc))
+                    evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
+                    break
                 for line in (completed.stdout or "").splitlines():
                     evidence.emit("CHILD STDOUT: " + line)
                 for line in (completed.stderr or "").splitlines():
@@ -250,11 +265,6 @@ def apply(plan, recommended, log, runner=subprocess.run):
             evidence.emit("RESULT: " + ("FAILED" if result["failed"] else "COMPLETE"))
             evidence.emit("EVIDENCE: " + str(Path(log).absolute()))
             return result
-
-
-# Explicit context manager so evidence log closes on download/child exceptions.
-Evidence.__enter__ = lambda self: self
-Evidence.__exit__ = lambda self, *_: self.close()
 
 
 def main(argv=None):

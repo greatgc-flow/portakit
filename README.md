@@ -14,20 +14,26 @@ python -I portakit.py remove jq
 
 The default root is `portable`, relative to the current directory. No PATH edits, no shims.
 
-## Optional categorized toolsets
+## Optional categorized toolsets — 10 MECE domains + reusable profiles
 
-Toolsets are an **opt-in composition layer**, not a change to default installation. `toolsets.json` groups the existing SHA-pinned catalog into **Common, OS, NW, Development, Data and Diagnostics** and profiles including `minimal`, `mes-support` and `developer`. The same tool can belong to multiple categories but is only installed once. Network-specific binaries are currently **backlog candidates, not verified installs**.
+**Default installation remains unchanged.** Each SHA-256-pinned tool has exactly one **primary functional category**, verified by tests: `files`, `text`, `structured-data`, `system`, `network`, `security`, `development`, `automation`, `documents`, `transfer`. A **profile** composes tools across those boundaries without installing duplicate copies. Historical selector names continue working but are no longer canonical taxonomy categories.
+
+There are **11 directly installable SHA-pinned tools**, including eight new lightweight ZIP binaries (together ~19.34 MiB compressed): `ripgrep`, `fd`, `fzf`, `bat`, `sd`, `yq`, `delta`, `hyperfine`. A separate [107-tool research register](research/TOOLS_CANDIDATES_20261020.json) includes Windows built-ins and unverified candidates; those are **not** automatically installable.
 
 ```powershell
 .\scripts\Toolsets.cmd list
+.\scripts\Toolsets.cmd plan essentials
+.\scripts\Toolsets.cmd plan lightweight
+.\scripts\Toolsets.cmd plan incident-response
+.\scripts\Toolsets.cmd apply lightweight --yes
+# Optional vendor-recommended settings and plugins for newly installed editors only:
+.\scripts\Toolsets.cmd apply essentials --yes --recommended
+# Legacy scripts continue to resolve their frozen original selections:
+.\scripts\Toolsets.cmd plan common
 .\scripts\Toolsets.cmd plan mes-support
-.\scripts\Toolsets.cmd plan common nw --include jq --exclude winmerge
-.\scripts\Toolsets.cmd apply mes-support --yes
-# Optional recommended editor plugins/settings for NEW installs only:
-.\scripts\Toolsets.cmd apply developer --yes --recommended
 ```
 
-`plan` never writes or downloads. `apply --yes` installs missing catalog-pinned apps only, skips already installed ones, refuses stale/unmanaged destinations (no silent updates), never touches right-click registry menus, and records console-equivalent logs. Existing core commands remain unchanged. See the [toolset design, category review and backlog](docs/TOOLSETS.md).
+`list` and `plan` do not modify any files or download software. `apply --yes` installs only missing SHA-pinned binaries, skips matching managed versions, never silently updates or overwrites user settings, never registers Explorer context menus, and produces console-mirrored evidence logs. [Detailed domain/profile contracts](docs/TOOLSETS.md) · [107 candidate entries](research/TOOLS_CANDIDATES_20261020.json) · [original enterprise TOP 30](docs/RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md).
 
 ## Commands
 

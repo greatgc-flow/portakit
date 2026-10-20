@@ -29,3 +29,14 @@ The items below are **not implemented/certified** merely by their appearance in 
 - **Governance**: add one candidate at a time, with official provenance, immutable version and SHA, EULA/licensing, safety classification, CI acceptance, and optional membership of any number of categories. Never treat a plan selection as consent for new drivers/services/system-wide changes.
 
 Details and official reference links: [TOOLSETS](TOOLSETS.md).
+
+## MECE small-first candidate admission (2026-10-20)
+
+- [107 unique screened research entries](../research/TOOLS_CANDIDATES_20261020.json) are categorized once by primary purpose. **11 are SHA-pinned**, **27 are existing/optional Windows built-ins**, **69 are research-only**. The candidate register is not an install authorization and does not certify all free-use or redistribution claims.
+- **Accepted small-first pins for live CI:** ripgrep, fd, fzf, bat, sd, yq, delta and hyperfine; release metadata SHA-256 + compressed sizes are recorded in the immutable `catalog.json` and `TOOLSETS.md`. Gate: real Windows download/hash/extract/`--version` smoke and reapply no-op. No auto-update.
+- **Next P0 research admission:** 7-Zip, Everything portable, compact log viewers (klogg/grepWin), dasel/Miller/SQLite tools; compare incremental practical value against built-ins and already pinned tools.
+- **Network/OS conditional:** Microsoft Sysinternals licensing permits company use but restricts redistribution; no unrestricted vendor binary bundling. Prioritize metadata-only sourcing, IT approval, safe non-privileged observation. Wireshark Npcap and live network/packet testing are elevated/change-impact opt-ins.
+- **Footprint honesty:** unknown compressed sizes are `null`, not treated as small; exact official bytes only for 8 newly pinned assets. Capture installed disk footprint (all DLL/doc files), prerequisites, first-launch writes, network activity, built-in alternatives, license notice, runtime compatibility and rollback before future admission.
+- **Legacy names:** keep `common/os/nw/dev/data/diag` as backward compatible frozen selectors, not primary categories. `minimal/mes-support/developer` preserved as profile names. Future releases should use `files/text/structured-data/system/network/security/development/automation/documents/transfer`.
+
+- **P1 sd upstream version anomaly:** Official v1.1.0 Windows ZIP at pinned SHA executes but `sd --version` prints 1.0.0 on Windows CI. Record explicit warning/exception (no hidden PASS as same version), compare vendor build metadata/source, open upstream issue if necessary and reassess pin/functional testing before future release claims.

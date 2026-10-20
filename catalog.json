@@ -69,6 +69,78 @@
       "artifact": "exe",
       "dest": "jq",
       "preserveOnUpdate": []
+    },
+    {
+      "id": "ripgrep",
+      "version": "15.2.0",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/download/15.2.0/ripgrep-15.2.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "71b2fef860abe467217a538ff31de02f5258807c0129f771846f87bd029aafc5",
+      "artifact": "zip",
+      "dest": "ripgrep",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "fd",
+      "version": "10.5.0",
+      "url": "https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "a227701b8551c35a9931d9f6da75503cf86d88e182d71fb849a70864c5d57cd7",
+      "artifact": "zip",
+      "dest": "fd",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "fzf",
+      "version": "0.74.5",
+      "url": "https://github.com/junegunn/fzf/releases/download/v0.74.5/fzf-0.74.5-windows_amd64.zip",
+      "sha256": "01f854ec8b9b47c99a7d78023638f7d2056cfb0af56b72dabd112032eed3993e",
+      "artifact": "zip",
+      "dest": "fzf",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "bat",
+      "version": "0.26.1",
+      "url": "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "0f729b4b6f5f28d395c641eacc2e9ff68d0096b85aa0eec344aa62425144b69b",
+      "artifact": "zip",
+      "dest": "bat",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "sd",
+      "version": "1.1.0",
+      "url": "https://github.com/chmln/sd/releases/download/v1.1.0/sd-v1.1.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "59837c2e7c911099aca1cc46b663bcdc5a949fd3e9fbbaf34fc73e5d5d71007c",
+      "artifact": "zip",
+      "dest": "sd",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "yq",
+      "version": "4.54.1",
+      "url": "https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_windows_amd64.zip",
+      "sha256": "c2fb1234e58a3b80e358a0a8baeaf7ec51bfa698bbe40e2fcab0ed37d590c107",
+      "artifact": "zip",
+      "dest": "yq",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "delta",
+      "version": "0.20.1",
+      "url": "https://github.com/dandavison/delta/releases/download/0.20.1/delta-0.20.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "c9af7484b33f1dbc1312a892fc7d5753a6d3365140a4000d49e575a2de742c25",
+      "artifact": "zip",
+      "dest": "delta",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "hyperfine",
+      "version": "2.0.0",
+      "url": "https://github.com/sharkdp/hyperfine/releases/download/v2.0.0/hyperfine-v2.0.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "3dec51acee1060908e67948838d6bc0a7aacde0774acebfa4afb220dcf0bc078",
+      "artifact": "zip",
+      "dest": "hyperfine",
+      "preserveOnUpdate": []
     }
   ]
 }

@@ -275,6 +275,57 @@ jobs:
             if (@(Get-ChildItem -LiteralPath (Join-Path $root '.portakit-evidence') -Filter 'toolsets-*.log').Count -lt 2) {
               throw 'Toolset install/reapply console evidence logs missing'
             }
+            # Verify the 8 newly pinned tiny Windows official ZIP assets end to end.
+            # This is an isolated runner root. Every ZIP passes the original
+            # SHA-256 validation, safe extraction and executable --version check.
+            $tiny = @(
+              @{ Id = 'ripgrep'; Exe = 'rg.exe'; ExpectedVersion = '15.2.0' },
+              @{ Id = 'fd'; Exe = 'fd.exe'; ExpectedVersion = '10.5.0' },
+              @{ Id = 'fzf'; Exe = 'fzf.exe'; ExpectedVersion = '0.74.5' },
+              @{ Id = 'bat'; Exe = 'bat.exe'; ExpectedVersion = '0.26.1' },
+              @{ Id = 'sd'; Exe = 'sd.exe'; ExpectedVersion = '1.0.0' },
+              @{ Id = 'yq'; Exe = 'yq_windows_amd64.exe'; ExpectedVersion = '4.54.1' },
+              @{ Id = 'delta'; Exe = 'delta.exe'; ExpectedVersion = '0.20.1' },
+              @{ Id = 'hyperfine'; Exe = 'hyperfine.exe'; ExpectedVersion = '2.0.0' }
+            )
+            $lightPlan = python -I scripts/toolsets.py plan lightweight --root "$root"
+            if ($LASTEXITCODE -ne 0 -or @($lightPlan | Select-String 'install').Count -lt 8) {
+              throw 'Lightweight profile does not resolve all 8 new pinned installers'
+            }
+            python -I scripts/toolsets.py apply lightweight --root "$root" --yes
+            if ($LASTEXITCODE -ne 0) { throw 'Pinned lightweight CLI profile install failed' }
+            foreach ($tool in $tiny) {
+              $folder = Join-Path $root $tool.Id
+              $bins = @(Get-ChildItem -LiteralPath $folder -Filter $tool.Exe -Recurse -File -ErrorAction Stop)
+              if ($bins.Count -ne 1) {
+                throw "Expected exactly one executable $($tool.Exe) in $folder, found $($bins.Count)"
+              }
+              $output = & $bins[0].FullName --version
+              if ($LASTEXITCODE -ne 0 -or -not $output) {
+                throw "Version smoke failed: $($tool.Id) / $($tool.Exe)"
+              }
+              $observedVersion = (($output | Out-String).Trim())
+              if (-not $observedVersion.Contains($tool.ExpectedVersion)) {
+                throw "Version mismatch for $($tool.Id): expected $($tool.ExpectedVersion), observed $observedVersion"
+              }
+              if ($tool.Id -eq 'sd') {
+                # Vendor GitHub release v1.1.0 ZIP (exact SHA pinned) embeds
+                # sd.exe reporting 1.0.0. This is an explicit upstream
+                # discrepancy, not an assertion of matching semantic versions.
+                Write-Warning 'sd upstream v1.1.0 ZIP reports sd 1.0.0; flagged for vendor follow-up'
+              }
+              Write-Host "PINNED SHA + OFFLINE EXECUTABLE PASS: $($tool.Id): $observedVersion"
+            }
+            $hashBefore = (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash
+            python -I scripts/toolsets.py apply lightweight --root "$root" --yes
+            if ($LASTEXITCODE -ne 0 -or
+                $hashBefore -ne (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash) {
+              throw 'Lightweight re-apply changed state or failed'
+            }
+            foreach ($tool in $tiny) {
+              python -I portakit.py --root "$root" remove $tool.Id
+              if ($LASTEXITCODE -ne 0) { throw "Tiny tool cleanup failed: $($tool.Id)" }
+            }
             python -I portakit.py --root "$root" remove jq
             if ($LASTEXITCODE -ne 0) { throw 'Toolset jq cleanup failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable

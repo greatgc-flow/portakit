@@ -1,10 +1,216 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "classification": "exactly-one-primary-domain-per-installable-tool",
   "categories": [
     {
+      "id": "files",
+      "label": "Files / 파일",
+      "description": "파일 비교, 탐색, 저장매체와 경로 탐색",
+      "tools": [
+        "winmerge",
+        "fd",
+        "fzf"
+      ]
+    },
+    {
+      "id": "text",
+      "label": "Text / 텍스트·로그",
+      "description": "텍스트/로그 편집, 검색, 보기 및 치환",
+      "tools": [
+        "notepad++",
+        "ripgrep",
+        "bat",
+        "sd"
+      ]
+    },
+    {
+      "id": "structured-data",
+      "label": "Data / 구조화 데이터",
+      "description": "JSON/YAML/XML/CSV 및 DB 데이터 처리",
+      "tools": [
+        "jq",
+        "yq"
+      ]
+    },
+    {
+      "id": "system",
+      "label": "System / 시스템 진단",
+      "description": "프로세스·메모리·파일 I/O·이벤트 진단",
+      "tools": []
+    },
+    {
+      "id": "network",
+      "label": "Network / 네트워크",
+      "description": "연결, 레이턴시, 프로토콜 및 패킷",
+      "tools": []
+    },
+    {
+      "id": "security",
+      "label": "Security / 보안·무결성",
+      "description": "서명, 해시, 권한, 암호화, 보안 점검",
+      "tools": []
+    },
+    {
+      "id": "development",
+      "label": "Development / 개발",
+      "description": "형상관리, 개발 도구, 비교 출력과 런타임",
+      "tools": [
+        "delta"
+      ]
+    },
+    {
+      "id": "automation",
+      "label": "Automation / 자동화",
+      "description": "반복 실행, 측정, 스크립트와 파이프라인",
+      "tools": [
+        "hyperfine"
+      ]
+    },
+    {
+      "id": "documents",
+      "label": "Documents / 문서·증적",
+      "description": "PDF, 이미지, 캡처 및 증적 편집·열람",
+      "tools": []
+    },
+    {
+      "id": "transfer",
+      "label": "Transfer / 전송·원격",
+      "description": "승인된 파일 전송과 원격 접속",
+      "tools": []
+    }
+  ],
+  "profiles": [
+    {
+      "id": "essentials",
+      "label": "Essentials / 기본 업무",
+      "categories": [],
+      "tools": [
+        "notepad++",
+        "winmerge",
+        "jq"
+      ]
+    },
+    {
+      "id": "lightweight",
+      "label": "Lightweight CLI / 초경량 생산성",
+      "categories": [],
+      "tools": [
+        "ripgrep",
+        "fd",
+        "fzf",
+        "bat",
+        "sd",
+        "yq",
+        "delta",
+        "hyperfine"
+      ]
+    },
+    {
+      "id": "workstation",
+      "label": "Workstation / 일반 업무",
+      "categories": [],
+      "tools": [
+        "notepad++",
+        "winmerge",
+        "jq",
+        "ripgrep",
+        "fd",
+        "bat",
+        "yq"
+      ]
+    },
+    {
+      "id": "incident-response",
+      "label": "Incident response / 장애 대응",
+      "categories": [
+        "system",
+        "network",
+        "security"
+      ],
+      "tools": [
+        "notepad++",
+        "winmerge",
+        "jq",
+        "ripgrep",
+        "fd",
+        "bat",
+        "yq",
+        "hyperfine"
+      ]
+    },
+    {
+      "id": "engineering",
+      "label": "Engineering / 개발·엔지니어링",
+      "categories": [
+        "development",
+        "text",
+        "structured-data",
+        "files",
+        "automation"
+      ],
+      "tools": []
+    },
+    {
+      "id": "data-work",
+      "label": "Data work / 데이터·로그",
+      "categories": [
+        "structured-data",
+        "text"
+      ],
+      "tools": []
+    },
+    {
+      "id": "minimal",
+      "label": "[Legacy] Minimal workstation",
+      "categories": [],
+      "tools": [
+        "notepad++",
+        "winmerge"
+      ]
+    },
+    {
+      "id": "mes-support",
+      "label": "[Legacy] MES/CIM support",
+      "categories": [],
+      "tools": [
+        "notepad++",
+        "winmerge",
+        "jq"
+      ]
+    },
+    {
+      "id": "developer",
+      "label": "[Legacy] Developer",
+      "categories": [],
+      "tools": [
+        "notepad++",
+        "winmerge",
+        "jq"
+      ]
+    },
+    {
+      "id": "all-curated",
+      "label": "All curated / 검증된 전체",
+      "categories": [
+        "files",
+        "text",
+        "structured-data",
+        "system",
+        "network",
+        "security",
+        "development",
+        "automation",
+        "documents",
+        "transfer"
+      ],
+      "tools": []
+    }
+  ],
+  "aliases": [
+    {
       "id": "common",
-      "label": "Common / 공통",
-      "description": "문서·소스 편집과 파일 비교",
+      "label": "Legacy Common",
+      "categories": [],
       "tools": [
         "notepad++",
         "winmerge"
@@ -12,22 +218,22 @@
     },
     {
       "id": "os",
-      "label": "OS / Windows",
-      "description": "파일·폴더 운영 점검; 시스템 전용 도구는 향후 추가",
+      "label": "Legacy OS",
+      "categories": [],
       "tools": [
         "winmerge"
       ]
     },
     {
       "id": "nw",
-      "label": "NW / Network",
-      "description": "네트워크 진단 전용 도구는 아직 SHA 고정 검증 전",
+      "label": "Legacy NW",
+      "categories": [],
       "tools": []
     },
     {
       "id": "dev",
-      "label": "Dev / 개발",
-      "description": "소스 편집·JSON 자동화",
+      "label": "Legacy Dev",
+      "categories": [],
       "tools": [
         "notepad++",
         "jq"
@@ -35,60 +241,19 @@
     },
     {
       "id": "data",
-      "label": "Data / 로그",
-      "description": "JSON 구조 데이터와 로그 분석",
+      "label": "Legacy Data",
+      "categories": [],
       "tools": [
         "jq"
       ]
     },
     {
       "id": "diag",
-      "label": "Diagnostics / 진단",
-      "description": "비교·JSON 진단 작업 보조",
+      "label": "Legacy Diagnostics",
+      "categories": [],
       "tools": [
         "winmerge",
         "jq"
-      ]
-    }
-  ],
-  "profiles": [
-    {
-      "id": "minimal",
-      "label": "Minimal workstation",
-      "categories": [
-        "common"
-      ]
-    },
-    {
-      "id": "mes-support",
-      "label": "MES/CIM support",
-      "categories": [
-        "common",
-        "os",
-        "nw",
-        "data",
-        "diag"
-      ]
-    },
-    {
-      "id": "developer",
-      "label": "Developer",
-      "categories": [
-        "common",
-        "dev",
-        "data"
-      ]
-    },
-    {
-      "id": "all-curated",
-      "label": "All currently pinned",
-      "categories": [
-        "common",
-        "os",
-        "nw",
-        "dev",
-        "data",
-        "diag"
       ]
     }
   ]

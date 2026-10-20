@@ -28,12 +28,63 @@ class ToolsetTests(unittest.TestCase):
     def test_curated_groups_and_profiles_resolve_to_catalog_only(self):
         catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
         categories, profiles = toolsets.load_manifest(self.manifest, catalog)
-        self.assertEqual(set(categories), {"common", "os", "nw", "dev", "data", "diag"})
-        self.assertEqual(set(profiles), {"minimal", "mes-support", "developer", "all-curated"})
+        self.assertEqual(set(categories), {
+            "files", "text", "structured-data", "system", "network",
+            "security", "development", "automation", "documents", "transfer",
+        })
+        self.assertTrue({"minimal", "mes-support", "developer", "all-curated",
+                         "essentials", "lightweight", "engineering", "incident-response"}.issubset(set(profiles)))
+        self.assertTrue({"common", "os", "nw", "dev", "data", "diag"}.issubset(set(profiles)))
         self.assertEqual([r["id"] for r in self.plan(["minimal"])["tools"]],
                          ["notepad++", "winmerge"])
         self.assertEqual([r["id"] for r in self.plan(["mes-support"])["tools"]],
                          ["notepad++", "winmerge", "jq"])
+
+    def test_v2_primary_mece_is_total_and_disjoint(self):
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        categories, _ = toolsets.load_manifest(self.manifest, catalog)
+        ids = [item for group in categories.values() for item in group["tools"]]
+        self.assertEqual(set(ids), set(catalog))
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(len(ids), 11)
+
+    def test_v2_legacy_names_remain_frozen_without_unintended_additions(self):
+        expected = {"common": ["notepad++", "winmerge"],
+                    "os": ["winmerge"], "nw": [],
+                    "dev": ["notepad++", "jq"],
+                    "data": ["jq"], "diag": ["winmerge", "jq"]}
+        for alias, names in expected.items():
+            self.assertEqual([r["id"] for r in self.plan([alias])["tools"]], names)
+
+    def test_v2_lightweight_selection_eight_deduplicated_pins(self):
+        tools = [r["id"] for r in self.plan(["lightweight"])["tools"]]
+        self.assertEqual(tools, ["ripgrep", "fd", "fzf", "bat",
+                                 "sd", "yq", "delta", "hyperfine"])
+        self.assertEqual([r["id"] for r in self.plan(["lightweight", "lightweight"])["tools"]], tools)
+
+    def test_v2_duplicate_primary_assignment_rejected(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["categories"][1]["tools"].append("winmerge")
+        path = self.root.parent / "duplicate-primary.json"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(toolsets.ToolsetError, "MECE"):
+            toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
+
+    def test_v2_missing_catalog_assignment_rejected(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["categories"][0]["tools"].remove("fd")
+        path = self.root.parent / "missing-primary.json"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(toolsets.ToolsetError, "MECE"):
+            toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
+
+    def test_v2_duplicate_profile_tools_rejected(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["profiles"][0]["tools"].append("notepad++")
+        path = self.root.parent / "bad-profile.json"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(toolsets.ToolsetError, "duplicate/unknown"):
+            toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
 
     def test_nw_is_explicitly_empty_not_fake_install(self):
         p = self.plan(["nw"])
@@ -97,7 +148,7 @@ class ToolsetTests(unittest.TestCase):
         path.write_text(json.dumps(data))
         with self.assertRaisesRegex(toolsets.ToolsetError, "unknown pinned"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
-        data["categories"][0]["tools"][-1] = "notepad++"
+        data["categories"][0]["tools"][-1] = "winmerge"
         path.write_text(json.dumps(data))
         with self.assertRaisesRegex(toolsets.ToolsetError, "duplicate member"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))

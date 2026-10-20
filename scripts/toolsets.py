@@ -35,19 +35,25 @@ def _validate_id(value):
 
 
 def load_manifest(path, catalog):
-    """Strict, bounded manifest; no URLs, commands, scripts, paths or auto-install flags."""
+    """Strict declarative v1/v2 manifest, with non-breaking v2 legacy aliases.
+
+    Canonical v2 categories are mutually exclusive by *primary* tool function.
+    Profiles compose categories and/or pinned individual tools; aliases lock old
+    named selector behaviour to the original pinned IDs. Nothing is executable.
+    """
     core.check_links(Path(path))
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ToolsetError("Cannot read toolsets manifest: " + str(exc)) from exc
-    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
-        raise ToolsetError("toolsets.json must have schemaVersion=1")
+    if not isinstance(data, dict) or data.get("schemaVersion") not in (1, 2):
+        raise ToolsetError("toolsets.json must have schemaVersion=1 or 2")
+    version = data["schemaVersion"]
     categories, profiles = {}, {}
-    for field, output, members in (
-            ("categories", categories, "tools"),
-            ("profiles", profiles, "categories")):
-        entries = data.get(field)
+    legacy = {}
+    for field in ("categories", "profiles", "aliases") if version == 2 else ("categories", "profiles"):
+        output = categories if field == "categories" else (legacy if field == "aliases" else profiles)
+        entries = data.get(field, [])
         if not isinstance(entries, list) or len(entries) > 32:
             raise ToolsetError(field + ": expected a list with at most 32 entries")
         for entry in entries:
@@ -58,27 +64,58 @@ def load_manifest(path, catalog):
                 raise ToolsetError(field + ": duplicate ID " + name)
             if not isinstance(entry.get("label"), str) or not entry["label"].strip():
                 raise ToolsetError(field + ": missing label for " + name)
+            members = "tools" if field == "categories" else "categories"
             selected = entry.get(members)
             if not isinstance(selected, list) or len(selected) > 64:
                 raise ToolsetError(field + "." + name + ": invalid members")
-            unique = set()
+            seen = set()
             for value in selected:
-                value = _validate_id(value)
-                if value in unique:
+                _validate_id(value)
+                if value in seen:
                     raise ToolsetError(field + "." + name + ": duplicate member " + value)
-                unique.add(value)
+                seen.add(value)
             if field == "categories":
                 if (not isinstance(entry.get("description"), str)
                         or len(entry["description"]) > 512):
                     raise ToolsetError("categories." + name + ": invalid description")
                 if any(t not in catalog for t in selected):
                     raise ToolsetError("categories." + name + ": unknown pinned tool ID")
+            else:
+                if version == 2:
+                    direct = entry.get("tools", [])
+                    if (not isinstance(direct, list) or len(direct) > 64
+                            or any(not isinstance(t, str) for t in direct)):
+                        raise ToolsetError(field + "." + name + ": invalid tools")
+                    for tool in direct:
+                        _validate_id(tool)
+                    if len(set(direct)) != len(direct) or any(t not in catalog for t in direct):
+                        raise ToolsetError(field + "." + name + ": duplicate/unknown pinned tool")
+                else:
+                    direct = []
+                entry = dict(entry, tools=direct)
             output[name] = entry
-    if set(categories) & set(profiles):
-        raise ToolsetError("Category/profile IDs overlap")
-    for name, entry in profiles.items():
-        if any(c not in categories for c in entry["categories"]):
-            raise ToolsetError("profiles." + name + ": unknown category")
+
+    if set(categories) & set(profiles) or set(categories) & set(legacy) or set(profiles) & set(legacy):
+        raise ToolsetError("Category/profile/alias IDs overlap")
+    if version == 2:
+        if data.get("classification") != "exactly-one-primary-domain-per-installable-tool":
+            raise ToolsetError("v2 requires explicit classification contract")
+        owned = {}
+        for name, entry in categories.items():
+            for tool in entry["tools"]:
+                if tool in owned:
+                    raise ToolsetError("MECE: " + tool + " assigned multiple primary domains")
+                owned[tool] = name
+        if set(owned) != set(catalog):
+            raise ToolsetError("MECE: every pinned catalog ID must have exactly one primary domain")
+    for field, group in (("profiles", profiles), ("aliases", legacy)):
+        for name, entry in group.items():
+            if any(c not in categories for c in entry["categories"]):
+                raise ToolsetError(field + "." + name + ": unknown category")
+    # Aliases resolve via the same selector code, but remain visibly separated
+    # from canonical profiles when listing the taxonomy.
+    for name, entry in legacy.items():
+        profiles[name] = dict(entry, legacy=True)
     return categories, profiles
 
 
@@ -92,6 +129,9 @@ def selection(names, include, exclude, categories, profiles, catalog):
             groups = (name,)
         elif name in profiles:
             groups = profiles[name]["categories"]
+            for tool in profiles[name].get("tools", []):
+                if tool not in found:
+                    found.append(tool)
         else:
             raise ToolsetError("Unknown toolset/category: " + name)
         for group in groups:
@@ -294,8 +334,15 @@ def main(argv=None):
                       (", ".join(group["tools"]) if group["tools"] else "(no verified pins yet)"))
             print("PROFILES")
             for name, profile in profiles.items():
-                print(name + "\t" + profile["label"] + "\t" +
-                      ", ".join(profile["categories"]))
+                if profile.get("legacy"):
+                    continue
+                sources = profile["categories"] + profile.get("tools", [])
+                print(name + "\t" + profile["label"] + "\t" + ", ".join(sources))
+            if any(v.get("legacy") for v in profiles.values()):
+                print("LEGACY ALIASES (stable pinned selections)")
+                for name, profile in profiles.items():
+                    if profile.get("legacy"):
+                        print(name + "\t" + ", ".join(profile.get("tools", [])))
             return 0
         if args.command == "plan" and (args.yes or args.log_file or args.recommended):
             raise ToolsetError("plan is read-only; --yes/--recommended/--log-file apply only")

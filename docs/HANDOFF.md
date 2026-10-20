@@ -80,3 +80,10 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - `toolsets.json` is the single declarative source for **Common / OS / NW / Dev / Data / Diagnostics** membership and profile composition; no new tool URLs/pins are claimed. `scripts/toolsets.py` and `scripts/Toolsets.cmd` provide read-only `list/plan` plus explicit `apply --yes`, optional include/exclude and new-install-only `--recommended`.
 - Existing single-tool CLI and defaults remain unchanged. No automatic Npcap/driver, Explorer shell registration, global PATH, silent update, delete or bulk rollback; cross-category repeated tool IDs are installed once.
 - Dedicated `docs/TOOLSETS.md` includes current category map, sample plans, official reference links for TCPView/PsPing/Everything/Sysinternals/Wireshark and backlog gates. NW specialized tools remain pending verified immutable hashes.
+
+## 2026-10-20 small-first MECE taxonomy handoff
+
+- The new `toolsets.json` schema v2 has ten **exclusive primary functional domains** with 11 pinned catalog tools; task profiles are separate composable views. Legacy v1 custom manifests and historical `common/os/nw/dev/data/diag` selections survive (frozen); old profile selections also survive.
+- Eight small official Windows release ZIPs with GitHub SHA-256 digests now appear in `catalog.json`: ripgrep, fd, fzf, bat, sd, yq, delta, hyperfine. Their combined compressed bytes are 20,282,483, with independently checked hashes required on real Windows runner. See `docs/TOOLSETS.md`; don't confuse compressed size with extracted footprint.
+- `research/TOOLS_CANDIDATES_20261020.json` contains 107 unique tool names (11 pinned, 27 OS-builtin, 69 candidates) with primary owner, official reference, license claims, priority, risk and evidence boundary. No research-only URL can be installed by toolset commands until separately admitted to pinned catalog.
+- TODO: future user workstation Explorer GUI acceptance, licensed Office4 comparisons, Sysinternals distribution/legal evaluation, privileged capture preflight and ongoing pin review remain separate.

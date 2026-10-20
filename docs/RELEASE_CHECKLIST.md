@@ -109,3 +109,11 @@ In a disposable test root, install each editor *without* `--recommended`, add a 
 - Run the Windows **real pinned jq** category smoke, then reapply and verify the SHA of the managed state did not change. Check `ROOT\.portakit-evidence\toolsets-*.log` captures the complete displayed action lines. Cleanup solely test root. Partial group failure must preserve earlier successful installs.
 - Any future OS/NW candidate requires official fixed release and independent SHA-256, archive validation, privilege/driver/licence review, and new category-specific tests. Do not claim Wireshark live capture works from a portable binary without Npcap.
 
+## MECE taxonomy v2 and compact CLI acceptance gate
+
+- Validate catalog **11 IDs**, toolsets.json schema v2's exactly-one primary domain, deterministic profile union and frozen backward compatibility aliases. No unapproved ZIP/EXE from the 107-tool research inventory may become installable.
+- Check the official release asset metadata SHA-256 digest and compressed size for all eight newly admitted utilities; in Windows CI perform real HTTPS download → SHA-256 compare → safe extract → exactly one expected executable → `--version` invocation; reapply profile and confirm no state mutation; remove only the disposable managed test root. Keep extracted sizes distinct from release ZIP sizes.
+- Legacy `common/os/nw/dev/data/diag` selectors and `minimal/mes-support/developer` profiles must keep prior pinned-ID results even after future catalog expansion. V1 user manifest is supported; unknown category/tool or overlapping canonical tool primary assignments must fail closed. No implicit registry, driver installation or profile auto-activation.
+- Small-first candidate admission requires license evidence for *internal use and distribution separately*, corporate EDR/security and privilege review, official immutable package and checksum, source/vendor provenance, offline acceptance and dependency footprint.
+
+- **Version mismatch exception:** sd v1.1.0 pinned ZIP reports sd.exe version 1.0.0 on live Windows. This exact mismatch must be surfaced to release reviewers; all seven other new tools require exact version-text match. SHA match authenticates archive bytes, not the executable's internal version field.

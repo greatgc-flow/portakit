@@ -117,3 +117,11 @@ In a disposable test root, install each editor *without* `--recommended`, add a 
 - Small-first candidate admission requires license evidence for *internal use and distribution separately*, corporate EDR/security and privilege review, official immutable package and checksum, source/vendor provenance, offline acceptance and dependency footprint.
 
 - **Version mismatch exception:** sd v1.1.0 pinned ZIP reports sd.exe version 1.0.0 on live Windows. This exact mismatch must be surfaced to release reviewers; all seven other new tools require exact version-text match. SHA match authenticates archive bytes, not the executable's internal version field.
+
+## Disconnected local vendor archive admission gate (2026-10-21)
+
+- Assert pinned **16 software IDs**, exactly-one functional domain for each, 108 research entries (16 pinned, 27 built-ins, 65 research-only); old category aliases retain existing tool selection.
+- `portakit.py --archive ORIGINAL install ID` reads only local source, disallows symlinks, enforces maximum archive size, compares SHA-256 to approved immutable catalog, uses the same safe ZIP and rollback staging; never contacts a vendor URL or silently opts into recommended plugin downloads.
+- `toolsets.py apply portable-productivity --yes --offline-dir DIR` requires ALL missing source files to exist under their exact vendor basename, with all hashes valid BEFORE any installation or local state mutation; repeat install keeps byte-identical .portakit-state.json; untrusted/missing/symlink input has no installs. Errors must show a nonzero exit and no false PASS.
+- Live Windows pinned vendor smoke must verify official SHA for 7zr/Everything/grepWin/Miller/dasel; test 7zr/Miller/dasel CLI version where meaningful, inspect Everything/grepWin executable metadata/signature **without GUI launch**, uninstall only disposable directories. No service, drivers, registry, PATH or installers.
+- Human security acceptance for Everything indexes/admin/HTTP and grepWin replacements, and no claim of full 7-Zip GUI, Microsoft Sysinternals redistribution or Office4 COM PASS based on hosted CI.

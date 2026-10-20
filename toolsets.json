@@ -9,7 +9,9 @@
       "tools": [
         "winmerge",
         "fd",
-        "fzf"
+        "fzf",
+        "7zr",
+        "everything"
       ]
     },
     {
@@ -20,7 +22,8 @@
         "notepad++",
         "ripgrep",
         "bat",
-        "sd"
+        "sd",
+        "grepwin"
       ]
     },
     {
@@ -29,7 +32,9 @@
       "description": "JSON/YAML/XML/CSV 및 DB 데이터 처리",
       "tools": [
         "jq",
-        "yq"
+        "yq",
+        "miller",
+        "dasel"
       ]
     },
     {
@@ -202,6 +207,27 @@
         "automation",
         "documents",
         "transfer"
+      ],
+      "tools": []
+    },
+    {
+      "id": "portable-productivity",
+      "label": "Portable productivity / GUI + CLI",
+      "categories": [],
+      "tools": [
+        "everything",
+        "grepwin",
+        "7zr",
+        "miller",
+        "dasel"
+      ]
+    },
+    {
+      "id": "files-and-logs",
+      "label": "Files and log operations",
+      "categories": [
+        "files",
+        "text"
       ],
       "tools": []
     }

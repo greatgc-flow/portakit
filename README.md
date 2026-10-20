@@ -2,6 +2,29 @@
 
 Small Windows portable app manager. Python 3.11+, standard library only. Windows only; run one operation at a time.
 
+## Air-gapped local vendor archive installation (explicit opt-in)
+
+The normal `install` command still downloads a pinned HTTPS asset. On a **fully disconnected company PC**, stage the **original, byte-unchanged vendor .ZIP/.EXE files** from an approved external transfer first, then use **offline flags**. The existing independent SHA-256 catalog pin is verified again locally; no URL is contacted.
+
+```powershell
+# One exact vendor package (offline, no network):
+python -I portakit.py --archive "D:\Approved\grepWin-x64-2.1.12_portable.zip" install grepwin
+
+# Entire optional profile; folder must contain all five originals for fresh installs:
+.\scripts\Toolsets.cmd plan portable-productivity
+.\scripts\Toolsets.cmd apply portable-productivity --yes --offline-dir "D:\Approved"
+
+# View the other compact GUI/data tools, unchanged defaults:
+.\scripts\Toolsets.cmd plan files-and-logs
+```
+
+**Safety:** the group checks **all** missing packages and their SHA-256 before installing anything. A missing/tampered item aborts with no partial installation. Running it again skips matching installed pins. `--offline-dir` does not auto-configure recommended plugins (those may need more external assets), and `--archive` plus `--recommended` is refused. Use ordinary approved `update` only when explicitly requested; no per-user PATH/registry/service changes during file installation.
+
+Five second-wave additions: **7zr** (very small **7z-only CLI**, *not* a substitute for 7-Zip's ZIP/GUI), **Everything Desktop** (file index/search; only install the ZIP, launching can prompt for privileged NTFS indexer service), **grepWin** (regex GUI search), **Miller** (CSV/TSV/JSON CLI), and **dasel** (cross-format structured data CLI). GUI launch and system indexing are **not** implied by installation and require separate user-workstation policy review.
+
+See [offline toolset and licensing notes](docs/TOOLSETS.md). The **full 7-Zip program** remains a candidate until its native `.7z` official package and GUI command integration are supported safely.
+
+
 ## Quickstart
 
 ```powershell

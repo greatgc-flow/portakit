@@ -789,8 +789,41 @@ def cleanup_temps(root):
         remove_tree(path)
 
 
+def offline_downloader(archive):
+    """Read an explicit locally staged vendor asset, retaining normal SHA checks.
+
+    The caller selects an archive by path, not by a mutable URL or untrusted
+    manifest. The original fetch_archive() still verifies the pinned digest
+    and maximum size before extraction and atomic deployment.
+    """
+    path = Path(os.path.abspath(str(archive)))
+    check_links(path)
+    if not path.is_file():
+        raise PortakitError("fetch", f"offline archive not found: {path}")
+
+    def copy_archive(_vendor_url, destination):
+        check_links(path)
+        check_links(destination)
+        try:
+            total = 0
+            with path.open("rb") as source, Path(destination).open("wb") as output:
+                while True:
+                    block = source.read(64 * 1024)
+                    if not block:
+                        break
+                    total += len(block)
+                    check_download_size(total)
+                    output.write(block)
+        except OSError as exc:
+            raise PortakitError("fetch", f"offline archive read: {exc}") from exc
+
+    return copy_archive
+
+
 def execute(args, downloader):
     command, root, identifier = args.command, args.root, args.id
+    if getattr(args, "archive", None) is not None:
+        downloader = offline_downloader(args.archive)
     check_links(root)
     if command == "list":
         return {"items": list(load_catalog(DEFAULT_CATALOG).values())}
@@ -835,6 +868,9 @@ def main(argv=None, downloader=None):
                     "  remove ID   Delete the installed folder, backup and all user data,\n"
                     "              then forget the state entry; no catalog needed.\n"
                     "install/update/configure/remove require ID."))
+        parser.add_argument("--archive", type=Path, metavar="FILE",
+                            help="for install/update: use this pre-staged vendor file offline, "
+                                 "SHA-256 checked against pinned catalog; no download")
         parser.add_argument("--recommended", action="store_true",
                             help="opt in to pinned recommended settings and plugins (install only)")
         parser.add_argument("--json", action="store_true",
@@ -854,6 +890,12 @@ def main(argv=None, downloader=None):
             raise PortakitError("usage", "list takes no ID; other commands require ID")
         if args.recommended and command != "install":
             raise PortakitError("usage", "--recommended applies only to install")
+        if args.archive is not None and command not in ("install", "update"):
+            raise PortakitError("usage", "--archive applies only to install/update")
+        if args.archive is not None and args.recommended:
+            raise PortakitError("usage",
+                                "--archive with --recommended is not supported: "
+                                "offline plugin assets cannot be implicitly downloaded")
         data = execute(args, downloader)
         result = dict(ok=True, command=command, data=data, error=None)
         code = 0

@@ -21,7 +21,8 @@ class CatalogTests(fixtures.Workspace):
         catalog = pk.load_catalog(path)
         self.assertEqual(set(catalog), {"notepad++", "winmerge", "jq",
                                         "ripgrep", "fd", "fzf", "bat", "sd",
-                                        "yq", "delta", "hyperfine"})
+                                        "yq", "delta", "hyperfine", "7zr",
+                                        "everything", "grepwin", "miller", "dasel"})
         for tool in raw["tools"]:
             with self.subTest(id=tool["id"]):
                 for removed in ("kind", "repo", "tag", "asset", "github_url", "defaultConfig"):

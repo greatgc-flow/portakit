@@ -95,3 +95,37 @@ For 30 historically assessed desktop-oriented tools see [corporate closed-networ
 ### Upstream sd embedded-version discrepancy (not hidden)
 
 During the genuine Windows x64 CI run, the official GitHub **sd v1.1.0 ZIP** (pinned archive SHA-256 `59837c2e...`) executed successfully, but `sd.exe --version` printed **sd 1.0.0**. This is **not** evidence that the binary belongs to a different download—the archive digest matched the recorded vendor release—but it does mean self-reported version parity is unproven. The Windows CI explicitly checks `1.0.0` for this particular pinned artifact and warns on the mismatch; all 7 other new tools must match their released version. Investigate vendor packaging before calling the embedded version verified or upgrading this pin.
+
+## Phase 2 — 2026-10-21 small verified pins and true disconnected installation
+
+**Five fixed-version packages** appended without changing the original 11 pins. Directly installable IDs = **16**. Research register = **108 unique entries (16 pinned / 27 Windows built-ins / 65 research-only)**.
+
+| Tool | Official vendor asset and size metadata | Pinned SHA provenance | Practical guardrail |
+| --- | --- | --- | --- |
+| [7zr](https://github.com/ip7z/7zip/releases/download/26.04/7zr.exe) | standalone 7zr.exe ~603 KB | Official GitHub release `digest` | **7z format only**; not full GUI 7-Zip or ZIP support. Use `7zr` as compact .7z reader |
+| [Everything](https://www.voidtools.com/downloads/) | 1.4.1.1032 x64 ZIP ~1.86 MB | Scoop Extras maintained manifest points to exact official vendor ZIP and SHA; validated by real Windows download/hash gate | **Installation only**. Starting GUI can request UAC, create service/index, reveal indexed filenames to other local users; no service or indexing enabled by PortaKit |
+| [grepWin](https://github.com/stefankueng/grepWin/releases/tag/2.1.12) | x64 portable ZIP 691,960 B | Official GitHub release `digest` | GUI executable presence/PE only in hosted CI, not click/interactive acceptance; replace mode can modify documents |
+| [Miller](https://github.com/johnkerl/miller/releases/tag/v6.22.0) | windows-amd64 ZIP 6,227,745 B | Official GitHub release `digest` | CSV/TSV/JSON CLI, `mlr.exe --version` verified on hosted Windows |
+| [dasel](https://github.com/TomWright/dasel/releases/tag/v3.11.2) | windows-amd64 EXE 10,756,608 B | Official GitHub release `digest` | JSON/YAML/XML/TOML/CSV operations; CLI `--version` verified on hosted Windows |
+
+**Offline mode:**
+
+```powershell
+# On a connected, company-approved staging PC: collect exact original assets,
+# record official download URL and SHA, scan them, and copy unchanged to D:\Approved.
+
+# On a CLOSED-NETWORK company PC (Internet not required):
+python -I portakit.py --archive "D:\Approved\dasel_windows_amd64.exe" install dasel
+.\scripts\Toolsets.cmd list
+.\scripts\Toolsets.cmd plan portable-productivity
+.\scripts\Toolsets.cmd apply portable-productivity --yes --offline-dir "D:\Approved"
+
+# One-time file integrity is automatically validated for each missing pin.
+# Already installed exact versions are skipped; no auto-updates or user data deletion.
+```
+
+For a group of missing tools, `--offline-dir` expects the **original URL basename** of each pinned vendor archive in the local folder; it preflights all required hashes **before** starting any installation, then delegates to the ordinary atomic per-tool stage pipeline with another SHA verification. **No Internet is used in the installation phase.** File files with incorrect digest, wrong name, missing entries, symlinks, oversize binaries or unapproved ID fail closed. The source archive remains untouched. The local evidence log still mirrors console lines from installation; early preflight failures print errors without a full batch log (follow-up hardening candidate).
+
+`--archive` is supported for the core `install` and `update` verbs, never for `list/configure/remove`. `--recommended` cannot be combined with `--archive` and group `--offline-dir` because Notepad++ optional plugin assets are separate downloads; no hidden network fallback. **No default menu/registry, PATH or Windows services changes.** For Everything only, subsequent *human GUI launch* needs special review: manual folder indexing can avoid installing the NTFS service but uses different performance characteristics; never default to service/HTTP/FTP features.
+
+**Limitations:** full 7-Zip GUI is not yet supported, since the latest vendor `extra.7z` package requires a specifically reviewed extraction stage. 7zr.exe only supports 7z archives. Microsoft Sysinternals and packet capture drivers remain separate permissions and license review items. Release gate includes Windows CI and company workstation manual acceptance, not publication automatically.

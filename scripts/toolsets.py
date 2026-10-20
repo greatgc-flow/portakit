@@ -6,6 +6,8 @@ selection of IDs in the SHA-pinned catalog, never a source of executable code.
 remove, PATH, registry, profiles, or unreviewed executable downloads).
 """
 import argparse
+import hashlib
+from urllib.parse import urlsplit, unquote
 from datetime import datetime
 import json
 import msvcrt
@@ -242,13 +244,51 @@ class BatchLock:
             os.close(self.fd)
 
 
-def apply(plan, recommended, log, runner=subprocess.run):
+def verify_offline_assets(rows, archive_dir, *, load_catalog=core.load_catalog):
+    """Preflight EVERY missing pinned artifact before any install is started.
+
+    No network calls and no directory writes. SHA and max size are checked from
+    vendor-named files, exactly as the core installer will re-check at stage.
+    The user must bring the original archive untouched into this directory.
+    """
+    offline = Path(os.path.abspath(str(archive_dir)))
+    core.check_links(offline)
+    if not offline.is_dir():
+        raise ToolsetError("Offline directory not found: " + str(offline))
+    catalog = load_catalog(core.DEFAULT_CATALOG)
+    plan = {}
+    for row in rows:
+        if row["status"] != "install":
+            continue
+        tool = catalog[row["id"]]
+        filename = unquote(urlsplit(tool["url"]).path.split("/")[-1])
+        if not filename or filename in (".", "..") or "/" in filename or "\\" in filename:
+            raise ToolsetError("Unsafe offline vendor filename for " + row["id"])
+        original = offline / filename
+        core.check_links(original)
+        if not original.is_file():
+            raise ToolsetError("Missing offline pinned archive: " + str(original))
+        if original.stat().st_size > core.MAX_DOWNLOAD_BYTES:
+            raise ToolsetError("Oversize offline archive for " + row["id"])
+        with original.open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        if digest != tool["sha256"].lower():
+            raise ToolsetError("Offline SHA-256 mismatch for " + row["id"])
+        plan[row["id"]] = original
+    return plan
+
+
+def apply(plan, recommended, log, runner=subprocess.run, *, offline_dir=None):
     root = Path(plan["root"])
     if not plan["tools"]:
         print("NO_OP: selected toolsets contain no verified pinned tools")
         return {"installed": [], "skipped": [], "failed": None}
     if any(row["status"].startswith("blocked-") for row in plan["tools"]):
         raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
+    if offline_dir is not None and recommended:
+        raise ToolsetError("Offline --recommended is unsupported: editor plugins may require extra downloads")
+    if offline_dir is not None:
+        verify_offline_assets(plan["tools"], offline_dir)
     root.mkdir(parents=True, exist_ok=True)
     with BatchLock(root):
         # Preflight again under batch lock, before downloading anything.
@@ -256,11 +296,14 @@ def apply(plan, recommended, log, runner=subprocess.run):
                               root, plan["manifest"])
         if any(row["status"].startswith("blocked-") for row in current["tools"]):
             raise ToolsetError("Blocked during apply preflight; no new tool downloaded")
+        offline_assets = (verify_offline_assets(current["tools"], offline_dir)
+                          if offline_dir is not None else {})
         with Evidence(log) as evidence:
             evidence.emit("OPERATION: apply toolsets (explicit --yes)")
             evidence.emit("ROOT: " + str(root))
             evidence.emit("SELECTED: " + ", ".join(plan["selected"]))
             evidence.emit("RECOMMENDED: " + ("YES (new installs only)" if recommended else "NO"))
+            evidence.emit("SOURCE: " + ("OFFLINE LOCAL SHA VERIFIED" if offline_dir else "PINNED HTTPS"))
             evidence.emit("PLAN: " + ", ".join(row["id"] + "=" + row["status"]
                                               for row in current["tools"]))
             result = {"installed": [], "skipped": [], "failed": None}
@@ -270,8 +313,10 @@ def apply(plan, recommended, log, runner=subprocess.run):
                     result["skipped"].append(name)
                     evidence.emit("SKIP: " + name + " (already managed; no update/config change)")
                     continue
-                cmd = [sys.executable, "-I", str(TOOL), "--json", "--root", str(root),
-                       "install", name]
+                cmd = [sys.executable, "-I", str(TOOL), "--json", "--root", str(root)]
+                if name in offline_assets:
+                    cmd.extend(["--archive", str(offline_assets[name])])
+                cmd.extend(["install", name])
                 if recommended and row["recommended_available"]:
                     cmd.append("--recommended")
                 evidence.emit("INSTALL: " + name + " (catalog SHA-pinned)")
@@ -315,6 +360,8 @@ def main(argv=None):
     parser.add_argument("--manifest", default=str(MANIFEST))
     parser.add_argument("--include", action="append", default=[], metavar="ID")
     parser.add_argument("--exclude", action="append", default=[], metavar="ID")
+    parser.add_argument("--offline-dir", metavar="DIR",
+                        help="apply only; local original vendor files, all SHA preverified; no Internet")
     parser.add_argument("--recommended", action="store_true",
                         help="apply recommended settings/plugins on NEW installs only")
     parser.add_argument("--yes", action="store_true",
@@ -326,7 +373,7 @@ def main(argv=None):
         categories, profiles = load_manifest(args.manifest, catalog)
         if args.command == "list":
             if (args.toolsets or args.include or args.exclude or args.recommended
-                    or args.yes or args.log_file):
+                    or args.yes or args.log_file or args.offline_dir):
                 raise ToolsetError("list takes no selections/installation options")
             print("CATEGORIES")
             for name, group in categories.items():
@@ -344,7 +391,8 @@ def main(argv=None):
                     if profile.get("legacy"):
                         print(name + "\t" + ", ".join(profile.get("tools", [])))
             return 0
-        if args.command == "plan" and (args.yes or args.log_file or args.recommended):
+        if args.command == "plan" and (args.yes or args.log_file or args.recommended
+                                        or args.offline_dir):
             raise ToolsetError("plan is read-only; --yes/--recommended/--log-file apply only")
         if args.command == "apply" and not args.yes:
             raise ToolsetError("apply requires explicit --yes (plan first)")
@@ -366,7 +414,7 @@ def main(argv=None):
         log = args.log_file or str(root / ".portakit-evidence" /
                  ("toolsets-" + datetime.now().strftime("%Y%m%d-%H%M%S")
                   + "-" + uuid.uuid4().hex[:8] + ".log"))
-        result = apply(plan, args.recommended, log)
+        result = apply(plan, args.recommended, log, offline_dir=args.offline_dir)
         return 1 if result["failed"] else 0
     except (ToolsetError, core.PortakitError, OSError, ValueError) as exc:
         print("ERROR: " + str(exc), file=sys.stderr)

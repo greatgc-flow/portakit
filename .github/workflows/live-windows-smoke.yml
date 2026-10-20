@@ -77,6 +77,43 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "$id removal failed" }
               if (Test-Path -LiteralPath $dir) { throw "$id directory remains after remove" }
             }
+            foreach ($id in @('notepad++', 'winmerge')) {
+              Write-Host "Installing recommended profile for $id"
+              $output = python -I portakit.py --json --root "$root" install $id --recommended
+              if ($LASTEXITCODE -ne 0) { throw "$id recommended installation failed: $output" }
+              $value = $output | ConvertFrom-Json
+              if (-not $value.ok -or -not $value.data.changed) {
+                throw "$id unexpected recommended profile envelope"
+              }
+              $dir = Join-Path $root $id
+              if ($id -eq 'notepad++') {
+                foreach ($plugin in @('ComparePlus\ComparePlus.dll', 'JsonTools\JsonTools.dll')) {
+                  $dll = Join-Path (Join-Path $dir 'plugins') $plugin
+                  if (-not (Test-Path -LiteralPath $dll -PathType Leaf)) { throw "Missing plugin $dll" }
+                }
+                [xml]$xml = Get-Content -LiteralPath (Join-Path $dir 'config.xml') -Raw
+                $tab = @($xml.NotepadPlus.GUIConfigs.GUIConfig | Where-Object { $_.name -eq 'TabSetting' })[0]
+                if ($tab.size -ne '4' -or $tab.replaceBySpace -ne 'yes') {
+                  throw 'Notepad++ recommended tab settings missing'
+                }
+              }
+              else {
+                $ini = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
+                if ($ini -notmatch '(?im)^\s*ViewLineNumbers\s*=\s*1\s*            if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
+            Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
+          }
+          finally {
+            if (Test-Path -LiteralPath $root) {
+              Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
+            }
+          }
+) {
+                  throw 'WinMerge recommended line numbers setting missing'
+                }
+              }
+              python -I portakit.py --root "$root" remove $id
+              if ($LASTEXITCODE -ne 0) { throw "$id recommended remove failed" }
+            }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
             if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
             Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'

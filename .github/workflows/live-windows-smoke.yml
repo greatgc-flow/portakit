@@ -326,6 +326,69 @@ jobs:
               python -I portakit.py --root "$root" remove $tool.Id
               if ($LASTEXITCODE -ne 0) { throw "Tiny tool cleanup failed: $($tool.Id)" }
             }
+            # Stage exact vendor packages outside the installed tool directories;
+            # install them from local original files, never through a downloader.
+            $approved = Join-Path $root 'approved-original-assets'
+            New-Item -ItemType Directory -Path $approved -Force | Out-Null
+            $pinList = @(Get-Content -LiteralPath 'catalog.json' -Raw | ConvertFrom-Json).tools
+            $newIds = @('7zr', 'everything', 'grepwin', 'miller', 'dasel')
+            foreach ($id in $newIds) {
+              $pin = @($pinList | Where-Object { $_.id -eq $id })[0]
+              if (-not $pin) { throw "Missing catalog pin: $id" }
+              $fileName = [IO.Path]::GetFileName(([uri] $pin.url).AbsolutePath)
+              $assetPath = Join-Path $approved $fileName
+              Invoke-WebRequest -Uri $pin.url -OutFile $assetPath -UseBasicParsing
+              if ((Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pin.sha256) {
+                throw "Official vendor artifact SHA mismatch: $id"
+              }
+              Write-Host "VENDOR ASSET HASH VERIFIED: $id ($((Get-Item -LiteralPath $assetPath).Length) bytes)"
+            }
+            python -I scripts/toolsets.py plan portable-productivity --root "$root"
+            if ($LASTEXITCODE -ne 0) { throw 'Second-wave plan failed' }
+            python -I scripts/toolsets.py apply portable-productivity --root "$root" --yes --offline-dir "$approved"
+            if ($LASTEXITCODE -ne 0) { throw 'Second-wave local-only bundle install failed' }
+            $newBins = @(
+              @{ Id='7zr'; Exe='7zr.exe'; Version='26.04'; Gui=$false },
+              @{ Id='everything'; Exe='Everything.exe'; Gui=$true },
+              @{ Id='grepwin'; Exe='grepWin.exe'; Gui=$true },
+              @{ Id='miller'; Exe='mlr.exe'; Version='6.22.0'; Gui=$false },
+              @{ Id='dasel'; Exe='dasel.exe'; Version='3.11.2'; Gui=$false }
+            )
+            foreach ($tool in $newBins) {
+              $installed = @(Get-ChildItem -LiteralPath (Join-Path $root $tool.Id) -Recurse -File | Where-Object { $_.Name -ieq $tool.Exe })
+              if ($installed.Count -ne 1) {
+                throw "Expected one installed $($tool.Exe) in $($tool.Id), found $($installed.Count)"
+              }
+              $first = [IO.File]::ReadAllBytes($installed[0].FullName)
+              if ($first.Length -lt 200 -or $first[0] -ne 77 -or $first[1] -ne 90) {
+                throw "Missing executable PE MZ signature for $($tool.Id)"
+              }
+              if ($tool.Gui) {
+                Write-Host "GUI FILE PRESENT, NOT LAUNCHED: $($tool.Id)"
+              }
+              else {
+                $versionOutput = (& $installed[0].FullName --version 2>&1 | Out-String)
+                if ($tool.Id -eq '7zr') {
+                  if ($versionOutput -notmatch '26.04') {
+                    throw "7zr release/version output unexpected: $versionOutput"
+                  }
+                }
+                elseif ($versionOutput -notmatch [regex]::Escape($tool.Version)) {
+                  throw "$($tool.Id) reported wrong version: $versionOutput"
+                }
+                Write-Host "CLI VERSION PASS: $($tool.Id) $versionOutput"
+              }
+            }
+            $bundleHash = (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash
+            python -I scripts/toolsets.py apply portable-productivity --root "$root" --yes --offline-dir "$approved"
+            if ($LASTEXITCODE -ne 0 -or
+                (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash -ne $bundleHash) {
+              throw 'Second-wave offline reapply did not preserve exact managed state'
+            }
+            foreach ($id in $newIds) {
+              python -I portakit.py --root "$root" remove $id
+              if ($LASTEXITCODE -ne 0) { throw "Second-wave cleanup failed: $id" }
+            }
             python -I portakit.py --root "$root" remove jq
             if ($LASTEXITCODE -ne 0) { throw 'Toolset jq cleanup failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable

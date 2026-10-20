@@ -79,8 +79,11 @@ def discover_binary(folder, ident):
     files = []
     for path in folder.rglob("*"):
         core.check_links(path)
-        if path.is_file() and path.name.lower() in {
-                x.lower() for x in TOOLS[ident]["patterns"]}:
+        basename = path.name.lower()
+        allowed = basename in {x.lower() for x in TOOLS[ident]["patterns"]}
+        if ident == "grepwin" and re.fullmatch(r"grepwin[a-z0-9._-]*\.exe", basename):
+            allowed = True
+        if path.is_file() and allowed:
             files.append(path)
     if len(files) != 1:
         raise AcceptanceError("Expected one known " + ident + " GUI executable, found " +

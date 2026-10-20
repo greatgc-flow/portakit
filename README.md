@@ -22,6 +22,13 @@ The default root is `portable`, relative to the current directory. No PATH edits
 - `update ID` compares the installed `version` and `sha256` with the catalog pin. Any difference (up, down, or a new digest at the same version) updates; identical with the folder present is a no-op without downloading (`changed: false`); a missing folder is repaired. Files and folders listed in `preserveOnUpdate` are copied from the old folder over the packaged copies. To force a reinstall of an identical pin, `remove` then `install` (preserved paths are not kept).
 - `remove ID` deletes `dest`, then `dest.old`, then the state entry last, and removes everything in `dest` including user data. It never loads the catalog and touches nothing else.
 
+### Plugins and updates
+
+Notepad++'s pinned **standard portable ZIP** includes its bundled plugins and Plugins Admin; WinMerge installs only the plugins shipped in its chosen archive. PortaKit does **not** install additional third-party plugins automatically. Add them using each application's own instructions.
+
+For the shipped catalog, updated versions keep additional plugin files under `notepad++/plugins` and `winmerge/MergePlugins` using `preserveMissingOnUpdate`. Files included in the new vendor package always win at the same path (including the Notepad++ plugin list DLL); absent user-added files are copied to the staged version. This avoids forcing old bundled plugin binaries back over the updated distribution, but any extra plugin may still be incompatible with a newer application. If a plugin was removed by the vendor it can remain from the old installation; review third-party plugins after upgrades. Do not use `remove` followed by `install` to retain plugins: `remove` deletes them.
+
+
 ## Layout, lock, state
 
 Under the root: `<dest>\`, `<dest>.old` (the only backup name), `.portakit-state.json` (`{"id":{"version","sha256","dest"}}`), `.portakit-lock` (held for the whole operation; a second portakit exits 6) and temporary `.portakit-*.tmp` files, wiped at the start of each install, update or remove. `list` reads only the catalog: it takes no lock and does not clean temporary files.
@@ -46,7 +53,7 @@ With `--json`, stdout is exactly one object `{"ok","command","data","error"}`; `
 
 ## Catalog
 
-`catalog.json`, beside `portakit.py`, holds `{"tools": [...]}`. Every entry is `id`, `version`, `url` (a pinned release asset), `sha256` (64 hex), `artifact` (`zip` or `exe`; an exe installs as `ID.exe`), `dest` (one folder name) and optional `preserveOnUpdate`. Downloads are capped at 100 MiB and verified before extraction; each install or changed/repair update downloads again (no cache). Mutable URLs with a `latest` path segment are rejected.
+`catalog.json`, beside `portakit.py`, holds `{"tools": [...]}`. Every entry is `id`, `version`, `url` (a pinned release asset), `sha256` (64 hex), `artifact` (`zip` or `exe`; an exe installs as `ID.exe`), `dest` (one folder name) and optional `preserveOnUpdate` and `preserveMissingOnUpdate`. Downloads are capped at 100 MiB and verified before extraction; each install or changed/repair update downloads again (no cache). Mutable URLs with a `latest` path segment are rejected.
 
 Digests: the notepad++ digest comes from the [release notes](https://github.com/notepad-plus-plus/notepad-plus-plus/releases/tag/v8.7.5), winmerge from the [Scoop manifest](https://github.com/ScoopInstaller/Extras/blob/777b50f8467b011b55f20a8790f2d8712b839663/bucket/winmerge.json) and jq from the [Scoop manifest](https://github.com/ScoopInstaller/Main/blob/da6f69ed0016a805c16d9d3d78386068a409da3a/bucket/jq.json). These are published hashes, not locally computed ones.
 

@@ -230,6 +230,53 @@ class UpdateTests(fixtures.InstallWorkspace):
         self.assertFalse((self.root / "demo/settings/new.ini").exists())
         self.assertEqual(pk.read_state(self.root)["demo"]["version"], "2")
 
+    def test_update_keeps_extra_plugins_but_upgrades_bundled_files(self):
+        old, old_dl = self.package("1", members=[
+            ("demo.exe", b"v1"),
+            ("plugins/Bundled/Bundled.dll", b"vendor-v1"),
+            ("plugins/Config/nppPluginList.dll", b"list-v1"),
+            ("MergePlugins/BuiltIn.sct", b"built-in-v1")])
+        pk.install(old, self.root, old_dl)
+        dest = self.root / "demo"
+        (dest / "plugins/Custom").mkdir()
+        (dest / "plugins/Custom/Custom.dll").write_bytes(b"user-plugin")
+        (dest / "plugins/Config/user.ini").write_bytes(b"user-config")
+        (dest / "MergePlugins/Local.sct").write_bytes(b"user-script")
+        new, dl = self.package("2", members=[
+            ("demo.exe", b"v2"),
+            ("plugins/Bundled/Bundled.dll", b"vendor-v2"),
+            ("plugins/Config/nppPluginList.dll", b"list-v2"),
+            ("MergePlugins/BuiltIn.sct", b"built-in-v2")],
+            preserveMissingOnUpdate=["plugins", "MergePlugins"])
+        pk.update(new, self.root, dl)
+        self.assertEqual((dest / "demo.exe").read_bytes(), b"v2")
+        self.assertEqual((dest / "plugins/Bundled/Bundled.dll").read_bytes(), b"vendor-v2")
+        self.assertEqual((dest / "plugins/Config/nppPluginList.dll").read_bytes(), b"list-v2")
+        self.assertEqual((dest / "MergePlugins/BuiltIn.sct").read_bytes(), b"built-in-v2")
+        self.assertEqual((dest / "plugins/Custom/Custom.dll").read_bytes(), b"user-plugin")
+        self.assertEqual((dest / "plugins/Config/user.ini").read_bytes(), b"user-config")
+        self.assertEqual((dest / "MergePlugins/Local.sct").read_bytes(), b"user-script")
+
+    def test_update_does_not_copy_unspecified_old_folders(self):
+        self.installed()
+        (self.root / "demo/private").mkdir()
+        (self.root / "demo/private/user.txt").write_text("private")
+        new, dl = self.package("2", preserveMissingOnUpdate=["plugins"])
+        pk.update(new, self.root, dl)
+        self.assertFalse((self.root / "demo/private").exists())
+
+    def test_preserve_missing_copy_failure_restores_previous_install(self):
+        previous = self.installed()
+        (self.root / "demo/plugins").mkdir()
+        (self.root / "demo/plugins/Custom.dll").write_bytes(b"keep")
+        new, dl = self.package("2", preserveMissingOnUpdate=["plugins"])
+        with mock.patch.object(pk.shutil, "copy2", side_effect=PermissionError("locked")):
+            with self.assertRaises(pk.PortakitError):
+                pk.update(new, self.root, dl)
+        self.assertEqual(self.state_bytes(), previous)
+        self.assertEqual((self.root / "demo/plugins/Custom.dll").read_bytes(), b"keep")
+        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+
     def test_state_write_permission_error_rolls_back_settings_binary_and_state(self):
         previous = self.installed()
         (self.root / "demo/config.ini").write_text("custom")

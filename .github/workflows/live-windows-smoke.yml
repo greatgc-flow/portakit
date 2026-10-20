@@ -2,11 +2,13 @@ name: Live Windows archive smoke
 
 on:
   workflow_dispatch:
-  # Exercise this newly introduced workflow on its review PR. Afterwards,
-  # real downloads are manual-only (not on each ordinary code push).
+  # Run the real-download check on PRs that change the installer, catalog, or this smoke.
+  # No scheduled runs and no auto-publish. Manual dispatch is also supported.
   pull_request:
     paths:
       - .github/workflows/live-windows-smoke.yml
+      - portakit.py
+      - catalog.json
 
 permissions:
   contents: read

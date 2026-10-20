@@ -46,6 +46,8 @@ Write-Host "Smoke root (disposable): $root"
 
 Review the printed `$root` carefully before deleting it; removal destroys anything inside that directory. Confirm state and temporary files are consistent after the run. Separately exercise Notepad++ and WinMerge installation, executable launch, no-op update, and removal in a **fresh disposable root** each (no production configs). Confirm catalog URLs still download and all three published SHA-256 pins match the assets. These live tests require network and are **not** included in CI.
 
+Check the manually dispatched [Windows live archive smoke](../.github/workflows/live-windows-smoke.yml) result for pinned asset downloads, SHA verification through PortaKit, bundled plugin directories, no-op update and removal. It does **not** start the two GUI editors and does **not** verify preservation across a real release change. Do not represent it as GUI or plugin-compatibility validation.
+
 ## Gate C: fault and rollback review (required)
 
 - Validate the mocked failure cases in `tests/test_lifecycle.py`, `test_archive.py`, and `test_links.py`: hash mismatch, unsafe ZIP entries, junction/symlink denial, stage failure, state-write rollback, stale backup restoration, both-present/manual recovery, locked binaries, and data-destructive remove.

@@ -51,6 +51,24 @@ jobs:
           python -I portakit.py --help | Out-Null
           if ($LASTEXITCODE -ne 0) { throw "portakit help failed (exit $LASTEXITCODE)" }
 
+      - name: Verify GUI acceptance and Sysinternals intake contracts (no launch)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -I -c "import ast,pathlib; ast.parse(pathlib.Path('scripts/gui_acceptance.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'GUI acceptance parser failed' }
+          $meta = Get-Content -LiteralPath 'research/SYSINTERNALS_NETWORK_REVIEW_20261021.json' -Raw | ConvertFrom-Json
+          $cat = Get-Content -LiteralPath 'catalog.json' -Raw | ConvertFrom-Json
+          if ($meta.policy -ne 'METADATA_ONLY_NOT_INSTALLABLE_NOT_REDISTRIBUTABLE') {
+            throw 'Sysinternals metadata-only policy must remain explicit'
+          }
+          $names = @($cat.tools | ForEach-Object { $_.id })
+          foreach ($tool in @('tcpview', 'psping')) {
+            if ($names -contains $tool) { throw "Unapproved Sysinternals catalog pin: $tool" }
+          }
+          if ($meta.tools.Count -ne 2) { throw 'Network vendor metadata count mismatch' }
+          Write-Host 'GUI acceptance parser and no-Sysinternals-binary catalog gates PASS'
+
       - name: Parse Windows PowerShell acceptance scripts
         shell: pwsh
         run: |

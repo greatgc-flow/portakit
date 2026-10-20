@@ -4,9 +4,9 @@
   "classification": "one primary domain for each unique tool; profiles remain cross-domain",
   "counts": {
     "total": 108,
-    "pinned": 16,
+    "pinned": 17,
     "builtIn": 27,
-    "research": 65
+    "research": 64
   },
   "footprintContract": "verifiedCompressedBytes is present only for the original eight ZIP files tested in PR#14; additional vendor release size evidence is tracked separately; null is NOT a claim of tiny size.",
   "licensingContract": "No automatic downloading or packaging of research tools. Free use, internal redistribution and corporate OSS/EDR approval are separate per-vendor gates.",
@@ -392,14 +392,14 @@
       "primary": "files",
       "source": "https://www.7-zip.org/",
       "license": "LGPL/BSD/unRAR caveat",
-      "workflow": "compression and evidence bundling",
-      "form": "review-zip",
+      "workflow": "Full 7-Zip File Manager 7zFM, CLI 7z+DLL, vendor installer never executed",
+      "form": "official-sfx-data-extract",
       "priority": "P0",
-      "admission": "RESEARCH_ONLY",
+      "admission": "PINNED_CATALOG",
       "verifiedCompressedBytes": null,
       "sizeMethod": "NOT_MEASURED",
       "corporateApproval": "REQUIRED",
-      "caveat": "Review offline operation and license before admission"
+      "caveat": "Requires separately managed exact SHA-verified 7zr. Uses SFX archive DATA extraction only. No installer/registry/shell integration; GUI acceptance later."
     },
     {
       "id": "7zr",

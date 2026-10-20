@@ -10,3 +10,5 @@
 - Behavior changes use tests first, red then green; validation is `python -I -m unittest discover -s tests`.
 
 - 2026-10-20: New opt-in `install --recommended` profile seeds minimal editor settings, validates/verifies pinned third-party Notepad++ plugin assets and stages them before atomic commit. No silent plugin install, no automatic plugin upgrades, and no external WinMerge plugin duplication. Strongly prefer catalog SHA pins over mutable/latest URLs.
+
+- 2026-10-20: WinMerge recommended setup reuses the shipped Office unpackers (Excel/Word/PowerPoint/Visio) rather than fetching duplicate/unverified third-party packages. Require those files in the verified vendor ZIP before commit. Enable automatic unpacking using WinMerge's actual `[WinMerge]` INI format and `Settings/PluginsEnabled=1`, `Settings/UnpackerMode=1`. Office COM prerequisites are not installed or guaranteed; these unpackers compare extracted contents, not rendered document formatting.

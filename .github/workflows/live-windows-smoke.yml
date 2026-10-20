@@ -370,6 +370,16 @@ jobs:
               if ($tool.Gui) {
                 Write-Host "GUI FILE PRESENT, NOT LAUNCHED: $($tool.Id)"
               }
+              elseif ($tool.Id -eq 'dasel') {
+                # The v3 vendor binary in this pinned ZIP may print usage for
+                # --version; verify meaningful local JSON querying instead.
+                $jsonText = '{"foo":{"bar":"baz"}}'
+                $queryOutput = ($jsonText | & $installed[0].FullName -i json 'foo.bar' 2>&1 | Out-String)
+                if ($LASTEXITCODE -ne 0 -or $queryOutput -notmatch 'baz') {
+                  throw "dasel JSON selector functional smoke failed: $queryOutput"
+                }
+                Write-Host 'CLI FUNCTIONAL PASS: dasel JSON selector'
+              }
               elseif ($tool.Id -eq 'miller') {
                 # Miller's pinned Windows binary does not support either
                 # conventional --version or 'version' in this build.

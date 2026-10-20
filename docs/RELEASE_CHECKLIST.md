@@ -66,6 +66,12 @@ Check the manually dispatched [Windows live archive smoke](../.github/workflows/
 - The licensed desktop acceptance run must verify distinct `BASELINE`/`DIFFERENT` markers **inside the generated HTML diff**, in addition to report existence and 0/1 exit codes. Comparing raw Office ZIP bytes is insufficient proof of plugin execution.
 - After local execution, retain the ZIP, `.sha256.txt` and outputs for all four programs. Missing Office COM or an execution error is not PASS. Keep original business documents entirely out of test scope.
 
+## Gate C1c: independent ZIP/CSV/semantic verification
+
+- On each candidate Office4 ZIP, run `python -I scripts/verify_office_evidence.py --zip <path> --require-pass`. Only **exit 0** with verified four-app PASS is a pass gate. Exit 2 is verifiable evidence but insufficient Office integration; exit 1 means tampered/inconsistent evidence.
+- Check sidecar SHA-256, all ZIP files/manifest entries, four-app CSV, full Office fixture sets, HTML reports and BASELINE/DIFFERENT markers for every PASS.
+- This is an independent evidence consistency check, not proof that unattended COM runs are safe on live end-user Office sessions. Manual GUI acceptance is still mandatory.
+
 ## Gate C2: WinMerge executable + Office COM acceptance
 
 - Record the successful real Windows WinMergeU.exe noninteractive text comparison with both HTML reports, exit codes 0 (same) and 1 (different), and the console transcript artifact. The test runs on disposable synthetic files, never user documents.

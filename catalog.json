@@ -14,7 +14,28 @@
       ],
       "preserveMissingOnUpdate": [
         "plugins"
-      ]
+      ],
+      "recommended": {
+        "settings": "notepad++-dev",
+        "plugins": [
+          {
+            "id": "compareplus",
+            "version": "3.0.0",
+            "url": "https://github.com/pnedev/comparePlus/releases/download/cp_3.0.0/ComparePlus_cp_3.0.0_x64.zip",
+            "sha256": "ed6256afcddca5715d81c48d3d1d2f35f4533cfa238320cb21d9d69ce86b5572",
+            "dest": "plugins/ComparePlus",
+            "requiredFile": "ComparePlus.dll"
+          },
+          {
+            "id": "jsontools",
+            "version": "8.5",
+            "url": "https://github.com/molsonkiko/JsonToolsNppPlugin/releases/download/v8.5/Release_x64.zip",
+            "sha256": "2b430c399e3624ba02d4d9634cd4c307535cb10eafd5b478f630de866414e32a",
+            "dest": "plugins/JsonTools",
+            "requiredFile": "JsonTools.dll"
+          }
+        ]
+      }
     },
     {
       "id": "winmerge",
@@ -28,7 +49,11 @@
       ],
       "preserveMissingOnUpdate": [
         "MergePlugins"
-      ]
+      ],
+      "recommended": {
+        "settings": "winmerge-dev",
+        "plugins": []
+      }
     },
     {
       "id": "jq",

@@ -373,7 +373,7 @@ jobs:
               else {
                 # 7zr implements the legacy 7-Zip CLI, which intentionally has
                 # no --version switch; its no-argument banner reports the version.
-                $versionArgs = if ($tool.Id -eq '7zr') { @() } else { @('--version') }
+                $versionArgs = if ($tool.Id -eq '7zr') { @() } elseif ($tool.Id -eq 'miller') { @('version') } else { @('--version') }
                 $versionOutput = (& $installed[0].FullName @versionArgs 2>&1 | Out-String)
                 if ($tool.Id -eq '7zr') {
                   if ($versionOutput -notmatch '26.04') {

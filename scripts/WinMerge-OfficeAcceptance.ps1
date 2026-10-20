@@ -21,6 +21,9 @@
   Optional Office apps: Excel, Word, PowerPoint, Visio.
 .PARAMETER TimeoutSeconds
   Per-comparison timeout (default 120 seconds).
+.PARAMETER ProbeOnly
+  Inspect Office COM registration only. Does not create COM objects or open Office.
+  Returns exit 2 (NOT_VERIFIED) even when all four registrations exist.
 .NOTES
   Only use with disposable documents. Do not test untrusted Office files or run
   this on servers. Requires actual Office COM and an interactive session.
@@ -29,7 +32,8 @@ param(
     [Parameter(Mandatory=$true)][string]$WinMergeExe,
     [Parameter(Mandatory=$true)][string]$EvidenceDir,
     [string[]]$Applications=@("Excel","Word","PowerPoint","Visio"),
-    [int]$TimeoutSeconds=120
+    [int]$TimeoutSeconds=120,
+    [switch]$ProbeOnly
 )
 $ErrorActionPreference = "Stop"
 $transcript = $false
@@ -169,7 +173,35 @@ try {
     Write-Host "WINMERGE: $exe"
     Write-Host "EVIDENCE: $outDir"
     Write-Host "WARNING: requires a desktop and installed/licensed Microsoft Office"
-
+    if ($ProbeOnly) {
+        Write-Host "MODE: PREREQUISITE PROBE ONLY — NO Office COM execution"
+        foreach ($name in $Applications) {
+            $progId = switch ($name) {
+                "Excel" { "Excel.Application" }
+                "Word" { "Word.Application" }
+                "PowerPoint" { "PowerPoint.Application" }
+                "Visio" { "Visio.Application" }
+                default { "" }
+            }
+            if (-not $progId) { throw "Unknown Applications selection: $name" }
+            $registered = $false
+            try {
+                $registered = ($null -ne [System.Type]::GetTypeFromProgID($progId, $false))
+            } catch {
+                Write-Host ("COM REGISTRY PROBE ERROR for " + $name + ": " +
+                            $_.Exception.Message)
+            }
+            if ($registered) {
+                $detail = "COM registration exists; runtime, activation and plugin NOT VERIFIED"
+            } else {
+                $detail = "COM registration not found; runtime and plugin NOT VERIFIED"
+            }
+            Write-Host ("NOT_VERIFIED " + $name + ": " + $detail)
+            $rows += New-Object PSObject -Property @{
+                Application=$name; Status="NOT_VERIFIED"; Detail=$detail }
+        }
+        $skipped = $true
+    } else {
     foreach ($name in $Applications) {
         $folder = Join-Path $outDir $name
         New-Item -ItemType Directory -Path $folder | Out-Null
@@ -214,6 +246,7 @@ try {
                 Application=$name; Status="FAIL"; Detail=$_.Exception.Message }
             $fail = $true
         }
+    }
     }
 }
 catch {

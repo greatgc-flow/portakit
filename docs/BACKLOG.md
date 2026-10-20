@@ -1,5 +1,8 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+The [corporate/offline 30-software survey](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md) identifies **research-only** candidates and per-vendor redistribution gates. Do not silently add them to installable catalog or republish proprietary vendor binaries.
+
+
 The items below are **not implemented/certified** merely by their appearance in this document. Keep explicit consent for side effects, and maintain minimal vendor defaults where a configuration change offers no verified benefit.
 
 | Priority | Area | Task | Gate / next action | State |

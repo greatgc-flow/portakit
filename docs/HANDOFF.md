@@ -14,6 +14,11 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - Added scripts/WinMerge-OfficeAcceptance.ps1 + docs/WINMERGE_OFFICE_ACCEPTANCE.md for separate manual desktop COM comparison of Excel, Word, PowerPoint and Visio. Exit 2 means Office COM missing/NOT VERIFIED; reports, source fixtures, CSV and transcript are retained locally. Human GUI selection/semantic acceptance remains outstanding until actual workstation run.
 - Avoid auto-publishing releases on this evidence alone. User-specific Office COM/GUI prerequisites are unavailable on ordinary hosted CI.
 
+## Four-Office prerequisite preflight (2026-10-20)
+
+- Office acceptance script `-ProbeOnly` checks only COM registration for Excel, Word, PowerPoint and Visio without spawning Office processes or touching production documents; emits four `NOT_VERIFIED` statuses to CSV and console transcript, exits 2.
+- Live Windows CI inspects bundled `.sct` extension filters and automatic selection declarations and publishes separate seven-day Office prerequisite evidence. These gates must never be mistaken for a successful COM runtime test. Separate licensed desktop and manual GUI tests are still outstanding.
+
 ## PeerHub cross-project status
 
 - [PeerHub #180](https://github.com/greatgc-flow/peerhub/issues/180) was closed 2026-10-19; it concerned in-place `pip install --target --upgrade` during an active ask on Windows and is not a PortaKit CLI failure.

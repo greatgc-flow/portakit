@@ -82,6 +82,8 @@ The Windows live workflow now **actually launches WinMergeU.exe** on synthetic i
 
 For `.xlsx` / `.docx` / `.pptx` / `.vsdx` comparison, run the evidence-producing [WinMerge Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md) on an interactive Windows PC with the corresponding licensed Office app. The PS2/5-compatible scripts accept a new isolated evidence directory and never install Office or touch real documents. Missing Office is recorded as **NOT VERIFIED**, not PASS. Actual GUI behavior needs a separate human check.
 
+Office prerequisites can be inventoried on a Windows machine **without launching Office** by running `scripts/WinMerge-OfficeAcceptance.ps1 -ProbeOnly`. Results for Excel, Word, PowerPoint and Visio are saved as a transcript and CSV with status `NOT_VERIFIED`, regardless of whether their COM registrations exist. The live Windows CI also checks vendor-provided Office extension filters and automatic selection declarations; actual Office COM and GUI document comparison remain a separately required acceptance gate. See the [Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md).
+
 ## Verification and releases
 
 Pull requests and `main` run the [Windows regression workflow](.github/workflows/windows-tests.yml) on Python 3.11 and 3.14. It uses mocks (no real app downloads). Before publishing, follow the [manual release acceptance checklist](docs/RELEASE_CHECKLIST.md), including isolated live downloads and full catalog verification. CI does not publish releases.

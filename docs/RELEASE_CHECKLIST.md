@@ -54,6 +54,12 @@ Check the manually dispatched [Windows live archive smoke](../.github/workflows/
 - For a candidate release, explicitly inspect changes since the previous candidate for newly introduced paths, persistence changes, pin changes, and data-loss risks.
 - No auto-upgrades, PATH edits, unpinned URLs, remote scripts, or global side effects.
 
+## Gate C1: Office four-app static filters and safe prerequisite probe
+
+- In live Windows CI verify the original SHA-pinned vendor `CompareMSExcelFiles.sct`, `CompareMSWordFiles.sct`, `CompareMSPowerPointFiles.sct` and `CompareMSVisioFiles.sct` contain matching extension filters and automatic selection declarations.
+- Check the `portakit-winmerge-office-prerequisites` artifact contains four CSV rows (Excel/Word/PowerPoint/Visio), a console transcript and `NOT_VERIFIED` in each result. COM registration is informational only and does not establish Office readiness. Exit 2 is an expected probe result, never a test pass.
+- An Office installed/licensed on the final workstation still requires actual document generation, plugin processing and human GUI inspection.
+
 ## Gate C2: WinMerge executable + Office COM acceptance
 
 - Record the successful real Windows WinMergeU.exe noninteractive text comparison with both HTML reports, exit codes 0 (same) and 1 (different), and the console transcript artifact. The test runs on disposable synthetic files, never user documents.

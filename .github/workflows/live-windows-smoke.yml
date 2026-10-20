@@ -140,11 +140,25 @@ jobs:
                   'CompareMSPowerPointFiles.sct',
                   'CompareMSVisioFiles.sct'
                 )
+                $expectedExt = @{
+                  'CompareMSExcelFiles.sct' = '.xlsx'
+                  'CompareMSWordFiles.sct' = '.docx'
+                  'CompareMSPowerPointFiles.sct' = '.pptx'
+                  'CompareMSVisioFiles.sct' = '.vsdx'
+                }
                 foreach ($name in $required) {
                   $scriptPath = Join-Path (Join-Path $dir 'MergePlugins') $name
                   if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
                     throw "WinMerge vendor Office script missing: $name"
                   }
+                  $text = [System.IO.File]::ReadAllText($scriptPath)
+                  if (-not $text.Contains($expectedExt[$name])) {
+                    throw "WinMerge Office script $name lacks expected $($expectedExt[$name]) filter"
+                  }
+                  if (-not [regex]::IsMatch($text, 'function\s+get_PluginIsAutomatic\s*\(\s*\)\s*\{\s*return\s+true\s*;')) {
+                    throw "WinMerge Office script $name does not declare automatic selection"
+                  }
+                  Write-Host "Verified actual Office script $name extension=$($expectedExt[$name]) automatic=true"
                 }
                 $ini = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
                 if ($ini -notmatch '(?im)^\s*\[WinMerge\]\s*$') {
@@ -169,6 +183,23 @@ jobs:
             $wmEvidence = Join-Path $env:RUNNER_TEMP 'portakit-winmerge-runtime-evidence'
             & (Join-Path $PWD 'scripts/WinMerge-RuntimeSmoke.ps1') -WinMergeExe $wmExe -EvidenceDir $wmEvidence -TimeoutSeconds 90
             if ($LASTEXITCODE -ne 0) { throw 'Real WinMerge executable smoke FAILED; check artifact' }
+            # Prerequisite probe is intentionally non-executing. The only honest
+            # result on a hosted runner is NOT_VERIFIED for all four applications,
+            # even if one or more COM ProgIDs happen to be registered.
+            $officeEvidence = Join-Path $env:RUNNER_TEMP 'portakit-winmerge-office-prerequisites'
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/WinMerge-OfficeAcceptance.ps1" -WinMergeExe $wmExe -EvidenceDir $officeEvidence -ProbeOnly
+            if ($LASTEXITCODE -ne 2) { throw "Office prerequisite-only probe must return NOT_VERIFIED (2), got $LASTEXITCODE" }
+            $rows = @(Import-Csv -LiteralPath (Join-Path $officeEvidence 'results.csv'))
+            $names = @('Excel', 'Word', 'PowerPoint', 'Visio')
+            if ($rows.Count -ne $names.Count) { throw "Expected four Office result rows, got $($rows.Count)" }
+            foreach ($name in $names) {
+              $match = @($rows | Where-Object { $_.Application -eq $name -and $_.Status -eq 'NOT_VERIFIED' })
+              if ($match.Count -ne 1) { throw "Office prerequisite result invalid for $name" }
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $officeEvidence 'console.log') -PathType Leaf)) {
+              throw 'Office prerequisite transcript missing'
+            }
+            Write-Host 'Office four-app registration probe recorded NOT_VERIFIED for all four (no COM execution)'
             python -I portakit.py --root "$root" remove winmerge
             if ($LASTEXITCODE -ne 0) { throw 'WinMerge cleanup after executable smoke failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -180,6 +211,15 @@ jobs:
               Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
             }
           }
+
+      - name: Upload Office prerequisite probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portakit-winmerge-office-prerequisites
+          path: ${{ runner.temp }}/portakit-winmerge-office-prerequisites/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload WinMerge runtime evidence
         if: always()

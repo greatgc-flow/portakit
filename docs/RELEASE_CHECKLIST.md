@@ -92,3 +92,11 @@ Future features (doctor, offline bundles, config seeding, pip tools, shims, nest
 ## Existing-install profile gate
 
 In a disposable test root, install each editor *without* `--recommended`, add a private marker file, execute `configure ID`, then run it again. Confirm the marker and state remain unchanged, first configure installs/activates the profile, and second returns `changed:false` with no external asset downloads. Verify failure injection for invalid plugin SHA, incomplete plugin folder, symlink/junction and write-state rollback. Running Office comparison inside WinMerge GUI with licensed desktop Office apps remains a separate release blocker.
+
+
+## Optional per-user classic Explorer menu gate
+
+- In Windows CI, confirm mock-owned registry lifecycle, foreign/collision refusal, repeated install/remove no-op, partial-create rollback, and verbatim console log evidence.
+- Run ephemeral HKCU smoke on a disposable hosted Windows identity; verify Notepad++ file and WinMerge file/folder key values and command path quoting; uninstall all owned keys in `finally`.
+- For human acceptance, explicitly opt in, inspect Windows Explorer file and folder right-click classic menu, launch each app, and exercise removal. On Windows 11, use **Show more options / Shift+F10**. Advanced two-selected-item WinMerge extension and native modern menu are excluded.
+- Never imply regular PortaKit `install`, `configure`, `update`, or `remove` implicitly adds/removes shell integration. The menu points to an absolute path and must be manually unregistered before moving or removing its target app.

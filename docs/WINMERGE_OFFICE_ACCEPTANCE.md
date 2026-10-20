@@ -28,6 +28,16 @@ Reproduce locally with Windows PowerShell 2.0 or 5.x (use a disposable root and 
 
 The EvidenceDir must **not exist** before running; the script refuses to overwrite existing data.
 
+## Gate C0 — safe four-application prerequisite inventory
+
+Run this before Office automation on a target PC, or use the CI-hosted run's `portakit-winmerge-office-prerequisites` artifact:
+
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\WinMerge-OfficeAcceptance.ps1 -WinMergeExe ".\portable\winmerge\WinMergeU.exe" -EvidenceDir "C:\Temp\portakit-office-probe-001" -ProbeOnly
+
+`-ProbeOnly` checks whether the four Office COM ProgIDs (Excel, Word, PowerPoint, Visio) are **registered** without starting an Office application or opening documents. It writes a console transcript and four rows in `results.csv` and **always returns exit code 2 (NOT_VERIFIED)** after a successful probe. Even a registered ProgID does not prove Office activation, licensing or WinMerge comparison correctness. An invalid input or filesystem error returns 1 instead.
+
+In the CI workflow, the four original SHA-pinned vendor scriptlets are also inspected to assert their respective `.xlsx`, `.docx`, `.pptx` and `.vsdx` extension filters and `get_PluginIsAutomatic() == true` declarations, in addition to the existing plugin presence and INI checks. This is static package validation, **not** Office runtime certification.
+
 ## Gate C — Office COM integration on the target desktop
 
 **Office applications are not present or licensed by default in the hosted CI.** These plugins invoke desktop Office COM automation and require the matching Excel, Word, PowerPoint or Visio application. They extract textual data and are not full formatting comparison engines. Use only disposable test documents, never actual MES or confidential customer files.

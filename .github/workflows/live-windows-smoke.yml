@@ -1,0 +1,88 @@
+name: Live Windows archive smoke
+
+on:
+  workflow_dispatch:
+  # Exercise this newly introduced workflow on its review PR. Afterwards,
+  # real downloads are manual-only (not on each ordinary code push).
+  pull_request:
+    paths:
+      - .github/workflows/live-windows-smoke.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portakit-live-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-archives:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Download pinned assets, check bundled plugins, and remove
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP ("portakit-live-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Path $root | Out-Null
+          try {
+            $items = @(
+              @{ Id = 'notepad++'; Exe = 'notepad++.exe'; PluginDir = 'plugins' },
+              @{ Id = 'winmerge'; Exe = 'WinMergeU.exe'; PluginDir = 'MergePlugins' },
+              @{ Id = 'jq'; Exe = 'jq.exe'; PluginDir = $null }
+            )
+            foreach ($item in $items) {
+              $id = $item.Id
+              Write-Host "Installing pinned $id"
+              $output = python -I portakit.py --json --root "$root" install $id
+              if ($LASTEXITCODE -ne 0) { throw "$id install failed: $output" }
+              $installed = $output | ConvertFrom-Json
+              if (-not $installed.ok -or -not $installed.data.changed) {
+                throw "$id install returned an unexpected envelope"
+              }
+              $dir = Join-Path $root $id
+              $exe = Join-Path $dir $item.Exe
+              if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+                throw "$id executable missing at $exe"
+              }
+              if ($item.PluginDir) {
+                $pluginPath = Join-Path $dir $item.PluginDir
+                if (-not (Test-Path -LiteralPath $pluginPath -PathType Container)) {
+                  throw "$id bundled plugin folder absent: $pluginPath"
+                }
+                $files = @(Get-ChildItem -LiteralPath $pluginPath -File -Recurse -ErrorAction Stop)
+                if ($files.Count -eq 0) { throw "$id shipped no plugin files in $pluginPath" }
+                Write-Host "$id has $($files.Count) bundled plugin files"
+                $files | Select-Object -First 15 -ExpandProperty Name | ForEach-Object { Write-Host "  $_" }
+              }
+              if ($id -eq 'jq') {
+                & $exe --version
+                if ($LASTEXITCODE -ne 0) { throw "jq --version failed" }
+              }
+              $noOp = python -I portakit.py --json --root "$root" update $id
+              if ($LASTEXITCODE -ne 0) { throw "$id no-op update failed" }
+              $check = $noOp | ConvertFrom-Json
+              if (-not $check.ok -or $check.data.changed) {
+                throw "$id identical-pin update must not download or modify files"
+              }
+              $removed = python -I portakit.py --json --root "$root" remove $id
+              if ($LASTEXITCODE -ne 0) { throw "$id removal failed" }
+              if (Test-Path -LiteralPath $dir) { throw "$id directory remains after remove" }
+            }
+            $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json
+            if ($state.PSObject.Properties.Count -ne 0) { throw 'State not empty after removals' }
+            Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
+          }
+          finally {
+            if (Test-Path -LiteralPath $root) {
+              Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
+            }
+          }

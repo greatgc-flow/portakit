@@ -200,6 +200,40 @@ jobs:
               throw 'Office prerequisite transcript missing'
             }
             Write-Host 'Office four-app registration probe recorded NOT_VERIFIED for all four (no COM execution)'
+            # The one-run UX must preserve Windows PowerShell 5 compatibility,
+            # return NOT_VERIFIED=2 and package SHA-256 evidence without Office.
+            $oneRunEvidence = Join-Path $env:RUNNER_TEMP 'portakit-office4-one-run'
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'scripts/Run-WinMerge-Office4.ps1' -Root "$root" -EvidenceDir $oneRunEvidence -ProbeOnly
+            if ($LASTEXITCODE -ne 2) {
+              throw "Office4 one-run probe must return 2 (NOT_VERIFIED); got $LASTEXITCODE"
+            }
+            $oneRunZip = $oneRunEvidence + '.zip'
+            $oneRunSha = $oneRunZip + '.sha256.txt'
+            if (-not (Test-Path -LiteralPath $oneRunZip -PathType Leaf) -or
+                -not (Test-Path -LiteralPath $oneRunSha -PathType Leaf)) {
+              throw 'Office4 one-run evidence ZIP or SHA-256 sidecar missing'
+            }
+            $shaLine = [System.IO.File]::ReadAllText($oneRunSha).Trim()
+            $actualSha = (Get-FileHash -LiteralPath $oneRunZip -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (-not $shaLine.ToLowerInvariant().StartsWith($actualSha + '  ')) {
+              throw 'Office4 one-run ZIP checksum mismatch'
+            }
+            Add-Type -AssemblyName 'System.IO.Compression'
+            $z = [System.IO.Compression.ZipFile]::OpenRead($oneRunZip)
+            try {
+              $manifestEntry = $z.GetEntry('manifest.json')
+              if ($null -eq $manifestEntry) { throw 'Evidence manifest missing' }
+              $reader = New-Object System.IO.StreamReader($manifestEntry.Open())
+              try {
+                $manifest = $reader.ReadToEnd() | ConvertFrom-Json
+              }
+              finally { $reader.Dispose() }
+              if ($manifest.office_runtime -ne 'NOT_VERIFIED' -or $manifest.script_exit_code -ne 2) {
+                throw 'Office4 probe evidence falsely claims PASS'
+              }
+            }
+            finally { $z.Dispose() }
+            Write-Host 'Office4 one-run ZIP, SHA256 manifest and NOT_VERIFIED status verified'
             python -I portakit.py --root "$root" remove winmerge
             if ($LASTEXITCODE -ne 0) { throw 'WinMerge cleanup after executable smoke failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -218,6 +252,17 @@ jobs:
         with:
           name: portakit-winmerge-office-prerequisites
           path: ${{ runner.temp }}/portakit-winmerge-office-prerequisites/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload Office4 one-run ZIP evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portakit-office4-one-run-evidence
+          path: |
+            ${{ runner.temp }}/portakit-office4-one-run.zip
+            ${{ runner.temp }}/portakit-office4-one-run.zip.sha256.txt
           if-no-files-found: warn
           retention-days: 7
 

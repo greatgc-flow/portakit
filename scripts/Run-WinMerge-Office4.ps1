@@ -134,6 +134,14 @@ try {
     }
     Write-Host "ZIP: $zipPath"
     Write-Host "SHA256: $zipPath.sha256.txt"
+    # Validate the sealed ZIP independently, including manifest entries,
+    # application results, and the extracted semantic HTML proof if PASS.
+    $verifier = Join-Path $scriptDir "verify_office_evidence.py"
+    & $Python "-I" $verifier "--zip" $zipPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "INDEPENDENT_VERIFICATION_FAILED: packaged Office evidence is not valid"
+    }
+    Write-Host "EVIDENCE VALIDATION: PASS (archive integrity only; not Office status)"
 }
 catch {
     Write-Host ("PACKAGING FAILED: " + $_.Exception.Message)

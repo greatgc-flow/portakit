@@ -55,6 +55,15 @@ class CatalogTests(fixtures.Workspace):
             with self.subTest(field=field, value=value), self.assertRaisesRegex(pk.PortakitError, field):
                 self.load([entry(**{field: value})])
 
+    def test_optional_missing_on_update_paths_are_validated(self):
+        self.assertEqual(self.load([entry(preserveMissingOnUpdate=["plugins", "MergePlugins"])])["demo"]["preserveMissingOnUpdate"],
+                         ["plugins", "MergePlugins"])
+        for value in (["../escape"], ["C:\\absolute"], ["plugins/../outside"],
+                      ["plugins", 1], "plugins"):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    pk.PortakitError, "preserveMissingOnUpdate"):
+                self.load([entry(preserveMissingOnUpdate=value)])
+
     def test_each_required_field_is_named_when_missing(self):
         for field in ("id", "version", "url", "sha256", "artifact", "dest"):
             tool = entry()

@@ -370,6 +370,17 @@ jobs:
               if ($tool.Gui) {
                 Write-Host "GUI FILE PRESENT, NOT LAUNCHED: $($tool.Id)"
               }
+              elseif ($tool.Id -eq 'miller') {
+                # Miller's pinned Windows binary does not support either
+                # conventional --version or 'version' in this build.
+                # Prefer a meaningful CSV -> JSON offline round-trip smoke.
+                $csvText = "foo,bar" + [Environment]::NewLine + "hello,world"
+                $converted = ($csvText | & $installed[0].FullName --icsv --ojson cat 2>&1 | Out-String)
+                if ($LASTEXITCODE -ne 0 -or $converted -notmatch '"foo"' -or $converted -notmatch 'hello') {
+                  throw "Miller CSV-to-JSON functional smoke failed: $converted"
+                }
+                Write-Host 'CLI FUNCTIONAL PASS: miller CSV-to-JSON'
+              }
               else {
                 # 7zr implements the legacy 7-Zip CLI, which intentionally has
                 # no --version switch; its no-argument banner reports the version.

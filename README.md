@@ -52,6 +52,10 @@ Digests: the notepad++ digest comes from the [release notes](https://github.com/
 
 To bump a pin, edit `version`, `url` and `sha256` together. Config seeding is not implemented (deferred).
 
+## Verification and releases
+
+Pull requests and `main` run the [Windows regression workflow](.github/workflows/windows-tests.yml) on Python 3.11 and 3.14. It uses mocks (no real app downloads). Before publishing, follow the [manual release acceptance checklist](docs/RELEASE_CHECKLIST.md), including isolated live downloads and full catalog verification. CI does not publish releases.
+
 ## Tests
 
 ```powershell

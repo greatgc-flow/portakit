@@ -100,6 +100,14 @@ The script creates a uniquely named evidence folder plus a local ZIP and SHA-256
 
 See [step-by-step Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md). Hosted GitHub runners lack licensed Office and can only test the `-ProbeOnly` flow.
 
+## Independent verification of Office4 evidence
+
+Any Windows/Linux machine with Python 3.11+ can validate an Office4 result ZIP **without running Office or WinMerge**:
+
+    python -I scripts/verify_office_evidence.py --zip "office4-evidence-....zip"
+
+The read-only verifier cross-checks the SHA-256 sidecar, ZIP entries, per-file manifest hashes, CSV statuses for all four Office applications, and the actual synthetic content markers in diff reports for every PASS. Its result JSON distinguishes `verified:true` (evidence internally sound) from `office_runtime:PASS` (Office 4 actually passed). To require full integration before moving to release use `--require-pass`: exit 0 only for four-app PASS, exit 2 for sound but incomplete/failed results, exit 1 for invalid or tampered evidence. The one-run launcher also invokes this verifier before returning.
+
 ## Verification and releases
 
 Pull requests and `main` run the [Windows regression workflow](.github/workflows/windows-tests.yml) on Python 3.11 and 3.14. It uses mocks (no real app downloads). Before publishing, follow the [manual release acceptance checklist](docs/RELEASE_CHECKLIST.md), including isolated live downloads and full catalog verification. CI does not publish releases.

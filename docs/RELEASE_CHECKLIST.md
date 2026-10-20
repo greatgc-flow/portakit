@@ -120,8 +120,14 @@ In a disposable test root, install each editor *without* `--recommended`, add a 
 
 ## Disconnected local vendor archive admission gate (2026-10-21)
 
-- Assert pinned **16 software IDs**, exactly-one functional domain for each, 108 research entries (16 pinned, 27 built-ins, 65 research-only); old category aliases retain existing tool selection.
+- Assert pinned **17 software IDs**, exactly-one functional domain for each, 108 research entries (17 pinned, 27 built-ins, 64 research-only); old category aliases retain existing tool selection.
 - `portakit.py --archive ORIGINAL install ID` reads only local source, disallows symlinks, enforces maximum archive size, compares SHA-256 to approved immutable catalog, uses the same safe ZIP and rollback staging; never contacts a vendor URL or silently opts into recommended plugin downloads.
 - `toolsets.py apply portable-productivity --yes --offline-dir DIR` requires ALL missing source files to exist under their exact vendor basename, with all hashes valid BEFORE any installation or local state mutation; repeat install keeps byte-identical .portakit-state.json; untrusted/missing/symlink input has no installs. Errors must show a nonzero exit and no false PASS.
 - Live Windows pinned vendor smoke must verify official SHA for 7zr/Everything/grepWin/Miller/dasel; test 7zr/Miller/dasel CLI version where meaningful, inspect Everything/grepWin executable metadata/signature **without GUI launch**, uninstall only disposable directories. No service, drivers, registry, PATH or installers.
-- Human security acceptance for Everything indexes/admin/HTTP and grepWin replacements, and no claim of full 7-Zip GUI, Microsoft Sysinternals redistribution or Office4 COM PASS based on hosted CI.
+- Human security acceptance for Everything indexes/admin/HTTP, grepWin replacements, and **full 7-Zip File Manager interactive GUI**; do not claim Microsoft Sysinternals redistribution or Office4 COM PASS based on hosted CI.
+
+## Full 7-Zip SFX-only safety and acceptance
+
+- Verify exact pinned official 26.04 x64 installer SHA and size; confirm installer EXE is **only opened as a 7z SFX archive** using exact separately managed `7zr.exe` (its SHA rechecked before invocation). Never execute vendor installer / uninstaller, no HKCU/HKLM file associations.
+- Before extraction validate 7z listing: archive type, paths, duplicates, no link/encryption, <=512 entries, <=64 MiB expanded; validate all post-extraction members and lengths before atomic commit. Tampered prerequisite/missing prereq/unsafe listing must fail before download or state promotion.
+- In Windows CI check static full `7zFM.exe`, `7zG.exe`, `7z.exe`, `7z.dll`; real ZIP creation plus integrity test with `7z.exe`; full profile reapply is byte-identical state and disposable test cleanup. **No interactive GUI assertion** unless tested on a user workstation with captured evidence.

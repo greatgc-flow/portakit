@@ -84,6 +84,61 @@ class RecommendedTests(fixtures.InstallWorkspace):
         self.assertIn("ViewLineNumbers = 1", ini)
         self.assertTrue((self.root / "demo/WinMergeU.exe").exists())
 
+    def test_winmerge_office_plugins_are_available_and_auto_unpacking_enabled(self):
+        names = ("CompareMSExcelFiles.sct", "CompareMSWordFiles.sct",
+                 "CompareMSPowerPointFiles.sct", "CompareMSVisioFiles.sct")
+        members = [("WinMergeU.exe", b"binary")] + [
+            ("MergePlugins/" + name, b"<scriptlet/>") for name in names]
+        tool, download = self.package(
+            "1", members=members, recommended={"settings": "winmerge-dev",
+                                              "plugins": [], "bundledPlugins": list(names)})
+        pk.install(tool, self.root, download, recommended=True)
+        for name in names:
+            self.assertTrue((self.root / "demo/MergePlugins" / name).is_file(), name)
+        import configparser
+        ini = configparser.ConfigParser(interpolation=None)
+        ini.optionxform = str
+        ini.read(self.root / "demo/WinMerge.ini", encoding="utf-8")
+        self.assertEqual(set(ini.sections()), {"WinMerge"})
+        self.assertEqual(ini["WinMerge"]["Settings/ViewLineNumbers"], "1")
+        self.assertEqual(ini["WinMerge"]["Settings/PluginsEnabled"], "1")
+        self.assertEqual(ini["WinMerge"]["Settings/UnpackerMode"], "1")
+
+    def test_winmerge_bundled_plugins_missing_aborts_without_state_or_partial_install(self):
+        names = ["CompareMSExcelFiles.sct", "CompareMSWordFiles.sct"]
+        tool, download = self.package(
+            "1", members=[("WinMergeU.exe", b"exe"),
+                          ("MergePlugins/CompareMSExcelFiles.sct", b"<scriptlet/>")],
+            recommended={"settings": "winmerge-dev", "plugins": [], "bundledPlugins": names})
+        with self.assertRaisesRegex(pk.PortakitError, "CompareMSWordFiles") as caught:
+            pk.install(tool, self.root, download, recommended=True)
+        self.assertEqual(caught.exception.code, "archive")
+        self.assertFalse((self.root / "demo").exists())
+        self.assertFalse((self.root / ".portakit-state.json").exists())
+        self.assertEqual(list(self.root.glob(".portakit-*.tmp")), [])
+
+    def test_normal_winmerge_install_remains_unchanged_even_if_bundled_plugin_absent(self):
+        tool, download = self.package(
+            "1", members=[("WinMergeU.exe", b"exe")],
+            recommended={"settings": "winmerge-dev", "plugins": [],
+                         "bundledPlugins": ["CompareMSExcelFiles.sct"]})
+        pk.install(tool, self.root, download)
+        self.assertFalse((self.root / "demo/WinMerge.ini").exists())
+
+    def test_winmerge_settings_do_not_overwrite_packaged_extra_ini_options(self):
+        src = b"[WinMerge]\\nSettings/ExistingCustom=42\\nSettings/UnpackerMode=0\\n"
+        src = src.replace(b"\\n", b"\n")
+        tool, download = self.package(
+            "1", members=[("WinMergeU.exe", b"exe"), ("WinMerge.ini", src)],
+            recommended={"settings": "winmerge-dev", "plugins": []})
+        pk.install(tool, self.root, download, recommended=True)
+        import configparser
+        ini = configparser.ConfigParser(interpolation=None)
+        ini.optionxform = str
+        ini.read(self.root / "demo/WinMerge.ini", encoding="utf-8")
+        self.assertEqual(ini["WinMerge"]["Settings/ExistingCustom"], "42")
+        self.assertEqual(ini["WinMerge"]["Settings/UnpackerMode"], "1")
+
     def test_missing_settings_node_is_created(self):
         tool, downloader = self.profile(with_plugin=False)
         base = zip_bytes([("demo.exe", b"app")])

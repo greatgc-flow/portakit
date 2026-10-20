@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-21",
+  "scope": "corporate restricted-network Windows",
+  "policy": "METADATA_ONLY_NOT_INSTALLABLE_NOT_REDISTRIBUTABLE",
+  "licensing": {
+    "companyUse": "Microsoft Sysinternals FAQ: no numeric limit for install/use on company-owned or supported devices, provided EULA followed",
+    "redistribution": "Microsoft explicitly declines third-party redistribution licenses, including free bundle/share/web distribution; use internal link-only metadata; legal review required for copying packages into closed network",
+    "licenseUrl": "https://learn.microsoft.com/en-us/sysinternals/license-terms",
+    "faqUrl": "https://learn.microsoft.com/en-us/sysinternals/license-faq",
+    "historicalInternalShareCaution": "https://learn.microsoft.com/en-us/sysinternals/resources/archive/v02n05",
+    "companyApproval": "NOT_GRANTED_BY_THIS_RESEARCH"
+  },
+  "tools": [
+    {
+      "id": "tcpview",
+      "name": "TCPView",
+      "officialUrl": "https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview",
+      "officialVersionObserved": "4.19",
+      "bundle": "TCPView ZIP including Tcpvcon",
+      "publishedApproxBytes": "1.5 MB",
+      "directAssetUrl": null,
+      "sha256": null,
+      "extractedBytes": null,
+      "status": "RESEARCH_ONLY",
+      "primary": "network",
+      "use": "List local TCP/UDP sockets, remote addresses and process owners. Tcpvcon -a -c -n can export local CSV without name resolution.",
+      "risks": [
+        "GUI defaults to name resolution unless disabled",
+        "GUI Close Connection can terminate live MES sessions",
+        "EULA first-use acknowledgement possible",
+        "Sensitive process, IP and hostname information"
+      ],
+      "guardrails": [
+        "Read only at first, use name-resolution off for diagnostic latency isolation",
+        "Do not close connections on production",
+        "No automatic network probing",
+        "Store CSV only in approved local evidence directory"
+      ]
+    },
+    {
+      "id": "psping",
+      "name": "PsPing",
+      "officialUrl": "https://learn.microsoft.com/en-us/sysinternals/downloads/psping",
+      "officialVersionObserved": "2.13",
+      "bundle": "PsTools ZIP, includes PsExec/PsKill/PsShutdown and other privileged tools",
+      "publishedApproxBytes": "4.9 to 5 MB bundle",
+      "directAssetUrl": null,
+      "sha256": null,
+      "extractedBytes": null,
+      "status": "RESEARCH_ONLY",
+      "primary": "network",
+      "use": "Explicit TCP connect/latency measurement for authorized MES interface endpoint. ICMP baseline only if approved.",
+      "risks": [
+        "PsTools suite includes process execution/termination/service controls unrelated to PsPing",
+        "Active TCP probes generate network traffic",
+        "Bandwidth tests can stress links/endpoints",
+        "Some scenarios need server-side listener or elevated access",
+        "EULA first-use acknowledgement possible"
+      ],
+      "guardrails": [
+        "Approval from operations/network owners for target, port, rate and duration",
+        "Never run -b or server (-s) on production by default",
+        "Import only the required PsPing tool, not whole PsTools operational suite, if allowed",
+        "Do not disable EDR, firewall or auditing"
+      ]
+    }
+  ],
+  "intakeSteps": [
+    "Obtain company OSS/EULA/network owner approval for precisely named intended devices and transport method; resolve redistribution restriction with legal/publisher before any internal bundle/share.",
+    "On approved connected workstation, acquire original vendor archive directly from official Microsoft link and record timestamp, version, file byte count, SHA-256, Authenticode signers if present, and EDR scan result.",
+    "For restricted network, approve transfer method in writing; metadata-only Git catalog references official documents, never commits or republishes vendor EXE/ZIP.",
+    "At offline workstation verify local SHA again and observe first-use license prompt; keep product binaries outside public bundles and outside PortaKit auto-install catalog pending legal decision.",
+    "Perform non-production read-only socket inventory first. For PsPing require target/port/probe count and approved load budget; capture local-only stdout + same-text log and clean up without changing system settings."
+  ]
+}

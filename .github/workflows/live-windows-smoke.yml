@@ -74,6 +74,42 @@ jobs:
               if (-not $check.ok -or $check.data.changed) {
                 throw "$id identical-pin update must not download or modify files"
               }
+              if ($id -in @('notepad++', 'winmerge')) {
+                $marker = Join-Path $dir 'user-keep.txt'
+                Set-Content -LiteralPath $marker -Value 'keep' -Encoding ascii
+                $statePath = Join-Path $root '.portakit-state.json'
+                $beforeHash = (Get-FileHash -LiteralPath $statePath -Algorithm SHA256).Hash
+                $confOutput = python -I portakit.py --json --root "$root" configure $id
+                if ($LASTEXITCODE -ne 0) { throw "$id configure failed: $confOutput" }
+                $configured = $confOutput | ConvertFrom-Json
+                if (-not $configured.ok -or -not $configured.data.changed) {
+                  throw "$id first configure should change existing default installation"
+                }
+                if ((Get-FileHash -LiteralPath $statePath -Algorithm SHA256).Hash -ne $beforeHash) {
+                  throw "$id configure mutated package version/state"
+                }
+                if ((Get-Content -LiteralPath $marker -Raw).Trim() -ne 'keep') {
+                  throw "$id lost unrelated user data"
+                }
+                if ($id -eq 'notepad++') {
+                  foreach ($plugin in @('ComparePlus\ComparePlus.dll','JsonTools\JsonTools.dll')) {
+                    if (-not (Test-Path -LiteralPath (Join-Path (Join-Path $dir 'plugins') $plugin) -PathType Leaf)) {
+                      throw "$id configure missing plugin $plugin"
+                    }
+                  }
+                } else {
+                  $settings = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
+                  if ($settings -notmatch '(?im)^\s*Settings/UnpackerMode\s*=\s*1\s*$') {
+                    throw "$id configure missing automatic Office unpackers"
+                  }
+                }
+                $again = python -I portakit.py --json --root "$root" configure $id
+                if ($LASTEXITCODE -ne 0) { throw "$id repeat configure failed" }
+                if (($again | ConvertFrom-Json).data.changed) {
+                  throw "$id repeat configure must be idempotent"
+                }
+                Write-Host "$id existing-install configuration and idempotency verified"
+              }
               $removed = python -I portakit.py --json --root "$root" remove $id
               if ($LASTEXITCODE -ne 0) { throw "$id removal failed" }
               if (Test-Path -LiteralPath $dir) { throw "$id directory remains after remove" }

@@ -5,6 +5,6 @@
 - Catalog pins use HTTPS URLs and SHA256. Updates follow both version and digest, including downgrades; identical pins skip downloading while the destination exists.
 - Destinations are single folders, uniquely owned by state IDs. Never adopt unmanaged folders or follow reparse points, junctions or symlinks.
 - Mutating operations hold a root lock, discard stale temps, verify downloads before extraction, and stage before swapping. State write commits the swap; pre-commit failures roll back. Update alone recovers a lone backup; both folders require manual resolution.
-- Preserve paths override packaged files during updates. Remove deletes all managed data and the backup before forgetting state; it works without a catalog.
+- Explicitly preserved paths override packaged files during updates. Opt-in `preserveMissingOnUpdate` merges only missing user/plugin files into the stage, leaving shipped binaries and updated plugin lists intact. Remove deletes all managed data and the backup before forgetting state; it works without a catalog.
 - JSON uses one result envelope and exit codes 0–6; help stays human text. No cache, shims, config seeding or force flag in the MVP.
 - Behavior changes use tests first, red then green; validation is `python -I -m unittest discover -s tests`.

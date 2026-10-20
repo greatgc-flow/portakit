@@ -36,3 +36,8 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - `install winmerge --recommended` ensures vendor `MergePlugins/CompareMSExcelFiles.sct`, `CompareMSWordFiles.sct`, `CompareMSPowerPointFiles.sct`, and `CompareMSVisioFiles.sct` are present. The SHA-verified WinMerge 2.16.46 ZIP already distributes them; no duplicate downloads.
 - WinMerge 2.16.46 source (`Src/Common/IniOptionsMgr.cpp`, `Src/Merge.cpp`, `Src/OptionsDef.h`) proves portable `WinMerge.ini` must contain `[WinMerge]` keys `Settings/ViewLineNumbers`, `Settings/PluginsEnabled`, `Settings/UnpackerMode`. Previous `[Settings]` formatting was ineffective; corrected here. CLI's `/inifile` is not required when an INI is alongside `WinMergeU.exe`.
 - Excel, Word, PowerPoint, and Visio Office COM automation dependencies are external and not installed. CLI smoke checks packaged scripts/INI; actual GUI and Office comparisons require a separately provisioned Windows desktop for release acceptance.
+
+## Existing-install recommended configuration — 2026-10-20
+
+- Explicit `configure notepad++` or `configure winmerge` on an already managed current-pin installation. Reuses the original binaries, validates user tree contains no links/junctions, stages a full copy, applies selected recommended settings, fills only missing SHA-verified third-party plugins, preserves unrelated data, and rolls back on failure. Second invocation is no-op.
+- Windows Python 3.11/3.14 regression tests and live Windows installed-base-then-configure verification are mandatory. No Office COM GUI acceptance is implied; licensed Office integration still needs a separate Windows desktop test.

@@ -331,7 +331,7 @@ jobs:
             $approved = Join-Path $root 'approved-original-assets'
             New-Item -ItemType Directory -Path $approved -Force | Out-Null
             $pinList = @(Get-Content -LiteralPath 'catalog.json' -Raw | ConvertFrom-Json).tools
-            $newIds = @('7zr', 'everything', 'grepwin', 'miller', 'dasel')
+            $newIds = @('7zr', '7zip', 'everything', 'grepwin', 'miller', 'dasel')
             foreach ($id in $newIds) {
               $pin = @($pinList | Where-Object { $_.id -eq $id })[0]
               if (-not $pin) { throw "Missing catalog pin: $id" }
@@ -349,6 +349,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw 'Second-wave local-only bundle install failed' }
             $newBins = @(
               @{ Id='7zr'; Exe='7zr.exe'; Version='26.04'; Gui=$false },
+              @{ Id='7zip'; Exe='7zFM.exe'; Gui=$true },
               @{ Id='everything'; Exe='Everything.exe'; Gui=$true },
               @{ Id='grepwin'; Exe='grepWin.exe'; Gui=$true },
               @{ Id='miller'; Exe='mlr.exe'; Version='6.22.0'; Gui=$false },
@@ -407,6 +408,27 @@ jobs:
                 Write-Host "CLI VERSION PASS: $($tool.Id) $versionOutput"
               }
             }
+            # The official 7-Zip installer was never run as executable. Its
+            # SFX payload is extracted as immutable DATA using the separately
+            # SHA-verified PortaKit-managed 7zr.exe. Test native ZIP support
+            # through full vendor 7z.exe + 7z.dll (7zr is 7z-only).
+            $fullDir = Join-Path $root '7zip'
+            foreach ($required in @('7zFM.exe', '7zG.exe', '7z.exe', '7z.dll', 'License.txt')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $fullDir $required) -PathType Leaf)) {
+                throw "Incomplete full portable 7-Zip: $required missing"
+              }
+            }
+            $fullSeven = Join-Path $fullDir '7z.exe'
+            $testFile = Join-Path $root 'offline-fixture.txt'
+            $testArchive = Join-Path $root 'offline-fixture.zip'
+            Set-Content -LiteralPath $testFile -Value 'PortaKit safe portable ZIP fixture' -Encoding ascii
+            & $fullSeven a -tzip $testArchive $testFile -y | Out-Null
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $testArchive)) {
+              throw 'Full portable 7-Zip ZIP creation failed'
+            }
+            & $fullSeven t $testArchive | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Full portable 7-Zip ZIP integrity test failed' }
+            Write-Host 'FULL 7-ZIP: ZIP create/test, GUI files present, vendor installer NOT RUN'
             $bundleHash = (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash
             python -I scripts/toolsets.py apply portable-productivity --root "$root" --yes --offline-dir "$approved"
             if ($LASTEXITCODE -ne 0 -or

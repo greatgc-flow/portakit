@@ -56,7 +56,7 @@ class GuiAcceptanceTests(unittest.TestCase):
         with mock.patch.object(gui.core, "load_catalog", return_value=self.catalog), \
              mock.patch.object(gui.core, "read_state", return_value=self.state), \
              mock.patch.object(gui, "service_status", return_value="NOT_FOUND_OR_INACCESSIBLE"), \
-             mock.patch.object(gui.sys.stdin, "isatty", return_value=tty):
+             mock.patch.object(gui.sys, "stdin", mock.Mock(isatty=lambda: tty)):
             return gui.run(args, read_input=input_fn,
                            launcher=launcher or mock.Mock())
 
@@ -157,7 +157,7 @@ class GuiAcceptanceTests(unittest.TestCase):
             link.symlink_to(d / "grepWin-x64.exe")
         except (OSError, NotImplementedError):
             self.skipTest("Windows user lacks symlink creation privilege")
-        with self.assertRaises(fixtures.pk.PortakitError):
+        with self.assertRaisesRegex(Exception, "Reparse path rejected"):
             gui.discover_binary(d, "grepwin")
 
 

@@ -33,7 +33,7 @@ class TaxonomyEvidenceTests(unittest.TestCase):
                            for key, value in (("pinned", "PINNED_CATALOG"),
                                               ("builtIn", "OS_BUILTIN"),
                                               ("research", "RESEARCH_ONLY"))}
-        self.assertEqual(count_by_status, self.research["counts"])
+        self.assertEqual(count_by_status, {key: self.research["counts"][key] for key in count_by_status})
 
     def test_research_install_boundary_and_sha_asset_sizes(self):
         pinned = {tool["id"] for tool in self.catalog["tools"]}

@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -166,8 +167,10 @@ def load_catalog(path):
             raise PortakitError("catalog", f"url: {exc}") from exc
         if not re.fullmatch(r"[a-fA-F0-9]{64}", tool["sha256"]):
             raise PortakitError("catalog", "sha256: expected 64 hex digits (placeholders are rejected)")
-        if tool["artifact"] not in ("zip", "exe"):
-            raise PortakitError("catalog", "artifact: expected zip or exe")
+        if tool["artifact"] not in ("zip", "exe", "sfx7z"):
+            raise PortakitError("catalog", "artifact: expected zip, exe or sfx7z")
+        if tool["artifact"] == "sfx7z" and tool["id"] != "7zip":
+            raise PortakitError("catalog", "sfx7z: restricted to verified 7zip catalog ID")
         dest = check_dest(tool["dest"])
         if dest.lower() in destinations:
             raise PortakitError("catalog", "dest: duplicate")
@@ -248,10 +251,136 @@ def fetch_archive(tool, target, downloader=None):
         raise PortakitError("fetch", "SHA256 mismatch; nothing installed")
 
 
+def parse_sfx_listing(output, destination):
+    """Fail-closed 7zr -slt listing parser, BEFORE touching the extraction root.
+
+    This is intentionally NOT a general-purpose 7z extractor. The official,
+    pinned Windows 7-Zip SFX archive uses a known, bounded listing grammar.
+    """
+    if not isinstance(output, str) or len(output) > 1024 * 1024:
+        raise PortakitError("archive", "sfx7z: missing or oversize listing")
+    header = re.search(r"(?m)^-{10,}\r?$", output)
+    if not header or "Type = 7z" not in output[:header.start()]:
+        raise PortakitError("archive", "sfx7z: expected SFX with embedded 7z archive")
+    entries = {}
+    total = 0
+    for piece in re.split(r"\r?\n\s*\r?\n", output[header.end():]):
+        part = dict(line.split(" = ", 1) for line in piece.splitlines()
+                    if " = " in line)
+        if not part:
+            continue
+        name, size_str = part.get("Path"), part.get("Size")
+        if not name or not size_str or not size_str.isdigit():
+            raise PortakitError("archive", "sfx7z: malformed member listing")
+        if any(ord(ch) > 127 for ch in name):
+            raise PortakitError("archive", "sfx7z: only ASCII vendor package paths supported")
+        parts = path_parts(name, "sfx member", "archive")
+        normalized = "/".join(parts)
+        safe_path(destination, normalized, "sfx member", "archive")
+        key = normalized.lower()
+        if key in entries:
+            raise PortakitError("archive", "sfx7z: duplicate case-insensitive path")
+        attributes = part.get("Attributes", "")
+        if (not attributes or "L" in attributes.upper() or
+                part.get("Encrypted") != "-" or "Symbolic Link" in part or
+                "Hard Link" in part or "Reparse" in part):
+            raise PortakitError("archive", "sfx7z: unknown/encrypted/link entry")
+        directory = "D" in attributes
+        size = int(size_str)
+        if directory and size != 0:
+            raise PortakitError("archive", "sfx7z: directory has file content")
+        total += size
+        if total > 64 * 1024 * 1024 or len(entries) >= 512:
+            raise PortakitError("archive", "sfx7z: expanded size/member limit")
+        entries[key] = (normalized, size, directory)
+    if not entries:
+        raise PortakitError("archive", "sfx7z: no members")
+    for key, (_name, _size, directory) in entries.items():
+        if any(entries.get("/".join(key.split("/")[:i]), ("", 0, True))[2] is False
+               for i in range(1, len(key.split("/")))):
+            raise PortakitError("archive", "sfx7z: file used as folder")
+    for expected in ("7z.exe", "7z.dll", "7zfm.exe", "7zg.exe", "license.txt"):
+        if expected not in entries or entries[expected][2]:
+            raise PortakitError("archive", "sfx7z: required full 7-Zip file missing: " + expected)
+    return entries
+
+
+def trusted_sfx_extractor(root):
+    """Only execute a fully-pinned, byte-reverified, PortaKit-managed 7zr.exe."""
+    root = Path(root)
+    catalog = load_catalog(DEFAULT_CATALOG)
+    if "7zr" not in catalog:
+        raise PortakitError("archive", "sfx7z: no pinned 7zr tool available")
+    pin = catalog["7zr"]
+    installed = read_state(root).get("7zr")
+    if (not isinstance(installed, dict) or
+            installed.get("version") != pin["version"] or
+            installed.get("sha256") != pin["sha256"] or
+            installed.get("dest") != pin["dest"]):
+        raise PortakitError("archive", "sfx7z: install the matching pinned 7zr first")
+    exe = safe_path(root, pin["dest"] + "/7zr.exe", "7zr executable", "archive")
+    if not exe.is_file():
+        raise PortakitError("archive", "sfx7z: missing managed 7zr.exe")
+    with exe.open("rb") as handle:
+        actual = hashlib.file_digest(handle, "sha256").hexdigest()
+    if actual != pin["sha256"]:
+        raise PortakitError("archive", "sfx7z: installed 7zr executable SHA mismatch")
+    return exe
+
+
+def extract_sfx7z(archive, destination, *, runner=subprocess.run):
+    """Unpack exact vendor Windows SFX as DATA; never launch the installer.
+
+    7zr is separately pinned and installed. Validate listing before extraction,
+    refuse special paths, verify all expanded files and total byte counts before
+    original deploy() atomically promotes the stage. No registry or GUI commands.
+    """
+    destination = Path(destination)
+    check_links(destination)
+    unpacker = trusted_sfx_extractor(destination.parent)
+    archive = Path(archive)
+    check_links(archive)
+    try:
+        info = runner([str(unpacker), "l", "-slt", str(archive)],
+                      capture_output=True, text=True, encoding="utf-8",
+                      errors="replace", timeout=30, check=False)
+        if info.returncode:
+            raise PortakitError("archive", "sfx7z: vendor archive listing failed")
+        expected = parse_sfx_listing(info.stdout, destination)
+        extraction = runner([str(unpacker), "x", "-y", "-bd",
+                             "-o" + str(destination), str(archive)],
+                            capture_output=True, text=True, encoding="utf-8",
+                            errors="replace", timeout=60, check=False)
+        if extraction.returncode:
+            raise PortakitError("archive", "sfx7z: vendor archive extraction failed")
+        observed = set()
+        for root, dirs, files in os.walk(destination, followlinks=False):
+            for entry in dirs + files:
+                actual = Path(root) / entry
+                if is_reparse(actual):
+                    raise PortakitError("archive", "sfx7z: extracted junction/symlink")
+                name = actual.relative_to(destination).as_posix()
+                safe_path(destination, name, "sfx member", "archive")
+                key = name.lower()
+                if key in observed or key not in expected:
+                    raise PortakitError("archive", "sfx7z: extra or duplicate extracted member")
+                planned, length, directory = expected[key]
+                if actual.is_dir() != directory or (not directory and actual.stat().st_size != length):
+                    raise PortakitError("archive", "sfx7z: extracted member size/type mismatch")
+                observed.add(key)
+        if observed != set(expected):
+            raise PortakitError("archive", "sfx7z: missing extracted file(s)")
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise PortakitError("archive", "sfx7z: subprocess or file validation failed: " + str(exc)) from exc
+
+
 def extract(artifact, tool, destination):
     check_links(artifact)
     check_links(destination)
     destination = Path(destination)
+    if tool["artifact"] == "sfx7z":
+        extract_sfx7z(artifact, destination)
+        return
     if tool["artifact"] == "exe":
         target = safe_path(destination, tool["id"] + ".exe", "id")
         destination.mkdir(parents=True, exist_ok=True)
@@ -578,6 +707,9 @@ def deploy(tool, root, state, downloader, update_mode, recommended=False):
     for temporary in (dl, stage):
         check_links(temporary)
     try:
+        if tool["artifact"] == "sfx7z":
+            # Refuse absent or modified prerequisite BEFORE any network download.
+            trusted_sfx_extractor(root)
         for leftover in (dl, stage):
             if os.path.lexists(leftover):
                 remove_tree(leftover)

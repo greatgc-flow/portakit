@@ -8,6 +8,8 @@ on:
       - .github/workflows/live-windows-smoke.yml
       - portakit.py
       - catalog.json
+      - toolsets.json
+      - scripts/toolsets.py
 
 permissions:
   contents: read
@@ -249,6 +251,32 @@ jobs:
             Write-Host 'Office4 independent ZIP, SHA-256, CSV and NOT_VERIFIED checks all passed'
             python -I portakit.py --root "$root" remove winmerge
             if ($LASTEXITCODE -ne 0) { throw 'WinMerge cleanup after executable smoke failed' }
+            # Real curated-profile smoke, independent of editor recommended plugins.
+            # Empty NW category must do nothing (no network install, no state).
+            $beforePlan = python -I scripts/toolsets.py plan nw --root "$root"
+            if ($LASTEXITCODE -ne 0 -or -not ($beforePlan -match 'EMPTY:')) {
+              throw "Unpinned NW category must be a zero-tool read-only plan"
+            }
+            $plan = python -I scripts/toolsets.py plan data --root "$root"
+            if ($LASTEXITCODE -ne 0 -or -not ($plan -match 'jq')) {
+              throw 'Category data must select the pinned jq tool'
+            }
+            python -I scripts/toolsets.py apply data --root "$root" --yes
+            if ($LASTEXITCODE -ne 0) { throw 'Optional pinned data toolset real install failed' }
+            if (-not (Test-Path -LiteralPath (Join-Path (Join-Path $root 'jq') 'jq.exe') -PathType Leaf)) {
+              throw 'Toolset jq executable missing'
+            }
+            $installedHash = (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash
+            python -I scripts/toolsets.py apply data --root "$root" --yes
+            if ($LASTEXITCODE -ne 0) { throw 'Toolset idempotent reapply failed' }
+            if ((Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash -ne $installedHash) {
+              throw 'Toolset reapply changed current pin state'
+            }
+            if (@(Get-ChildItem -LiteralPath (Join-Path $root '.portakit-evidence') -Filter 'toolsets-*.log').Count -lt 2) {
+              throw 'Toolset install/reapply console evidence logs missing'
+            }
+            python -I portakit.py --root "$root" remove jq
+            if ($LASTEXITCODE -ne 0) { throw 'Toolset jq cleanup failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
             if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
             Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'

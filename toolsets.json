@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "categories": [
+    {
+      "id": "common",
+      "label": "Common / 공통",
+      "description": "문서·소스 편집과 파일 비교",
+      "tools": [
+        "notepad++",
+        "winmerge"
+      ]
+    },
+    {
+      "id": "os",
+      "label": "OS / Windows",
+      "description": "파일·폴더 운영 점검; 시스템 전용 도구는 향후 추가",
+      "tools": [
+        "winmerge"
+      ]
+    },
+    {
+      "id": "nw",
+      "label": "NW / Network",
+      "description": "네트워크 진단 전용 도구는 아직 SHA 고정 검증 전",
+      "tools": []
+    },
+    {
+      "id": "dev",
+      "label": "Dev / 개발",
+      "description": "소스 편집·JSON 자동화",
+      "tools": [
+        "notepad++",
+        "jq"
+      ]
+    },
+    {
+      "id": "data",
+      "label": "Data / 로그",
+      "description": "JSON 구조 데이터와 로그 분석",
+      "tools": [
+        "jq"
+      ]
+    },
+    {
+      "id": "diag",
+      "label": "Diagnostics / 진단",
+      "description": "비교·JSON 진단 작업 보조",
+      "tools": [
+        "winmerge",
+        "jq"
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "minimal",
+      "label": "Minimal workstation",
+      "categories": [
+        "common"
+      ]
+    },
+    {
+      "id": "mes-support",
+      "label": "MES/CIM support",
+      "categories": [
+        "common",
+        "os",
+        "nw",
+        "data",
+        "diag"
+      ]
+    },
+    {
+      "id": "developer",
+      "label": "Developer",
+      "categories": [
+        "common",
+        "dev",
+        "data"
+      ]
+    },
+    {
+      "id": "all-curated",
+      "label": "All currently pinned",
+      "categories": [
+        "common",
+        "os",
+        "nw",
+        "dev",
+        "data",
+        "diag"
+      ]
+    }
+  ]
+}

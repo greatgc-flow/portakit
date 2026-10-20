@@ -77,8 +77,11 @@ def package_evidence(evidence, target, status):
     }
     # ZIP and checksum sit next to (not within) EvidenceDir.
     target.parent.mkdir(parents=True, exist_ok=True)
+    created_zip = False
+    created_checksum = False
     try:
         with target.open("xb") as binary:
+            created_zip = True
             with zipfile.ZipFile(binary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
                 for name, src, _, _ in records:
                     archive.write(src, arcname=name)
@@ -86,11 +89,13 @@ def package_evidence(evidence, target, status):
                     manifest, ensure_ascii=True, indent=2) + "\n")
         sha, _ = digest_file(target)
         with checksum.open("x", encoding="utf-8") as text:
+            created_checksum = True
             text.write(sha + "  " + target.name + "\n")
     except BaseException:
-        # Only clean outputs that this attempt created; never remove source evidence.
-        for item in (checksum, target):
-            if item.exists():
+        # Clean ONLY paths successfully created by this process. In particular,
+        # never delete another process's ZIP after an exclusive-create race.
+        for item, owned in ((checksum, created_checksum), (target, created_zip)):
+            if owned and item.exists():
                 item.unlink()
         raise
     return {"zip": str(target), "sha256": sha, "checksum": str(checksum),

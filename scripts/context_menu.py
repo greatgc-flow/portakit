@@ -66,7 +66,6 @@ def managed_executable(root, app, repo_dir):
         installed = state[app]
         dest = tool["dest"]
         if (not isinstance(installed, dict) or installed.get("dest") != dest
-                or dest not in EXES and ("/" in dest or "\\" in dest)
                 or dest != app):
             raise MenuError(app + ": managed installation destination mismatch")
     except (OSError, ValueError, KeyError, StopIteration, TypeError) as exc:
@@ -158,7 +157,11 @@ def create_menu(path, expected, registry=winreg):
 
 
 def delete_menu(path, registry=winreg):
-    registry.DeleteKey(registry.HKEY_CURRENT_USER, path + r"\command")
+    """Remove only this menu's two fixed keys, tolerating a partial create."""
+    try:
+        registry.DeleteKey(registry.HKEY_CURRENT_USER, path + r"\command")
+    except FileNotFoundError:
+        pass
     registry.DeleteKey(registry.HKEY_CURRENT_USER, path)
 
 
@@ -228,7 +231,7 @@ def perform(command, app, root, repo_dir=None, registry=winreg):
             try:
                 delete_menu(path, registry)
             except OSError:
-                pass
+                pass  # Reportable partial cleanup; never delete nonowned keys.
         raise
     return {"changed": bool(new), "items": [
         {"key": p, "state": "installed" if any(n == p for n, _ in new)

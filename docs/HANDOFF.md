@@ -74,3 +74,9 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - New optional `scripts/context_menu.py` and `scripts/ContextMenu.cmd`: reversible per-user **classic** Explorer file menu for Notepad++, file/folder compare starter for WinMerge. Distinct owned HKCU keys, no admin, no shell COM DLLs, and no changes to default install/configure/update/remove.
 - `status`, `install`, `remove` are independent from application configuration, and every call writes a console-mirrored evidence log. Registry unit mocks plus actual Windows hosted runner HKCU self-cleaning smoke are the required gates.
 - WinMerge simple one-selection menu is **not** WinMerge ShellExtension's native 2-file selection/Compare To feature. On Windows 11 classic menu, use Show more options / Shift+F10. No release until actual Windows GUI context-click acceptance where requested.
+
+## Optional toolsets and categories (2026-10-20)
+
+- `toolsets.json` is the single declarative source for **Common / OS / NW / Dev / Data / Diagnostics** membership and profile composition; no new tool URLs/pins are claimed. `scripts/toolsets.py` and `scripts/Toolsets.cmd` provide read-only `list/plan` plus explicit `apply --yes`, optional include/exclude and new-install-only `--recommended`.
+- Existing single-tool CLI and defaults remain unchanged. No automatic Npcap/driver, Explorer shell registration, global PATH, silent update, delete or bulk rollback; cross-category repeated tool IDs are installed once.
+- Dedicated `docs/TOOLSETS.md` includes current category map, sample plans, official reference links for TCPView/PsPing/Everything/Sysinternals/Wireshark and backlog gates. NW specialized tools remain pending verified immutable hashes.

@@ -4,6 +4,16 @@ Commands: `list | install ID | update ID | configure ID | remove ID`; global `--
 MVP tools: notepad++, winmerge, jq (single exe). Limits: 100 MiB download cap, reserved names (`.portakit*`, `*.old`), single-root zip flatten.
 Out of scope: download cache, automatic or silent configuration, offline bundles, doctor, pip tools, shims, general nested/plugin destinations, installed status in `list`, and force reinstall flags. Exception: `install ID --recommended` for new installs and explicit `configure ID` for existing managed installations.
 
+## Optional category/profile composition contract
+
+- Add a separate file `toolsets.json` (`schemaVersion=1`), whose `categories` list maps validated names to zero or more existing **catalog tool IDs** and whose `profiles` map names to valid category IDs. The same catalog ID can appear in multiple categories; selection resolves in order and deduplicates. No download URL, arbitrary command or shell-configuration action is ever read from this manifest.
+- Separate `scripts/toolsets.py` and `scripts/Toolsets.cmd`, not core `portakit.py` command changes. `list` displays available categories/profiles; `plan CATEGORY/PROFILE...` evaluates managed state **without creating directories, locks or logs**. `--include ID` and `--exclude ID` must name tools in the validated pinned catalog; unknown names and duplicates within each group are rejected. `--manifest` optionally supplies a validated custom selection manifest.
+- `apply CATEGORY/PROFILE... --yes` requires explicit consent and delegates to original `portakit.py --json install ID` subprocess per newly missing catalog ID, in deterministic order, using its SHA-pinned downloads and root lock. Already installed exact pins are skipped (including no silent `configure`); stale pins, unmanaged/broken destinations, backup leftovers, and reparse paths block the entire plan **before downloading**. Apply is also serialized via a separate batch lock.
+- `--recommended` on `apply` adds the existing opt-in recommended editor configuration **only when installing new editors**, never silently modifying existing ones. Nothing invokes Explorer shell integration. `plan`/ordinary core commands do not apply recommended settings.
+- Batch apply has **per-tool atomicity** and no cross-tool rollback: stop after a failure, preserve already successfully installed tools, report partial results and let rerun skip completed IDs. Removing entire categories is unsupported because `portakit.py remove` deletes the app and its local user data.
+- Displayed apply output is copied verbatim into an exclusively created UTF-8 file under `ROOT\.portakit-evidence\` (or `--log-file`). All toolset operations use the existing Windows/Python 3.11+ compatibility baseline.
+- An empty curated category such as the initially unpinned NW category must be reported transparently and never trigger an unauthorized download, implicit network scan, Npcap driver install, or placeholder binary.
+
 ## Optional Explorer context menu (separate script contract)
 
 - Implementation: `scripts/context_menu.py`, Windows / Python 3.11+ standard library (`winreg`). The PortaKit core CLI and its JSON contract, state format, install/configure/update/remove semantics and no-registry default **do not change**.

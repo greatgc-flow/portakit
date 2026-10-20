@@ -14,6 +14,21 @@ python -I portakit.py remove jq
 
 The default root is `portable`, relative to the current directory. No PATH edits, no shims.
 
+## Optional categorized toolsets
+
+Toolsets are an **opt-in composition layer**, not a change to default installation. `toolsets.json` groups the existing SHA-pinned catalog into **Common, OS, NW, Development, Data and Diagnostics** and profiles including `minimal`, `mes-support` and `developer`. The same tool can belong to multiple categories but is only installed once. Network-specific binaries are currently **backlog candidates, not verified installs**.
+
+```powershell
+.\scripts\Toolsets.cmd list
+.\scripts\Toolsets.cmd plan mes-support
+.\scripts\Toolsets.cmd plan common nw --include jq --exclude winmerge
+.\scripts\Toolsets.cmd apply mes-support --yes
+# Optional recommended editor plugins/settings for NEW installs only:
+.\scripts\Toolsets.cmd apply developer --yes --recommended
+```
+
+`plan` never writes or downloads. `apply --yes` installs missing catalog-pinned apps only, skips already installed ones, refuses stale/unmanaged destinations (no silent updates), never touches right-click registry menus, and records console-equivalent logs. Existing core commands remain unchanged. See the [toolset design, category review and backlog](docs/TOOLSETS.md).
+
 ## Commands
 
 `list | install ID | update ID | configure ID | remove ID`. Global flags: `--json`, `--root DIR`, `-h/--help` (human text, exit 0, never an envelope).

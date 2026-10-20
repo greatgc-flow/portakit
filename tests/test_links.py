@@ -30,6 +30,22 @@ class ExtractTests(fixtures.ExtractWorkspace):
             self.assertFalse(self.root.exists())
 
 
+class PluginPreservationLinkTests(fixtures.InstallWorkspace):
+    def test_user_plugin_junction_blocks_update_without_following_target(self):
+        old_state = self.installed()
+        outside = self.base / "outside"
+        outside.mkdir()
+        (outside / "keep.txt").write_text("untouched")
+        (self.root / "demo/plugins").mkdir()
+        self.junction(self.root / "demo/plugins/External", outside)
+        new, dl = self.package("2", preserveMissingOnUpdate=["plugins"])
+        with self.assertRaisesRegex(pk.PortakitError, "Reparse"):
+            pk.update(new, self.root, dl)
+        self.assertEqual(self.state_bytes(), old_state)
+        self.assertEqual((outside / "keep.txt").read_text(), "untouched")
+        self.assertEqual((self.root / "demo/demo.exe").read_bytes(), b"1")
+
+
 class PathSafetyTests(fixtures.Workspace):
     def test_existing_reparse_parent_rejected_even_inside_root(self):
         parent = self.root / "alias"

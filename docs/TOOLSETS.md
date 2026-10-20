@@ -91,3 +91,7 @@ The config is versioned `toolsets.json`. `scripts/toolsets.py` remains standard-
 - Windows CI must validate catalog hashes, exact-one primary domains, frozen legacy selection, idempotence/empty-plan/unknown-ID failures and **real ZIP download → SHA-256 → extraction → version** for the new pinned subset. Offline client end-to-end approval remains separate from CI.
 
 For 30 historically assessed desktop-oriented tools see [corporate closed-network TOP 30](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md). For future release gates see [BACKLOG](BACKLOG.md) and [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md).
+
+### Upstream sd embedded-version discrepancy (not hidden)
+
+During the genuine Windows x64 CI run, the official GitHub **sd v1.1.0 ZIP** (pinned archive SHA-256 `59837c2e...`) executed successfully, but `sd.exe --version` printed **sd 1.0.0**. This is **not** evidence that the binary belongs to a different download—the archive digest matched the recorded vendor release—but it does mean self-reported version parity is unproven. The Windows CI explicitly checks `1.0.0` for this particular pinned artifact and warns on the mismatch; all 7 other new tools must match their released version. Investigate vendor packaging before calling the embedded version verified or upgrading this pin.

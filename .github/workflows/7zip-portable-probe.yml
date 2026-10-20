@@ -1,0 +1,52 @@
+name: Probe official 7-Zip SFX portability
+on:
+  pull_request:
+    paths:
+      - .github/workflows/7zip-portable-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Inspect hash-pinned 7-Zip SFX without running installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $work = Join-Path $env:RUNNER_TEMP '7zip-verified-sfx-probe'
+          New-Item -ItemType Directory -Path $work -Force | Out-Null
+          $base = 'https://github.com/ip7z/7zip/releases/download/26.04/'
+          $assets = @(
+            @{ File='7zr.exe'; Sha='256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282' },
+            @{ File='7z2604-x64.exe'; Sha='d54bf805f9f3704d1e8db2fa3498ae7ef2df0312b40b558e7c71c734430a665d' },
+            @{ File='7z2604-extra.7z'; Sha='dc4b11d3399db18b063630137145f5585d8f7ac847bf3639bd1185d7d1f7cee0' }
+          )
+          foreach ($asset in $assets) {
+            $target = Join-Path $work $asset.File
+            Invoke-WebRequest -Uri ($base + $asset.File) -OutFile $target -UseBasicParsing
+            if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() -ne $asset.Sha) {
+              throw "Upstream SHA mismatch: $($asset.File)"
+            }
+            Write-Host "OFFICIAL SHA PASS $($asset.File)"
+          }
+          $exe = Join-Path $work '7zr.exe'
+          $installer = Join-Path $work '7z2604-x64.exe'
+          $extra = Join-Path $work '7z2604-extra.7z'
+          Write-Host 'SFX LIST PROBE (NO INSTALLER EXECUTION):'
+          & $exe l -slt $installer | Select-Object -First 65 | Out-Host
+          Write-Host "SFX LIST EXIT: $LASTEXITCODE"
+          $dest = Join-Path $work 'extracted-sfx'
+          New-Item -ItemType Directory -Path $dest | Out-Null
+          & $exe x -y "-o$dest" $installer | Select-Object -Last 28 | Out-Host
+          Write-Host "SFX EXTRACT EXIT: $LASTEXITCODE"
+          Get-ChildItem -LiteralPath $dest -File -Recurse | Select-Object -First 50 -ExpandProperty Name
+          Write-Host 'EXTRA PACKAGE LIST:'
+          & $exe l -slt $extra | Select-Object -First 35 | Out-Host
+          if (-not (Test-Path -LiteralPath (Join-Path $dest '7zFM.exe'))) {
+            Write-Host 'No 7zFM.exe at root after SFX extraction, may need flatten or different approach.'
+          }

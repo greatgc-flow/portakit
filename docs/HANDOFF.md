@@ -1,6 +1,6 @@
 # Open work
 
-Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md); the implementation and original test suite have not been expanded by the release-readiness work.
+Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optional recommended profile adds new behavior without changing ordinary install/update/remove semantics.
 
 ## Verification and release
 

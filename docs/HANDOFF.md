@@ -14,6 +14,12 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md); the impleme
 - [#169](https://github.com/greatgc-flow/peerhub/issues/169) and [#174](https://github.com/greatgc-flow/peerhub/issues/174) are also closed. Closure is **not** independent evidence of end-to-end resolution; check PeerHub itself before asserting so.
 - Previous direct ag review of PortaKit: spot checks reported 7/7 nonempty on PeerHub 0.21.1 (recorded in the earlier handoff). This is not equivalent to a full Windows integration test.
 
+## Plugin preservation work (2026-10-20)
+
+- Additional Notepad++ and WinMerge plugins are **not** downloaded or installed by PortaKit. Only the plugins bundled in the pinned archives install by default.
+- The proposed opt-in `preserveMissingOnUpdate` retains user-added plugin files on updates without replacing files shipped by the new application version; Notepad++ `plugins/Config` is no longer blindly copied wholesale, to prevent overwriting the vendor plugin list DLL.
+- Verify this behavior in Windows CI and on a real version-change update before treating it as release-ready. The automatic live-smoke PR check tests pinned archives, not a real version change.
+
 ## Optional future scope (not required for this gate)
 
 - Expand the catalog after verifying every new pin and source.

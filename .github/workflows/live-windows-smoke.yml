@@ -279,14 +279,14 @@ jobs:
             # This is an isolated runner root. Every ZIP passes the original
             # SHA-256 validation, safe extraction and executable --version check.
             $tiny = @(
-              @{ Id = 'ripgrep'; Exe = 'rg.exe' },
-              @{ Id = 'fd'; Exe = 'fd.exe' },
-              @{ Id = 'fzf'; Exe = 'fzf.exe' },
-              @{ Id = 'bat'; Exe = 'bat.exe' },
-              @{ Id = 'sd'; Exe = 'sd.exe' },
-              @{ Id = 'yq'; Exe = 'yq_windows_amd64.exe' },
-              @{ Id = 'delta'; Exe = 'delta.exe' },
-              @{ Id = 'hyperfine'; Exe = 'hyperfine.exe' }
+              @{ Id = 'ripgrep'; Exe = 'rg.exe'; ExpectedVersion = '15.2.0' },
+              @{ Id = 'fd'; Exe = 'fd.exe'; ExpectedVersion = '10.5.0' },
+              @{ Id = 'fzf'; Exe = 'fzf.exe'; ExpectedVersion = '0.74.5' },
+              @{ Id = 'bat'; Exe = 'bat.exe'; ExpectedVersion = '0.26.1' },
+              @{ Id = 'sd'; Exe = 'sd.exe'; ExpectedVersion = '1.0.0' },
+              @{ Id = 'yq'; Exe = 'yq_windows_amd64.exe'; ExpectedVersion = '4.54.1' },
+              @{ Id = 'delta'; Exe = 'delta.exe'; ExpectedVersion = '0.20.1' },
+              @{ Id = 'hyperfine'; Exe = 'hyperfine.exe'; ExpectedVersion = '2.0.0' }
             )
             $lightPlan = python -I scripts/toolsets.py plan lightweight --root "$root"
             if ($LASTEXITCODE -ne 0 -or @($lightPlan | Select-String 'install').Count -lt 8) {
@@ -304,7 +304,17 @@ jobs:
               if ($LASTEXITCODE -ne 0 -or -not $output) {
                 throw "Version smoke failed: $($tool.Id) / $($tool.Exe)"
               }
-              Write-Host "PINNED SHA + OFFLINE EXECUTABLE PASS: $($tool.Id): $output"
+              $observedVersion = (($output | Out-String).Trim())
+              if (-not $observedVersion.Contains($tool.ExpectedVersion)) {
+                throw "Version mismatch for $($tool.Id): expected $($tool.ExpectedVersion), observed $observedVersion"
+              }
+              if ($tool.Id -eq 'sd') {
+                # Vendor GitHub release v1.1.0 ZIP (exact SHA pinned) embeds
+                # sd.exe reporting 1.0.0. This is an explicit upstream
+                # discrepancy, not an assertion of matching semantic versions.
+                Write-Warning 'sd upstream v1.1.0 ZIP reports sd 1.0.0; flagged for vendor follow-up'
+              }
+              Write-Host "PINNED SHA + OFFLINE EXECUTABLE PASS: $($tool.Id): $observedVersion"
             }
             $hashBefore = (Get-FileHash -LiteralPath (Join-Path $root '.portakit-state.json') -Algorithm SHA256).Hash
             python -I scripts/toolsets.py apply lightweight --root "$root" --yes

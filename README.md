@@ -76,6 +76,12 @@ python -I portakit.py configure winmerge
 - Downloads are pinned and verified **before** staging is committed. Any plugin failure aborts the new installation, leaves no managed destination/state entry, and cleans temporary files. Existing files are not adopted or overwritten.
 - Profiles seed new installations, or are applied explicitly with `configure ID` to an existing managed installation. Updates retain the config and extra plugin files per the existing preservation rules. `remove` deletes all managed data, including added plugins and settings. Stop the editor before updating.
 
+## WinMerge executable and Office acceptance
+
+The Windows live workflow now **actually launches WinMergeU.exe** on synthetic identical/different text files, checks exit codes 0/1 and HTML report generation, and uploads its console transcript and reports as an Actions artifact. This verifies the executable, not Microsoft Office integration.
+
+For `.xlsx` / `.docx` / `.pptx` / `.vsdx` comparison, run the evidence-producing [WinMerge Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md) on an interactive Windows PC with the corresponding licensed Office app. The PS2/5-compatible scripts accept a new isolated evidence directory and never install Office or touch real documents. Missing Office is recorded as **NOT VERIFIED**, not PASS. Actual GUI behavior needs a separate human check.
+
 ## Verification and releases
 
 Pull requests and `main` run the [Windows regression workflow](.github/workflows/windows-tests.yml) on Python 3.11 and 3.14. It uses mocks (no real app downloads). Before publishing, follow the [manual release acceptance checklist](docs/RELEASE_CHECKLIST.md), including isolated live downloads and full catalog verification. CI does not publish releases.

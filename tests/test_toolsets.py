@@ -153,6 +153,17 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(result["failed"], "winmerge")
         self.assertIn("PARTIAL:", log.read_text(encoding="utf-8"))
 
+    def test_empty_nw_apply_is_pure_no_op(self):
+        p = self.plan(["nw"])
+        p.update(include=[], exclude=[], manifest=self.manifest)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            result = toolsets.apply(p, False, self.root / "should-not-exist.log",
+                                    runner=mock.Mock(side_effect=AssertionError("unexpected install")))
+        self.assertEqual(result, {"installed": [], "skipped": [], "failed": None})
+        self.assertFalse(self.root.exists())
+        self.assertIn("NO_OP", out.getvalue())
+
     def test_command_list_plan_and_apply_consent(self):
         with contextlib.redirect_stdout(io.StringIO()) as output:
             self.assertEqual(toolsets.main(["list"]), 0)

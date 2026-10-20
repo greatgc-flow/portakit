@@ -148,7 +148,7 @@ class ToolsetTests(unittest.TestCase):
         path.write_text(json.dumps(data))
         with self.assertRaisesRegex(toolsets.ToolsetError, "unknown pinned"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
-        data["categories"][0]["tools"][-1] = "notepad++"
+        data["categories"][0]["tools"][-1] = "winmerge"
         path.write_text(json.dumps(data))
         with self.assertRaisesRegex(toolsets.ToolsetError, "duplicate member"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))

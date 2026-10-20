@@ -284,7 +284,7 @@ jobs:
               @{ Id = 'fzf'; Exe = 'fzf.exe' },
               @{ Id = 'bat'; Exe = 'bat.exe' },
               @{ Id = 'sd'; Exe = 'sd.exe' },
-              @{ Id = 'yq'; Exe = 'yq.exe' },
+              @{ Id = 'yq'; Exe = 'yq_windows_amd64.exe' },
               @{ Id = 'delta'; Exe = 'delta.exe' },
               @{ Id = 'hyperfine'; Exe = 'hyperfine.exe' }
             )

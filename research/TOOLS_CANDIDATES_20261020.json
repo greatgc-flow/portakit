@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-10-20",
+  "asOf": "2026-10-21",
   "classification": "one primary domain for each unique tool; profiles remain cross-domain",
   "counts": {
     "total": 107,
-    "pinned": 11,
+    "pinned": 15,
     "builtIn": 27,
-    "research": 69
+    "research": 65
   },
-  "footprintContract": "Only numeric compressed bytes are verified official GitHub release asset metadata for 8 newly pinned ZIPs; NOT_MEASURED is never treated as small. Check extracted bytes and actual installed footprint in Windows CI.",
+  "footprintContract": "verifiedCompressedBytes is present only for the original eight ZIP files tested in PR#14; additional vendor release size evidence is tracked separately; null is NOT a claim of tiny size.",
   "licensingContract": "No automatic downloading or packaging of research tools. Free use, internal redistribution and corporate OSS/EDR approval are separate per-vendor gates.",
   "tools": [
     {
@@ -80,11 +80,11 @@
       "workflow": "indexed file search; indexing privileges",
       "form": "review-zip",
       "priority": "P0",
-      "admission": "RESEARCH_ONLY",
+      "admission": "PINNED_CATALOG",
       "verifiedCompressedBytes": null,
       "sizeMethod": "NOT_MEASURED",
       "corporateApproval": "REQUIRED",
-      "caveat": "Review offline operation and license before admission"
+      "caveat": "Installing ZIP only is nonprivileged; launching may offer Everything Service, UAC, indexing, update checks and HTTP/ETP features. DO NOT enable without IT authorization"
     },
     {
       "id": "double-commander",
@@ -245,11 +245,11 @@
       "workflow": "GUI grep/find and replace",
       "form": "review-exe",
       "priority": "P1",
-      "admission": "RESEARCH_ONLY",
+      "admission": "PINNED_CATALOG",
       "verifiedCompressedBytes": null,
       "sizeMethod": "NOT_MEASURED",
       "corporateApproval": "REQUIRED",
-      "caveat": "Review offline operation and license before admission"
+      "caveat": "GUI search/replace may modify files: perform read-only search first"
     },
     {
       "id": "klogg",
@@ -395,11 +395,11 @@
       "workflow": "JSON XML YAML TOML CSV selectors",
       "form": "review-exe",
       "priority": "P1",
-      "admission": "RESEARCH_ONLY",
+      "admission": "PINNED_CATALOG",
       "verifiedCompressedBytes": null,
       "sizeMethod": "NOT_MEASURED",
       "corporateApproval": "REQUIRED",
-      "caveat": "Review offline operation and license before admission"
+      "caveat": "CLI JSON/YAML/XML, confirm source is not modified by option"
     },
     {
       "id": "miller",
@@ -410,11 +410,11 @@
       "workflow": "CSV TSV JSON record pipeline",
       "form": "review-zip",
       "priority": "P1",
-      "admission": "RESEARCH_ONLY",
+      "admission": "PINNED_CATALOG",
       "verifiedCompressedBytes": null,
       "sizeMethod": "NOT_MEASURED",
       "corporateApproval": "REQUIRED",
-      "caveat": "Review offline operation and license before admission"
+      "caveat": "CLI must not overwrite original CSV logs unless explicitly requested"
     },
     {
       "id": "csvtk",

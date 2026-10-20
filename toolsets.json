@@ -11,7 +11,8 @@
         "fd",
         "fzf",
         "7zr",
-        "everything"
+        "everything",
+        "7zip"
       ]
     },
     {
@@ -218,6 +219,7 @@
         "everything",
         "grepwin",
         "7zr",
+        "7zip",
         "miller",
         "dasel"
       ]

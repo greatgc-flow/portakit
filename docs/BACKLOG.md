@@ -43,10 +43,16 @@ Details and official reference links: [TOOLSETS](TOOLSETS.md).
 
 ## Closed-network second-wave outstanding items — 2026-10-21
 
-- **FULL 7-Zip** (P1): do not confuse new minimal `7zr.exe` (7z-only) with complete `7z.exe + 7z.dll`/7-Zip GUI. Current pinned installer accepts ZIP/EXE, while upstream official Extra is `.7z`; support safely authenticated `.7z` extraction or vetted ZIP package before full admission. Verify GUI/context-menu, no implicit associations/registry, legal notices.
+- **Full 7-Zip GUI user-workstation acceptance** (P1): the **complete official 7-Zip 26.04 is now pinned** and uses validated SFX-as-DATA extraction via the trusted managed 7zr, never launches installer. Remaining: manual 7zFM GUI Add/Extract/Open, Unicode paths, HKCU context-menu *opt-in only*, no unintended default file associations or registry writes.
 - **Everything service/index and privacy** (P1): officially permissive desktop software, portable ZIP installed without registry; actual first launch may offer NTFS service, indexing via admin, update checks, HTTP/ETP configuration, index-file user permissions. Never auto-launch in CI. Validate on non-production client with *service disabled + folder-only indexing* profile and document performance/privilege trade-off; no default service or full drive index on MES servers.
 - **grepWin** (P1): real Windows Explorer GUI search and replace *read-only search first*, case/encoding/large log and portable settings write footprint. Add optional shell integration only after owned-HKCU collision-safe test (not default).
 - **Miller / dasel** (P1): fixture-based real transformations and log encoding tests, check NUL/malformed CSV/YAML/JSON and no in-place source modifications. 
 - **Offline vendor intake** (P1): review manifest-driven export with exact official URLs, local SHA, file size, signature, EDR/OSS approval evidence. Validate source archives without network on disconnected worker; currently user must obtain original vendor files on an approved connected machine. Offline recommended Notepad++ plugin installer is not implemented; reject instead of network fallback.
 - **License review** (P1): original vendor binaries are downloaded by the user from official sources; source-only Git repo contains no vendor binaries. Everything desktop license includes notice conditions. Run internal corporate OSS/EULA/security approval before deployment; no automatic release.
 - **Prior unchanged:** actual Office4 Word/Excel/PowerPoint/Visio COM GUI comparisons on licensed Windows, advanced WinMerge two-item native ShellExtension, and `sd` pinned v1.1.0 archive containing executable self-report v1.0.0 remain blocked/backlog.
+
+## Next cross-component verification
+
+- Validate real full 7-Zip SFX extraction under an approved offline workstation (not only hosted CI). Verify `7zFM.exe` opens without admin, actually adds/extracts ZIP/7z, configuration stays local, Win11 classic right-click remains unchanged until separate optional HKCU integration approved.
+- Everything desktop: first-run folder-only indexing without service/UAC as **option**, metadata/file path privacy and manual UI. Do not autoenable NTFS service.
+- grepWin portable: read-only regex search against UTF-8/UTF-16 and log-volume fixture, verify application UI and replace operation opt-in, no shell association by default.

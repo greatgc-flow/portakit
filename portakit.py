@@ -120,13 +120,19 @@ def load_catalog(path):
         dest = check_dest(tool["dest"])
         if dest.lower() in destinations:
             raise PortakitError("catalog", "dest: duplicate")
+        extras = tool.get("preserveMissingOnUpdate", [])
+        if not isinstance(extras, list):
+            raise PortakitError("catalog", "preserveMissingOnUpdate: expected a list")
+        for item in extras:
+            path_parts(item, "preserveMissingOnUpdate")
         preserve = tool.get("preserveOnUpdate", [])
         if not isinstance(preserve, list):
             raise PortakitError("catalog", "preserveOnUpdate: expected a list")
         for item in preserve:
             path_parts(item, "preserveOnUpdate")
         destinations.add(dest.lower())
-        result[tool["id"]] = dict(tool, sha256=tool["sha256"].lower(), preserveOnUpdate=preserve)
+        result[tool["id"]] = dict(tool, sha256=tool["sha256"].lower(),
+                                  preserveOnUpdate=preserve, preserveMissingOnUpdate=extras)
     return result
 
 
@@ -349,6 +355,34 @@ def preserve_paths(tool, source, stage):
             shutil.copy2(original, target)
 
 
+def preserve_missing_paths(tool, source, stage):
+    """Keep user-added files under nominated directories; packaged paths take priority."""
+    def merge_missing(old, new):
+        for item in old.iterdir():
+            target = new / item.name
+            if os.path.lexists(target):
+                if item.is_dir() and target.is_dir():
+                    merge_missing(item, target)
+                continue  # Never replace a packaged file, including bundled plugin binaries.
+            if item.is_dir():
+                shutil.copytree(item, target)
+            else:
+                shutil.copy2(item, target)
+
+    for relative in tool.get("preserveMissingOnUpdate", []):
+        original = safe_path(source, relative, "preserveMissingOnUpdate", "state")
+        if not os.path.lexists(original):
+            continue
+        reject_links(original)
+        if not original.is_dir():
+            raise PortakitError("state", f"preserveMissingOnUpdate: {original} is not a directory")
+        target = safe_path(stage, relative, "preserveMissingOnUpdate", "state")
+        if os.path.lexists(target) and not target.is_dir():
+            continue
+        target.mkdir(parents=True, exist_ok=True)
+        merge_missing(original, target)
+
+
 def rename(source, target):
     """os.rename only: an existing target makes it fail instead of being replaced."""
     try:
@@ -397,6 +431,7 @@ def deploy(tool, root, state, downloader, update_mode):
         extract(dl, tool, stage)
         if update_mode:
             preserve_paths(tool, dest, stage)
+            preserve_missing_paths(tool, dest, stage)
         if os.path.lexists(dest):
             rename(dest, old)
             moved_old = True

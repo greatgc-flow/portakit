@@ -98,7 +98,7 @@ During the genuine Windows x64 CI run, the official GitHub **sd v1.1.0 ZIP** (pi
 
 ## Phase 2 — 2026-10-21 small verified pins and true disconnected installation
 
-**Five fixed-version packages** appended without changing the original 11 pins. Directly installable IDs = **16**. Research register = **108 unique entries (16 pinned / 27 Windows built-ins / 65 research-only)**.
+**Five fixed-version packages** appended without changing the original 11 pins. At that phase directly installable IDs = **16**. Current after full 7-Zip admission: **17 pinned**. Research register = **108 unique entries (17 pinned / 27 Windows built-ins / 64 research-only)**.
 
 | Tool | Official vendor asset and size metadata | Pinned SHA provenance | Practical guardrail |
 | --- | --- | --- | --- |
@@ -128,4 +128,14 @@ For a group of missing tools, `--offline-dir` expects the **original URL basenam
 
 `--archive` is supported for the core `install` and `update` verbs, never for `list/configure/remove`. `--recommended` cannot be combined with `--archive` and group `--offline-dir` because Notepad++ optional plugin assets are separate downloads; no hidden network fallback. **No default menu/registry, PATH or Windows services changes.** For Everything only, subsequent *human GUI launch* needs special review: manual folder indexing can avoid installing the NTFS service but uses different performance characteristics; never default to service/HTTP/FTP features.
 
-**Limitations:** full 7-Zip GUI is not yet supported, since the latest vendor `extra.7z` package requires a specifically reviewed extraction stage. 7zr.exe only supports 7z archives. Microsoft Sysinternals and packet capture drivers remain separate permissions and license review items. Release gate includes Windows CI and company workstation manual acceptance, not publication automatically.
+**Update 2026-10-21:** Full official 7-Zip GUI is now installed as a separate **optional** `7zip` ID using the verified upstream x64 SFX *without executing the installer*. Its `7zFM.exe` was statically checked; interactive GUI acceptance is still outstanding. 7zr.exe only supports 7z archives. Microsoft Sysinternals and packet capture drivers remain separate permissions and license review items. Release gate includes Windows CI and company workstation manual acceptance, not publication automatically.
+
+## 2026-10-21 full official 7-Zip opt-in admission
+
+- **Official x64 vendor asset:** `https://github.com/ip7z/7zip/releases/download/26.04/7z2604-x64.exe`, **1,664,082 bytes**, vendor-published SHA-256 `d54bf805f9f3704d1e8db2fa3498ae7ef2df0312b40b558e7c71c734430a665d`.
+- **Proven from real Windows inspection:** file is a self-extracting 7z archive with 107 entries (~5.92 MB unpacked), includes `7zFM.exe`, `7zG.exe`, `7z.exe`, `7z.dll` and `License.txt`. **Never launch this executable**; only `7zr.exe l -slt` and `7zr.exe x` read its archive DATA.
+- **Prerequisite:** a separately PortaKit-managed `7zr` 26.04 with exact *state pin and executable SHA-256*; reject missing, modified or downgraded prereq **before downloading** installer. `portable-productivity` profile and `files` primary domain order `7zr` before `7zip`. Installing `7zip` as a single tool without `7zr` must fail closed.
+- **Extraction safety:** only pinned `id=7zip` may use artifact type `sfx7z`; parse listing and limit 512 members / 64 MiB expanded data; reject traversal, absolute/ADS/device names, path collisions, links/reparse, encryption and special types. After extraction recursively verify every exact declared file size and type, then use original atomic move/rollback. No EXE installer or `Uninstall.exe` is executed.
+- **Run:** `python -I portakit.py install 7zr`, then `python -I portakit.py install 7zip`. For offline imports, pass the two exact original assets through `--archive` or select the approved `portable-productivity` profile with `--offline-dir`.
+- **GUI acceptance caveat:** existence/PE verification of `7zFM.exe` is NOT evidence of interactive GUI success. Hosted Windows CI additionally exercises **full 7z.exe ZIP create/test** (7zr-only is different), no actual user-window UI, no registry or service changes. User workstation manual review remains a release gate.
+- **Status:** catalog **17 pinned**, research ledger **108 unique (17 pinned, 27 Windows built-ins, 64 research-only)**. Complete desktop 7-Zip replaces the old *research candidate*, while small 7zr remains a separate lightweight program.

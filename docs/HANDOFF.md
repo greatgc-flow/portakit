@@ -19,6 +19,13 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - Office acceptance script `-ProbeOnly` checks only COM registration for Excel, Word, PowerPoint and Visio without spawning Office processes or touching production documents; emits four `NOT_VERIFIED` statuses to CSV and console transcript, exits 2.
 - Live Windows CI inspects bundled `.sct` extension filters and automatic selection declarations and publishes separate seven-day Office prerequisite evidence. These gates must never be mistaken for a successful COM runtime test. Separate licensed desktop and manual GUI tests are still outstanding.
 
+## Office 4 one-command local verification handoff (2026-10-20)
+
+- `scripts/Run-WinMerge-Office4.cmd` + PowerShell runner provide one-operation opt-in Office4 acceptance, with `-ProbeOnly` for non-executing COM registration. Automatically install pinned WinMerge if no managed install exists or safely configure exact-pin existing; never silently update or remove anything. Requires Python 3.11+ and Windows PowerShell 2/5 syntax.
+- `scripts/package_office_evidence.py` packages local synthetic fixtures, CSV statuses, HTML reports and transcripts into new ZIP, includes SHA-256 manifest, writes separate ZIP digest, refuses overwrites and symlinks.
+- Office comparison acceptance requires original semantic markers in HTML diff as proof of actual extracted content, besides WinMerge exit 0/1. This prevents fake passes on raw ZIP byte comparisons; only a dedicated licensed Office workstation can verify 4 actual COM integrations. Hosted CI only runs probe-only and checks NOT_VERIFIED plus ZIP checksums.
+- Results stay local; do not automatically upload or publish Office files, and do not consider missing licensed Office a pass.
+
 ## PeerHub cross-project status
 
 - [PeerHub #180](https://github.com/greatgc-flow/peerhub/issues/180) was closed 2026-10-19; it concerned in-place `pip install --target --upgrade` during an active ask on Windows and is not a PortaKit CLI failure.

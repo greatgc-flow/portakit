@@ -28,6 +28,28 @@ Reproduce locally with Windows PowerShell 2.0 or 5.x (use a disposable root and 
 
 The EvidenceDir must **not exist** before running; the script refuses to overwrite existing data.
 
+## One-command four-app acceptance and self-contained ZIP
+
+From a checkout of this repository on a dedicated Windows test desktop (PowerShell 2.x or 5.x, Python 3.11+):
+
+    scripts\Run-WinMerge-Office4.cmd -ProbeOnly
+    scripts\Run-WinMerge-Office4.cmd
+
+The first command is safe prerequisite-only inspection and returns `2` = NOT VERIFIED even if all COM ProgIDs are registered. The second runs real synthetic comparisons for **Excel, Word, PowerPoint and Visio** where installed. Close all open Office documents first because some COM servers may reuse a running Office process. Do **not** use this on production MES servers. Lack of a corresponding licensed Office app remains NOT VERIFIED, not a test pass.
+
+The runner automatically performs a pinned recommended WinMerge install if no managed installation exists, otherwise `configure winmerge` for current catalog pins; it refuses to auto-update a mismatched existing version. It never removes the installation. Optional `-Root`, `-EvidenceDir`, `-Python` and `-TimeoutSeconds` parameters are passed through the launcher. It does not alter PATH/registry or publish anything.
+
+Outputs are created only under a **new** evidence folder and adjacent files:
+
+- `office4-evidence-<unique>/` - all synthetic documents, report HTML, `results.csv`, child `console.log`, parent `runner-console.log`.
+- `office4-evidence-<unique>.zip` - self-contained copy of the above plus `manifest.json` with SHA-256 of every included file and the real exit status.
+- `office4-evidence-<unique>.zip.sha256.txt` - independent hash of the ZIP.
+- `office4-evidence-<unique>.runner.log` - additional plain-text runner transcript.
+
+The packager uses Python standard library only, refuses to overwrite existing files, and rejects evidence symlinks/junctions. Do not upload any locally generated Office files or logs publicly without inspection.
+
+**Release gate**: `0` only if both actual WinMerge comparisons (same/different) succeed and the HTML report includes distinct `BASELINE`/`DIFFERENT` content markers, not merely ZIP binary differences. Exit `1` = FAIL; exit `2` = NOT VERIFIED. Hosted CI verifies the one-run `-ProbeOnly` path with an actual ZIP/hash/manifest but cannot certify Office integration.
+
 ## Gate C0 — safe four-application prerequisite inventory
 
 Run this before Office automation on a target PC, or use the CI-hosted run's `portakit-winmerge-office-prerequisites` artifact:

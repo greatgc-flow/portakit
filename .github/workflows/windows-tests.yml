@@ -57,7 +57,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           foreach ($path in @(
             'scripts/WinMerge-RuntimeSmoke.ps1',
-            'scripts/WinMerge-OfficeAcceptance.ps1'
+            'scripts/WinMerge-OfficeAcceptance.ps1',
+            'scripts/Run-WinMerge-Office4.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -69,3 +70,10 @@ jobs:
             }
             Write-Host "PowerShell syntax OK: $path"
           }
+
+      - name: Compile Python evidence packager (no files modified)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -I -c "import ast, pathlib; ast.parse(pathlib.Path('scripts/package_office_evidence.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Evidence packager parse failed' }

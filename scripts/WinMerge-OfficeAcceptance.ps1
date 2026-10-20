@@ -27,6 +27,9 @@
 .NOTES
   Only use with disposable documents. Do not test untrusted Office files or run
   this on servers. Requires actual Office COM and an interactive session.
+  Close existing Office documents before running: some Office COM servers can
+  reuse a running process, and this test calls Quit on its automation object.
+  HTML reports must show the distinct synthetic content markers to PASS.
 #>
 param(
     [Parameter(Mandatory=$true)][string]$WinMergeExe,
@@ -151,6 +154,16 @@ function Invoke-OfficeCompare([string]$exe, [string]$left, [string]$right,
     if ((Get-Item -LiteralPath $report).Length -lt 100) {
         throw "WinMerge HTML report unexpectedly small"
     }
+    # A valid binary/ZIP comparison can also return exit 1 with an HTML report.
+    # Prove the Office unpacker actually surfaced synthetic document contents.
+    # The two tokens appear in the original Office cell/text/shape, not in file names.
+    if ($expected -eq 1) {
+        $html = [System.IO.File]::ReadAllText($report)
+        if (-not $html.Contains("BASELINE") -or -not $html.Contains("DIFFERENT")) {
+            throw "REPORT_CONTENT_NOT_EXTRACTED: Office text markers not found in HTML report"
+        }
+        Write-Host "SEMANTIC_CHECK: BASELINE and DIFFERENT visible in extracted comparison"
+    }
     return $code
 }
 
@@ -216,19 +229,20 @@ try {
         if (-not $comApp) {
             throw "Unknown Applications selection: $name"
         }
-        # Avoid claiming that missing Office or licensing is a successful test.
-        $available = $null
-        try { $available = New-Object -ComObject $comApp -ErrorAction Stop }
-        catch {
-            Write-Host ("NOT_VERIFIED " + $name + ": Office COM unavailable: " + $_.Exception.Message)
+        # Only inspect COM registration here. Construct Office once inside
+        # New-OfficePair, not twice; do not Quit a potentially shared instance
+        # merely to check whether the ProgID is registered.
+        $registered = $false
+        try {
+            $registered = ($null -ne [System.Type]::GetTypeFromProgID($comApp, $false))
+        } catch { }
+        if (-not $registered) {
+            Write-Host ("NOT_VERIFIED " + $name + ": Office COM ProgID not registered")
             $rows += New-Object PSObject -Property @{
-                Application=$name; Status="NOT_VERIFIED"; Detail="Office COM unavailable" }
+                Application=$name; Status="NOT_VERIFIED"; Detail="Office COM not registered" }
             $skipped = $true
             continue
         }
-        try { $available.Quit() } catch {}
-        Release-Com $available
-
         try {
             $pair = New-OfficePair $name $folder
             Write-Host ("GENERATED " + $pair.Left + " / " + $pair.Right)

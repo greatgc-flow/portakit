@@ -60,6 +60,12 @@ Check the manually dispatched [Windows live archive smoke](../.github/workflows/
 - Check the `portakit-winmerge-office-prerequisites` artifact contains four CSV rows (Excel/Word/PowerPoint/Visio), a console transcript and `NOT_VERIFIED` in each result. COM registration is informational only and does not establish Office readiness. Exit 2 is an expected probe result, never a test pass.
 - An Office installed/licensed on the final workstation still requires actual document generation, plugin processing and human GUI inspection.
 
+## Gate C1b: complete local evidence ZIP and semantic proof
+
+- CI runs the one-command four-app `-ProbeOnly` entry point under Windows PowerShell, requires exit 2 and a local evidence ZIP/sidecar with matching SHA-256 and a manifest explicitly reporting NOT_VERIFIED. Upload is CI-only synthetic evidence, never user data.
+- The licensed desktop acceptance run must verify distinct `BASELINE`/`DIFFERENT` markers **inside the generated HTML diff**, in addition to report existence and 0/1 exit codes. Comparing raw Office ZIP bytes is insufficient proof of plugin execution.
+- After local execution, retain the ZIP, `.sha256.txt` and outputs for all four programs. Missing Office COM or an execution error is not PASS. Keep original business documents entirely out of test scope.
+
 ## Gate C2: WinMerge executable + Office COM acceptance
 
 - Record the successful real Windows WinMergeU.exe noninteractive text comparison with both HTML reports, exit codes 0 (same) and 1 (different), and the console transcript artifact. The test runs on disposable synthetic files, never user documents.

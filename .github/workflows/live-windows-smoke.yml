@@ -96,18 +96,9 @@ jobs:
                 if ($tab.size -ne '4' -or $tab.replaceBySpace -ne 'yes') {
                   throw 'Notepad++ recommended tab settings missing'
                 }
-              }
-              else {
+              } else {
                 $ini = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
-                if ($ini -notmatch '(?im)^\s*ViewLineNumbers\s*=\s*1\s*            if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
-            Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
-          }
-          finally {
-            if (Test-Path -LiteralPath $root) {
-              Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
-            }
-          }
-) {
+                if ($ini -notmatch '(?im)^\s*ViewLineNumbers\s*=\s*1\s*$') {
                   throw 'WinMerge recommended line numbers setting missing'
                 }
               }

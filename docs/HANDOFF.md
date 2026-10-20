@@ -8,6 +8,12 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - Follow [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md) before a GitHub Release: live isolated Windows test for jq, Notepad++, and WinMerge (including actual pinned assets), failure/recovery audit, recorded evidence, and human release approval.
 - The repository is public and has no published GitHub Release at the time of this handoff. PyPI packaging is not planned for this gate; choose separately if needed.
 
+## WinMerge runtime and Office acceptance (2026-10-20)
+
+- Added scripts/WinMerge-RuntimeSmoke.ps1: real WinMergeU.exe process compares disposable identical/different synthetic text, checks 0/1 exit codes and HTML report generation, with a Windows PowerShell 2.x/5.x-compatible transcript. CI uploads the seven-day synthetic artifact. This is an executable runtime test, not Office COM certification.
+- Added scripts/WinMerge-OfficeAcceptance.ps1 + docs/WINMERGE_OFFICE_ACCEPTANCE.md for separate manual desktop COM comparison of Excel, Word, PowerPoint and Visio. Exit 2 means Office COM missing/NOT VERIFIED; reports, source fixtures, CSV and transcript are retained locally. Human GUI selection/semantic acceptance remains outstanding until actual workstation run.
+- Avoid auto-publishing releases on this evidence alone. User-specific Office COM/GUI prerequisites are unavailable on ordinary hosted CI.
+
 ## PeerHub cross-project status
 
 - [PeerHub #180](https://github.com/greatgc-flow/peerhub/issues/180) was closed 2026-10-19; it concerned in-place `pip install --target --upgrade` during an active ask on Windows and is not a PortaKit CLI failure.

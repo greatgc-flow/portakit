@@ -4,6 +4,16 @@ Commands: `list | install ID | update ID | configure ID | remove ID`; global `--
 MVP tools: notepad++, winmerge, jq (single exe). Limits: 100 MiB download cap, reserved names (`.portakit*`, `*.old`), single-root zip flatten.
 Out of scope: download cache, automatic or silent configuration, offline bundles, doctor, pip tools, shims, general nested/plugin destinations, installed status in `list`, and force reinstall flags. Exception: `install ID --recommended` for new installs and explicit `configure ID` for existing managed installations.
 
+## Optional Explorer context menu (separate script contract)
+
+- Implementation: `scripts/context_menu.py`, Windows / Python 3.11+ standard library (`winreg`). The PortaKit core CLI and its JSON contract, state format, install/configure/update/remove semantics and no-registry default **do not change**.
+- `python -I scripts/context_menu.py install|status|remove {notepad++,winmerge} [--root DIR] [--log-file PATH]` or `scripts/ContextMenu.cmd`. Only explicit `install`/`remove` mutate registry. Status reads registry and records a local console log.
+- Restrict all registry writes to `HKCU\Software\Classes\*\shell\PortaKit.NotepadPlusPlus.File`, `HKCU\Software\Classes\*\shell\PortaKit.WinMerge.File`, and `HKCU\Software\Classes\Directory\shell\PortaKit.WinMerge.Folder`, plus fixed `command` child; never write HKLM, HKCR, file associations or COM DLL registration.
+- The installation target must be a non-symlink executable inside an existing, managed root whose `dest` equals the catalog tool destination; construct quoted `"EXE" "%1"` shell command. File/folder WinMerge menu handles *one* Explorer selection; user specifies the second path in WinMerge. Multi-select and Compare To COM behavior are out of scope and tracked separately.
+- Each key uses a unique PortaKit namespaced name and exact `PortaKitOwner` value. Status reports `absent`, `owned`, `foreign` or `modified`. Install refuses any foreign/modified key and never overwrites it; repeat install with matching command is no-op. Remove deletes only matching owned keys (also when EXE no longer exists); refuses modified or foreign keys. Preflight all applicable keys before writes. A create failure triggers best-effort cleanup of only keys originally absent.
+- Console output is duplicated into a unique UTF-8 log under `ROOT\.portakit-evidence\` or the explicit `--log-file`. The log is created exclusively and never overwritten. No automatic menu action occurs on regular app installation or removal.
+- Windows 11 classic menu may need Show More Options / Shift+F10. A moved portable root invalidates hard-coded absolute menu paths; unregister before moving/re-register afterward. User must opt in and can reverse any time.
+
 ## 0. Opt-in recommended installation
 
 - Optional global `--recommended` is valid only for `install ID`; all other commands return usage 1. `configure ID` explicitly applies recommendations without the flag. When absent, all original behavior remains unchanged; state schema and result envelopes are unchanged.

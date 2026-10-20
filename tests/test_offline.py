@@ -125,7 +125,10 @@ class ProfileOfflineTests(unittest.TestCase):
             link.symlink_to(real)
         except (OSError, NotImplementedError):
             self.skipTest("Symlink creation forbidden")
-        with self.assertRaises(CORE.PortakitError):
+        # The core module is imported twice (standalone test harness and toolsets),
+        # so their PortakitError class identities differ; assert the safety
+        # failure contract, not incidental import-object identity.
+        with self.assertRaisesRegex(Exception, "Reparse path rejected"):
             self.verify()
 
     def test_reject_oversize_file_using_limit_override(self):

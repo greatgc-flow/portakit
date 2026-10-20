@@ -174,7 +174,7 @@ try {
     Write-Host "EVIDENCE: $outDir"
     Write-Host "WARNING: requires a desktop and installed/licensed Microsoft Office"
     if ($ProbeOnly) {
-        Write-Host "MODE: PREREQUISITE PROBE ONLY — NO Office COM execution"
+        Write-Host "MODE: PREREQUISITE PROBE ONLY - NO Office COM execution"
         foreach ($name in $Applications) {
             $progId = switch ($name) {
                 "Excel" { "Excel.Application" }

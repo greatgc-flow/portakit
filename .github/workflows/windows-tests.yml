@@ -80,3 +80,54 @@ jobs:
             python -I -c "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))" $path
             if ($LASTEXITCODE -ne 0) { throw "Evidence tool parse failed: $path" }
           }
+
+      - name: Ephemeral HKCU classic Explorer menu registration and removal
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP ("portakit-menu-" + [guid]::NewGuid().ToString("N"))
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          foreach ($item in @(@{Name='notepad++'; Exe='notepad++.exe'}, @{Name='winmerge'; Exe='WinMergeU.exe'})) {
+            $dir = Join-Path $root $item.Name
+            New-Item -ItemType Directory -Path $dir | Out-Null
+            [System.IO.File]::WriteAllBytes((Join-Path $dir $item.Exe), [byte[]](1,2,3))
+          }
+          $state = @{
+            'notepad++' = @{ version='CI'; dest='notepad++'; sha256=('a' * 64) }
+            'winmerge' = @{ version='CI'; dest='winmerge'; sha256=('a' * 64) }
+          } | ConvertTo-Json -Depth 4
+          [System.IO.File]::WriteAllText((Join-Path $root '.portakit-state.json'), $state)
+          try {
+            foreach ($id in @('notepad++', 'winmerge')) {
+              python -I scripts/context_menu.py install $id --root "$root"
+              if ($LASTEXITCODE -ne 0) { throw "HKCU $id shell registration failed" }
+              python -I scripts/context_menu.py install $id --root "$root"
+              if ($LASTEXITCODE -ne 0) { throw "HKCU $id idempotency failed" }
+              python -I scripts/context_menu.py status $id --root "$root"
+              if ($LASTEXITCODE -ne 0) { throw "HKCU $id status failed" }
+            }
+            $checkPaths = @(
+              'HKCU\Software\Classes\*\shell\PortaKit.NotepadPlusPlus.File\command',
+              'HKCU\Software\Classes\*\shell\PortaKit.WinMerge.File\command',
+              'HKCU\Software\Classes\Directory\shell\PortaKit.WinMerge.Folder\command'
+            )
+            foreach ($key in $checkPaths) {
+              $output = & reg.exe query $key /ve
+              if ($LASTEXITCODE -ne 0 -or -not ($output -match 'REG_SZ')) {
+                throw "Missing HKCU Explorer shell command: $key"
+              }
+            }
+            Write-Host 'All three real HKCU classic shell command keys verified'
+          }
+          finally {
+            # Best effort cleanup is intentionally limited to PortaKit-owned keys.
+            foreach ($id in @('notepad++', 'winmerge')) {
+              python -I scripts/context_menu.py remove $id --root "$root"
+              if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Unable to clean owned HKCU menu for $id on disposable CI runner"
+              }
+            }
+            if (Test-Path -LiteralPath $root) {
+              Remove-Item -LiteralPath $root -Recurse -Force
+            }
+          }

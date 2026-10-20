@@ -50,6 +50,17 @@ The packager uses Python standard library only, refuses to overwrite existing fi
 
 **Release gate**: `0` only if both actual WinMerge comparisons (same/different) succeed and the HTML report includes distinct `BASELINE`/`DIFFERENT` content markers, not merely ZIP binary differences. Exit `1` = FAIL; exit `2` = NOT VERIFIED. Hosted CI verifies the one-run `-ProbeOnly` path with an actual ZIP/hash/manifest but cannot certify Office integration.
 
+## Independent evidence verification and final PASS gate
+
+After running `scripts\Run-WinMerge-Office4.cmd`, verify the local ZIP and sidecar independently, with no Office installation required:
+
+    python -I scripts/verify_office_evidence.py --zip "office4-evidence-....zip"
+    python -I scripts/verify_office_evidence.py --zip "office4-evidence-....zip" --require-pass
+
+The first command returns zero if the ZIP, SHA-256 sidecar, manifest entries, every included file checksum, four-app CSV and every claimed successful application's synthetic semantic HTML markers are internally consistent. A result `"verified": true, "office_runtime": "NOT_VERIFIED"` **does not** mean actual Office integration passed. The second command is the strict release gate: **exit 0** for verified **four-app PASS only**, **exit 2** for valid but incomplete/failed results, **exit 1** for invalid/tampered evidence. Both scripts are read-only and Python standard-library-only. The launcher itself automatically runs the first verifier after creating the ZIP.
+
+Verification detects corrupted data, a false PASS manifest with fewer than four PASS rows, absent synthetic fixtures, missing HTML reports, or diff HTML without BASELINE/DIFFERENT evidence. It cannot prove that all embedded content was generated honestly by Office; for that, retain the original CI process logs and complete local human-in-loop GUI inspection. Do not publish any business documents or private workstation logs.
+
 ## Gate C0 — safe four-application prerequisite inventory
 
 Run this before Office automation on a target PC, or use the CI-hosted run's `portakit-winmerge-office-prerequisites` artifact:

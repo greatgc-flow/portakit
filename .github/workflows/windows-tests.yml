@@ -75,5 +75,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          python -I -c "import ast, pathlib; ast.parse(pathlib.Path('scripts/package_office_evidence.py').read_text(encoding='utf-8'))"
-          if ($LASTEXITCODE -ne 0) { throw 'Evidence packager parse failed' }
+          foreach ($path in @('scripts/package_office_evidence.py',
+                               'scripts/verify_office_evidence.py')) {
+            python -I -c "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))" $path
+            if ($LASTEXITCODE -ne 0) { throw "Evidence tool parse failed: $path" }
+          }

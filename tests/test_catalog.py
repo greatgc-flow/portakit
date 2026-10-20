@@ -19,7 +19,9 @@ class CatalogTests(fixtures.Workspace):
         path = Path(pk.__file__).with_name("catalog.json")
         raw = json.loads(path.read_text(encoding="utf-8"))
         catalog = pk.load_catalog(path)
-        self.assertEqual(set(catalog), {"notepad++", "winmerge", "jq"})
+        self.assertEqual(set(catalog), {"notepad++", "winmerge", "jq",
+                                        "ripgrep", "fd", "fzf", "bat", "sd",
+                                        "yq", "delta", "hyperfine"})
         for tool in raw["tools"]:
             with self.subTest(id=tool["id"]):
                 for removed in ("kind", "repo", "tag", "asset", "github_url", "defaultConfig"):

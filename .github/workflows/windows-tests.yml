@@ -1,0 +1,52 @@
+name: Windows tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# No write token or publishing credentials are required to run this suite.
+permissions:
+  contents: read
+
+# Superseded runs on the same branch need not consume runner time.
+concurrency:
+  group: portakit-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Windows / Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.14']
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run offline regression suite
+        run: python -I -m unittest discover -s tests -v
+
+      - name: Verify CLI and catalog envelope (no downloads)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = python -I portakit.py --json list
+          if ($LASTEXITCODE -ne 0) { throw "portakit list failed (exit $LASTEXITCODE)" }
+          $result = $output | ConvertFrom-Json
+          if (-not $result.ok -or $result.command -ne 'list' -or $result.data.items.Count -lt 3) {
+            throw 'Unexpected catalog envelope or missing catalog tools'
+          }
+          python -I portakit.py --help | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "portakit help failed (exit $LASTEXITCODE)" }

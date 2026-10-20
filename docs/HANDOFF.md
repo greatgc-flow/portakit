@@ -99,3 +99,9 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - PR #16: pinned official 7z2604-x64.exe (SHA `d54bf805f9f3704d1e8db2fa3498ae7ef2df0312b40b558e7c71c734430a665d`) is a 7z SFX carrying 107 members/5.92 MB, containing full File Manager, GUI helper, 7z.exe and 7z.dll. Installer EXE never executed.
 - SFX parser and hardened unpack via separately pinned, state-matched, byte-reverified managed 7zr.exe; fails for malicious paths, links, encrypted archives, duplicates, caps; verifies extracted members and rolls back on error. `7zip` additionally registered as primary `files` domain pin; profile prereq first. Catalog 17, research 108 (17/27/64).
 - CI gates: full ZIP creation and test with portable 7z.exe; GUI only binary presence. Manual full 7zFM GUI, Win11 context menu and Everything indexing still require workstation acceptance. No release/publish.
+
+## 2026-10-21 GUI human test and Sysinternals licensing review
+
+- New `scripts/gui_acceptance.py` and `scripts/GuiAcceptance.cmd`: safe default probe (NOT_VERIFIED), explicit `--review`, separate `--launch`, and extra `--allow-everything-first-run`; only local fixtures/evidence, no auto-registration, service, network call or GUI automation. PASS requires human typing `pass`; verified artifact status remains honest. See `docs/GUI_ACCEPTANCE_20261021.md`.
+- `research/SYSINTERNALS_NETWORK_REVIEW_20261021.json` documents TCPView 4.19 and PsPing 2.13 official pages, PsTools suite concern, Microsoft free-company-use vs non-redistribution conditions, legal/EDR/operation gates. **No Sysinternals binaries or Pins added**; 17 installable apps retained.
+- Real GUI acceptance not possible on hosted headless CI; wait for approved human workstation evidence, do not mark user-visible GUI or license gate PASS.

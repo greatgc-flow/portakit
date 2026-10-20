@@ -66,3 +66,11 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 
 - Explicit `configure notepad++` or `configure winmerge` on an already managed current-pin installation. Reuses the original binaries, validates user tree contains no links/junctions, stages a full copy, applies selected recommended settings, fills only missing SHA-verified third-party plugins, preserves unrelated data, and rolls back on failure. Second invocation is no-op.
 - Windows Python 3.11/3.14 regression tests and live Windows installed-base-then-configure verification are mandatory. No Office COM GUI acceptance is implied; licensed Office integration still needs a separate Windows desktop test.
+
+
+## Component-wide audit and optional Explorer shell entries (2026-10-20)
+
+- See [component review](COMPONENT_REVIEW_20261020.md) for tool-by-tool decisions and [backlog](BACKLOG.md) for Office4 real COM/GUI verification and optional native Windows 11/WinMerge advanced shell integration.
+- New optional `scripts/context_menu.py` and `scripts/ContextMenu.cmd`: reversible per-user **classic** Explorer file menu for Notepad++, file/folder compare starter for WinMerge. Distinct owned HKCU keys, no admin, no shell COM DLLs, and no changes to default install/configure/update/remove.
+- `status`, `install`, `remove` are independent from application configuration, and every call writes a console-mirrored evidence log. Registry unit mocks plus actual Windows hosted runner HKCU self-cleaning smoke are the required gates.
+- WinMerge simple one-selection menu is **not** WinMerge ShellExtension's native 2-file selection/Compare To feature. On Windows 11 classic menu, use Show more options / Shift+F10. No release until actual Windows GUI context-click acceptance where requested.

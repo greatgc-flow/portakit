@@ -76,6 +76,30 @@ python -I portakit.py configure winmerge
 - Downloads are pinned and verified **before** staging is committed. Any plugin failure aborts the new installation, leaves no managed destination/state entry, and cleans temporary files. Existing files are not adopted or overwritten.
 - Profiles seed new installations, or are applied explicitly with `configure ID` to an existing managed installation. Updates retain the config and extra plugin files per the existing preservation rules. `remove` deletes all managed data, including added plugins and settings. Stop the editor before updating.
 
+## Optional Windows Explorer right-click menus (current user only)
+
+All application installations remain **portable and registry-free by default**. To add a **reversible, classic** Windows Explorer context menu, use explicit opt-in from the repository directory:
+
+```powershell
+# Must have already installed the corresponding tool via PortaKit.
+python -I scripts/context_menu.py install notepad++
+python -I scripts/context_menu.py install winmerge
+# Inspect the exact HKCU menu entries before/after registration.
+python -I scripts/context_menu.py status notepad++
+python -I scripts/context_menu.py status winmerge
+# Unregister before moving your portable root or removing the app.
+python -I scripts/context_menu.py remove winmerge
+python -I scripts/context_menu.py remove notepad++
+```
+
+The equivalent simple CMD entrypoint is `scripts\ContextMenu.cmd install|status|remove notepad++|winmerge`. If PortaKit was installed under a different root, add `--root "D:\My Portable Apps"`. The script creates a unique plain-text log for each run under `ROOT\.portakit-evidence\` with the **same lines as console output**; use `--log-file PATH` to override. Commands are idempotent and **do not require administrator privileges**.
+
+Notepad++ adds **Edit with Notepad++ (PortaKit)** when right-clicking a file. WinMerge adds **Compare with WinMerge (PortaKit)** for one file or folder; WinMerge opens the selected path, and you choose the second comparison path in WinMerge. **These are not** the full vendor two-selected-items Explorer COM shell-extension commands. That advanced integration is optional backlog work, not installed here.
+
+Only unique PortaKit-owned keys under `HKEY_CURRENT_USER\Software\Classes\...\shell\` are written. Foreign/modified keys are **never overwritten or removed**, nor are file associations, PATH, COM DLLs or global registry modified. On Windows 11, this classic action may require **Show more options / Shift+F10**. After moving the portable app folder, remove the old owned shell entries and register them again at the new path. Ordinary `install`, `configure`, `update` and `remove` do not change the registry.
+
+Review: [all component decisions](docs/COMPONENT_REVIEW_20261020.md); [backlog](docs/BACKLOG.md); [official Notepad++ shell options](https://github.com/notepad-plus-plus/npp-usermanual/blob/master/content/docs/shell-extension.md); [official WinMerge Explorer integration](https://manual.winmerge.org/en/Open_paths.html).
+
 ## WinMerge executable and Office acceptance
 
 The Windows live workflow now **actually launches WinMergeU.exe** on synthetic identical/different text files, checks exit codes 0/1 and HTML report generation, and uploads its console transcript and reports as an Actions artifact. This verifies the executable, not Microsoft Office integration.

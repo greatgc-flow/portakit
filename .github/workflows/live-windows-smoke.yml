@@ -233,7 +233,20 @@ jobs:
               }
             }
             finally { $z.Dispose() }
-            Write-Host 'Office4 one-run ZIP, SHA256 manifest and NOT_VERIFIED status verified'
+            $verification = python -I scripts/verify_office_evidence.py --zip $oneRunZip
+            if ($LASTEXITCODE -ne 0) {
+              throw "Independent ZIP verification rejected Office4 evidence: $verification"
+            }
+            $verified = $verification | ConvertFrom-Json
+            if (-not $verified.verified -or
+                $verified.office_runtime -ne 'NOT_VERIFIED' -or
+                $verified.applications.Excel -ne 'NOT_VERIFIED' -or
+                $verified.applications.Word -ne 'NOT_VERIFIED' -or
+                $verified.applications.PowerPoint -ne 'NOT_VERIFIED' -or
+                $verified.applications.Visio -ne 'NOT_VERIFIED') {
+              throw 'Independent Office evidence verdict incorrect'
+            }
+            Write-Host 'Office4 independent ZIP, SHA-256, CSV and NOT_VERIFIED checks all passed'
             python -I portakit.py --root "$root" remove winmerge
             if ($LASTEXITCODE -ne 0) { throw 'WinMerge cleanup after executable smoke failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable

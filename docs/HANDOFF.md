@@ -1,6 +1,6 @@
 # Open work
 
-Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md); the implementation and original test suite have not been expanded by the release-readiness work.
+Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optional recommended profile adds new behavior without changing ordinary install/update/remove semantics.
 
 ## Verification and release
 
@@ -23,4 +23,10 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md); the impleme
 ## Optional future scope (not required for this gate)
 
 - Expand the catalog after verifying every new pin and source.
-- Deferred: config seeding, offline bundles, doctor, pip tools, shims, nested/plugin destinations and installed-state listing in `list`.
+- Deferred: offline bundles, doctor, pip tools, shims, nested/plugin destinations and installed-state listing in `list`.
+
+## Recommended setup track (2026-10-20)
+
+- Proposed `install ID --recommended` for Notepad++ and WinMerge; existing install/update/remove unchanged without flag.
+- ComparePlus 3.0.0 and JSON Tools 8.5 SHA-256 values taken from the official Notepad++ x64 Plugin List. Windows CI must confirm external archives, DLL destinations, NPP configuration and WinMerge INI before the feature is merged.
+- Live GUI plugin load and compatibility after real editor version transitions remain **manual release gates**, not implied by CLI smoke. Never advertise them as verified by file-only tests.

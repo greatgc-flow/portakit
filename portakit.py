@@ -1,6 +1,7 @@
 """Small, standard-library portable app manager for Windows."""
 
 import argparse
+import configparser
 import hashlib
 import http.client
 import json
@@ -17,6 +18,7 @@ import urllib.request
 import uuid
 import zipfile
 import zlib
+import xml.etree.ElementTree as ET
 
 
 DEFAULT_CATALOG = Path(__file__).with_name("catalog.json")
@@ -84,6 +86,43 @@ def check_dest(value, field="dest", code="catalog"):
     return name
 
 
+def validate_recommended(config):
+    if config is None:
+        return
+    if not isinstance(config, dict):
+        raise PortakitError("catalog", "recommended: expected an object")
+    if config.get("settings") not in ("notepad++-dev", "winmerge-dev"):
+        raise PortakitError("catalog", "recommended.settings: unknown profile")
+    plugins = config.get("plugins")
+    if not isinstance(plugins, list) or len(plugins) > 8:
+        raise PortakitError("catalog", "recommended.plugins: expected at most 8 plugins")
+    destinations = set()
+    for plugin in plugins:
+        if not isinstance(plugin, dict):
+            raise PortakitError("catalog", "recommended.plugins: expected objects")
+        for field in ("id", "version", "url", "sha256", "dest", "requiredFile"):
+            if not isinstance(plugin.get(field), str) or not plugin[field]:
+                raise PortakitError("catalog", f"recommended.plugins.{field}: required string")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", plugin["id"]):
+            raise PortakitError("catalog", "recommended.plugins.id: invalid")
+        parsed = urllib.parse.urlsplit(plugin["url"])
+        if (parsed.scheme != "https" or not parsed.hostname
+                or any(ch.isspace() for ch in plugin["url"])
+                or "latest" in urllib.parse.unquote(parsed.path).lower().split("/")):
+            raise PortakitError("catalog", "recommended.plugins.url: expected pinned HTTPS asset")
+        if not re.fullmatch(r"[a-fA-F0-9]{64}", plugin["sha256"]):
+            raise PortakitError("catalog", "recommended.plugins.sha256: expected 64 hex")
+        parts = path_parts(plugin["dest"], "recommended.plugins.dest")
+        if len(parts) != 2 or parts[0].lower() != "plugins":
+            raise PortakitError("catalog", "recommended.plugins.dest: expected plugins/PluginName")
+        required = path_parts(plugin["requiredFile"], "recommended.plugins.requiredFile")
+        if len(required) != 1 or not required[0].lower().endswith(".dll"):
+            raise PortakitError("catalog", "recommended.plugins.requiredFile: expected plugin DLL")
+        if parts[1].lower() in destinations:
+            raise PortakitError("catalog", "recommended.plugins.dest: duplicate destination")
+        destinations.add(parts[1].lower())
+
+
 def load_catalog(path):
     check_links(path)
     try:
@@ -130,6 +169,13 @@ def load_catalog(path):
             raise PortakitError("catalog", "preserveOnUpdate: expected a list")
         for item in preserve:
             path_parts(item, "preserveOnUpdate")
+        validate_recommended(tool.get("recommended"))
+        if tool.get("recommended"):
+            setting = tool["recommended"]["settings"]
+            if (setting == "notepad++-dev") != (tool["id"] == "notepad++"):
+                raise PortakitError("catalog", "recommended.settings: incompatible tool")
+            if setting == "winmerge-dev" and tool["id"] != "winmerge":
+                raise PortakitError("catalog", "recommended.settings: incompatible tool")
         destinations.add(dest.lower())
         result[tool["id"]] = dict(tool, sha256=tool["sha256"].lower(),
                                   preserveOnUpdate=preserve, preserveMissingOnUpdate=extras)
@@ -383,6 +429,74 @@ def preserve_missing_paths(tool, source, stage):
         merge_missing(original, target)
 
 
+def seed_recommended_settings(settings, stage):
+    """Seed only a new staged install; never change existing user config."""
+    if settings == "notepad++-dev":
+        marker = safe_path(stage, "doLocalConf.xml", "recommended.settings", "state")
+        if not marker.exists():
+            marker.touch()
+        config = safe_path(stage, "config.xml", "recommended.settings", "state")
+        try:
+            if config.exists():
+                tree = ET.parse(config)
+                root = tree.getroot()
+                if root.tag != "NotepadPlus":
+                    raise ValueError("expected NotepadPlus root")
+            else:
+                root = ET.Element("NotepadPlus")
+                tree = ET.ElementTree(root)
+            gui = root.find("GUIConfigs")
+            if gui is None:
+                gui = ET.SubElement(root, "GUIConfigs")
+            tab = next((node for node in gui.findall("GUIConfig")
+                        if node.get("name") == "TabSetting"), None)
+            if tab is None:
+                tab = ET.SubElement(gui, "GUIConfig", {"name": "TabSetting"})
+            tab.set("size", "4")
+            tab.set("replaceBySpace", "yes")
+            tree.write(config, encoding="utf-8", xml_declaration=True)
+        except (ET.ParseError, ValueError) as exc:
+            raise PortakitError("state", f"recommended.settings: bad config.xml: {exc}") from exc
+    elif settings == "winmerge-dev":
+        config = safe_path(stage, "WinMerge.ini", "recommended.settings", "state")
+        ini = configparser.ConfigParser(interpolation=None)
+        ini.optionxform = str  # Preserve WinMerge setting key case.
+        try:
+            if config.exists():
+                with config.open("r", encoding="utf-8-sig") as source:
+                    ini.read_file(source)
+        except (configparser.Error, UnicodeError) as exc:
+            raise PortakitError("state", f"recommended.settings: bad WinMerge.ini: {exc}") from exc
+        if not ini.has_section("Settings"):
+            ini.add_section("Settings")
+        ini.set("Settings", "ViewLineNumbers", "1")
+        with config.open("w", encoding="utf-8") as out:
+            ini.write(out)
+
+
+def stage_recommended(tool, stage, root, downloader):
+    config = tool.get("recommended")
+    if not config:
+        raise PortakitError("catalog", f"{tool['id']}: no recommended profile")
+    validate_recommended(config)
+    seed_recommended_settings(config["settings"], stage)
+    for index, plugin in enumerate(config["plugins"]):
+        destination = safe_path(stage, plugin["dest"], "recommended.plugins.dest", "state")
+        if os.path.lexists(destination):
+            raise PortakitError("state", f"recommended.plugins.dest: {destination} exists")
+        archive = root / f".portakit-dl-{tool['id']}-rec-{index}.tmp"
+        try:
+            fetch_archive(plugin, archive, downloader)
+            extract(archive, dict(id=plugin["id"], artifact="zip"), destination)
+            required = safe_path(destination, plugin["requiredFile"],
+                                 "recommended.plugins.requiredFile", "state")
+            if not required.is_file():
+                raise PortakitError("archive", f"recommended.plugins.requiredFile: {required} missing")
+        finally:
+            if os.path.lexists(archive):
+                remove_tree(archive)
+
+
 def rename(source, target):
     """os.rename only: an existing target makes it fail instead of being replaced."""
     try:
@@ -412,7 +526,7 @@ def check_dest_kind(dest):
         raise PortakitError("state", f"{dest} is a file or link, not a directory")
 
 
-def deploy(tool, root, state, downloader, update_mode):
+def deploy(tool, root, state, downloader, update_mode, recommended=False):
     identifier = tool["id"]
     name = tool["dest"]
     dest, old = dest_paths(root, name)
@@ -429,6 +543,8 @@ def deploy(tool, root, state, downloader, update_mode):
         fetch_archive(tool, dl, downloader)
         stage.mkdir()
         extract(dl, tool, stage)
+        if recommended:
+            stage_recommended(tool, stage, root, downloader)
         if update_mode:
             preserve_paths(tool, dest, stage)
             preserve_missing_paths(tool, dest, stage)
@@ -459,7 +575,7 @@ def deploy(tool, root, state, downloader, update_mode):
     return dict(id=identifier, version=tool["version"], dest=str(dest), changed=True)
 
 
-def install(tool, root, downloader=None, *, state=None):
+def install(tool, root, downloader=None, *, state=None, recommended=False):
     check_links(root)
     root = Path(root).resolve()
     if state is None:
@@ -475,7 +591,7 @@ def install(tool, root, downloader=None, *, state=None):
     for path in (dest, old):
         if os.path.lexists(path):
             raise PortakitError("state", f"{path} exists and is unmanaged; delete or rename it")
-    return deploy(tool, root, state, downloader, update_mode=False)
+    return deploy(tool, root, state, downloader, update_mode=False, recommended=recommended)
 
 
 def update(tool, root, downloader=None, *, state=None):
@@ -582,6 +698,9 @@ def execute(args, downloader):
         if command == "install":
             if identifier not in catalog:
                 raise PortakitError("usage", f"Unknown ID: {identifier}")
+            if args.recommended:
+                return install(catalog[identifier], root, downloader, state=state,
+                               recommended=True)
             return install(catalog[identifier], root, downloader, state=state)
         if command == "update":
             if identifier not in state:
@@ -607,6 +726,8 @@ def main(argv=None, downloader=None):
                     "  remove ID   Delete the installed folder, backup and all user data,\n"
                     "              then forget the state entry; no catalog needed.\n"
                     "install/update/remove require ID."))
+        parser.add_argument("--recommended", action="store_true",
+                            help="opt in to pinned recommended settings and plugins (install only)")
         parser.add_argument("--json", action="store_true",
                             help="emit one JSON result envelope (help stays human text)")
         parser.add_argument("--root", type=Path, default=Path("portable"), metavar="DIR",
@@ -622,6 +743,8 @@ def main(argv=None, downloader=None):
         command = args.command
         if (command == "list") != (args.id is None):
             raise PortakitError("usage", "list takes no ID; install/update/remove require ID")
+        if args.recommended and command != "install":
+            raise PortakitError("usage", "--recommended applies only to install")
         data = execute(args, downloader)
         result = dict(ok=True, command=command, data=data, error=None)
         code = 0

@@ -2,7 +2,14 @@
 Windows CLI, Python 3.11+ stdlib only, single module `portakit.py` + `catalog.json`. No JSON schemas.
 Commands: `list | install ID | update ID | remove ID`; global `--json`, `--root DIR`.
 MVP tools: notepad++, winmerge, jq (single exe). Limits: 100 MiB download cap, reserved names (`.portakit*`, `*.old`), single-root zip flatten.
-Out of scope: download cache, config seeding, offline bundles, doctor, pip tools, shims, nested/plugin destinations, installed status in `list`, and force reinstall flags.
+Out of scope: download cache, automatic or silent configuration, offline bundles, doctor, pip tools, shims, general nested/plugin destinations, installed status in `list`, and force reinstall flags. Exception: explicit `install ID --recommended` profile on new installs only.
+
+## 0. Opt-in recommended installation
+
+- Optional global `--recommended` is valid only for `install ID`; all other commands return usage 1. When absent, all original behavior remains unchanged; state schema and result envelopes are unchanged.
+- `recommended` is an optional catalog object: `{ "settings": "notepad++-dev"|"winmerge-dev", "plugins": [{ "id", "version", "url", "sha256", "dest", "requiredFile" }] }`. Validate all entries at catalog load. Plugins require pinned HTTPS URL, 64-hex SHA, destination `plugins/<name>`, and a top-level DLL file name, with at most 8 unique plugin destinations. Settings profile must match tool ID. Only shipped Notepad++ x64 profile requests external plugins; WinMerge profile seeds local INI and relies on bundled plugins. Generic package installation is not a supported feature.
+- On an opted-in `install`, download and safely unpack the normal application to a private stage. Apply recommended settings to this stage (Notepad++ portable marker, XML TabSetting 4/yes; WinMerge INI Settings/ViewLineNumbers=1), then download each pinned plugin to a private temp, enforce existing 100 MiB SHA-256 and safe ZIP rules, extract under the plugin's destination and assert `requiredFile` exists. Refuse pre-existing plugin destination; never overwrite packaged files. Commit the stage with the original two-phase rename/state process **only when all steps succeed**. Network, integrity, archive, config, or missing DLL errors abort with no managed install and temps cleaned.
+- After install, updates preserve user configuration and third-party files through the original `preserveOnUpdate` and `preserveMissingOnUpdate` semantics. No additional auto-download of third-party plugin updates. No global PATH, registry modifications or automatic plugin execution by PortaKit; the editor may load plugins on launch.
 
 ## 1. Root, layout, lock
 - `--root` default `portable`, relative to the cwd. No PATH edits, no shims. install/update/remove mkdir ROOT (parents) before locking; `list` never does.

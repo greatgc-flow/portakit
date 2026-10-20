@@ -57,7 +57,20 @@ With `--json`, stdout is exactly one object `{"ok","command","data","error"}`; `
 
 Digests: the notepad++ digest comes from the [release notes](https://github.com/notepad-plus-plus/notepad-plus-plus/releases/tag/v8.7.5), winmerge from the [Scoop manifest](https://github.com/ScoopInstaller/Extras/blob/777b50f8467b011b55f20a8790f2d8712b839663/bucket/winmerge.json) and jq from the [Scoop manifest](https://github.com/ScoopInstaller/Main/blob/da6f69ed0016a805c16d9d3d78386068a409da3a/bucket/jq.json). These are published hashes, not locally computed ones.
 
-To bump a pin, edit `version`, `url` and `sha256` together. Config seeding is not implemented (deferred).
+To bump a pin, edit `version`, `url` and `sha256` together. Configuration seeding is **opt-in** through `install ID --recommended`; no profiles apply to ordinary installations.
+
+## Recommended setup (opt-in)
+
+```powershell
+python -I portakit.py install notepad++ --recommended
+python -I portakit.py install winmerge --recommended
+```
+
+- Without `--recommended`, `install` behaves exactly as before. The flag is accepted **only by install**, not update/remove/list. Existing installations are not changed.
+- Notepad++: local portable configuration, 4-space indentation; additionally download and SHA-256 verify the **x64 ComparePlus 3.0.0** and **JSON Tools 8.5** plugin ZIPs from their pinned upstream GitHub releases. Extract into `plugins/ComparePlus` and `plugins/JsonTools`. These are executable third-party DLLs; the flag is explicit consent to running third-party plugins when the editor starts. Upstream pins are checked against the official Notepad++ x64 plugin list; upgrades require explicit catalog review.
+- WinMerge: create/update the local `WinMerge.ini` with line numbers shown; use its shipped 16 plugin files rather than duplicating third-party plugins. WinMerge may still use some Windows registry data even with an INI; this setup does **not** change file associations or add Explorer shell integrations.
+- Downloads are pinned and verified **before** staging is committed. Any plugin failure aborts the new installation, leaves no managed destination/state entry, and cleans temporary files. Existing files are not adopted or overwritten.
+- Profiles seed **only new installations**. Updates retain the config and extra plugin files per the existing preservation rules. `remove` deletes all managed data, including added plugins and settings. Stop the editor before updating.
 
 ## Verification and releases
 

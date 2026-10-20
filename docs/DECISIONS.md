@@ -6,5 +6,7 @@
 - Destinations are single folders, uniquely owned by state IDs. Never adopt unmanaged folders or follow reparse points, junctions or symlinks.
 - Mutating operations hold a root lock, discard stale temps, verify downloads before extraction, and stage before swapping. State write commits the swap; pre-commit failures roll back. Update alone recovers a lone backup; both folders require manual resolution.
 - Explicitly preserved paths override packaged files during updates. Opt-in `preserveMissingOnUpdate` merges only missing user/plugin files into the stage, leaving shipped binaries and updated plugin lists intact. Remove deletes all managed data and the backup before forgetting state; it works without a catalog.
-- JSON uses one result envelope and exit codes 0–6; help stays human text. No cache, shims, config seeding or force flag in the MVP.
+- JSON uses one result envelope and exit codes 0–6; help stays human text. No cache, shims, silent/global config seeding or force flag in the MVP; optional per-install recommended profiles require `--recommended`.
 - Behavior changes use tests first, red then green; validation is `python -I -m unittest discover -s tests`.
+
+- 2026-10-20: New opt-in `install --recommended` profile seeds minimal editor settings, validates/verifies pinned third-party Notepad++ plugin assets and stages them before atomic commit. No silent plugin install, no automatic plugin upgrades, and no external WinMerge plugin duplication. Strongly prefer catalog SHA pins over mutable/latest URLs.

@@ -100,3 +100,12 @@ In a disposable test root, install each editor *without* `--recommended`, add a 
 - Run ephemeral HKCU smoke on a disposable hosted Windows identity; verify Notepad++ file and WinMerge file/folder key values and command path quoting; uninstall all owned keys in `finally`.
 - For human acceptance, explicitly opt in, inspect Windows Explorer file and folder right-click classic menu, launch each app, and exercise removal. On Windows 11, use **Show more options / Shift+F10**. Advanced two-selected-item WinMerge extension and native modern menu are excluded.
 - Never imply regular PortaKit `install`, `configure`, `update`, or `remove` implicitly adds/removes shell integration. The menu points to an absolute path and must be manually unregistered before moving or removing its target app.
+
+## Optional toolset selection and lifecycle gate
+
+- `python -I scripts/toolsets.py list` exposes six named categories and four composed profiles sourced exclusively from `toolsets.json`. All tool IDs must exist in the separately SHA-validated catalog. Overlapping memberships resolve once.
+- `plan` must not download, write files or create ROOT/lock; verify the initially unpinned NW group reports **EMPTY** and a mixed `mes-support` selection enumerates only the three existing catalog IDs.
+- `apply` requires explicit `--yes`, installs **missing** items only, refuses pin mismatch, unmanaged folders, backups and reparse links before download; `--recommended` is separately opt-in for **new** editor installs only. Do not permit silent update, remove, registry menu changes or Windows driver/service installation.
+- Run the Windows **real pinned jq** category smoke, then reapply and verify the SHA of the managed state did not change. Check `ROOT\.portakit-evidence\toolsets-*.log` captures the complete displayed action lines. Cleanup solely test root. Partial group failure must preserve earlier successful installs.
+- Any future OS/NW candidate requires official fixed release and independent SHA-256, archive validation, privilege/driver/licence review, and new category-specific tests. Do not claim Wireshark live capture works from a portable binary without Npcap.
+

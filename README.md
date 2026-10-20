@@ -22,8 +22,29 @@ python -I portakit.py --archive "D:\Approved\grepWin-x64-2.1.12_portable.zip" in
 
 Five second-wave additions: **7zr** (very small **7z-only CLI**, *not* a substitute for 7-Zip's ZIP/GUI), **Everything Desktop** (file index/search; only install the ZIP, launching can prompt for privileged NTFS indexer service), **grepWin** (regex GUI search), **Miller** (CSV/TSV/JSON CLI), and **dasel** (cross-format structured data CLI). GUI launch and system indexing are **not** implied by installation and require separate user-workstation policy review.
 
-See [offline toolset and licensing notes](docs/TOOLSETS.md). The **full 7-Zip program** remains a candidate until its native `.7z` official package and GUI command integration are supported safely.
+See [offline toolset and licensing notes](docs/TOOLSETS.md). **Full 7-Zip 26.04 is now a separate opt-in `7zip` ID:** its official SHA-256-pinned x64 installer is **never run**, only extracted as verified 7z SFX data using the already installed/byte-verified `7zr`. The full GUI `7zFM.exe` and complete `7z.exe`+`7z.dll` are installed locally, without registering shell associations. Actual user-workstation GUI acceptance remains pending.
 
+
+## Complete 7-Zip (optional, vendor installer never launched)
+
+To get **full 7-Zip** GUI/CLI, not only the 7z-only `7zr`, install the exact official `7zr` prerequisite first. The independent `7zip` ID uses the official **26.04 x64 SFX executable as a verified archive**, not as an installer or process.
+
+```powershell
+# Installed from approved original files, fully offline:
+python -I portakit.py --archive "D:\Approved\7zr.exe" install 7zr
+python -I portakit.py --archive "D:\Approved\7z2604-x64.exe" install 7zip
+
+# Optional group includes both prerequisite and full 7-Zip in safe order:
+.\scripts\Toolsets.cmd plan portable-productivity
+.\scripts\Toolsets.cmd apply portable-productivity --yes --offline-dir "D:\Approved"
+
+# Manual launch (GUI user acceptance not automated):
+.\portable\7zip\7zFM.exe
+# Full ZIP format support:
+.\portable\7zip\7z.exe
+```
+
+The 7zip installer is **never executed**: PortaKit checks vendor SHA-256, checks the separate managed 7zr.exe's own installed SHA-256, prevalidates archive member names, case collisions, encryption/symlinks and expanded size, and only then extracts to a private stage and promotes it atomically. Its x64 GUI is not started in CI; context-menu/registry options remain separate, disabled by default.
 
 ## Quickstart
 

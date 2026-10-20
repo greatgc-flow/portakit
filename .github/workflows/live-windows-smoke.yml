@@ -97,9 +97,38 @@ jobs:
                   throw 'Notepad++ recommended tab settings missing'
                 }
               } else {
+                $required = @(
+                  'CompareMSExcelFiles.sct',
+                  'CompareMSWordFiles.sct',
+                  'CompareMSPowerPointFiles.sct',
+                  'CompareMSVisioFiles.sct'
+                )
+                foreach ($name in $required) {
+                  $path = Join-Path (Join-Path $dir 'MergePlugins') $name
+                  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                    throw "Missing bundled WinMerge Office comparison plugin: $name"
+                  }
+                }
                 $ini = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
-                if ($ini -notmatch '(?im)^\s*ViewLineNumbers\s*=\s*1\s*$') {
-                  throw 'WinMerge recommended line numbers setting missing'
+                foreach ($key in @('ViewLineNumbers','PluginsEnabled','UnpackerMode')) {
+                  if ($ini -notmatch "(?im)^\s*Settings/$key\s*=\s*1\s*$") {
+                    throw "WinMerge recommended setting missing or disabled: $key"
+                  }
+                }
+                if ($ini -notmatch '(?im)^\s*\[WinMerge\]\s*              python -I portakit.py --root "$root" remove $id
+              if ($LASTEXITCODE -ne 0) { throw "$id recommended remove failed" }
+            }
+            $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
+            if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
+            Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
+          }
+          finally {
+            if (Test-Path -LiteralPath $root) {
+              Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
+            }
+          }
+) {
+                  throw 'WinMerge INI requires [WinMerge] section'
                 }
               }
               python -I portakit.py --root "$root" remove $id

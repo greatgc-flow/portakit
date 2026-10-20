@@ -84,6 +84,22 @@ For `.xlsx` / `.docx` / `.pptx` / `.vsdx` comparison, run the evidence-producing
 
 Office prerequisites can be inventoried on a Windows machine **without launching Office** by running `scripts/WinMerge-OfficeAcceptance.ps1 -ProbeOnly`. Results for Excel, Word, PowerPoint and Visio are saved as a transcript and CSV with status `NOT_VERIFIED`, regardless of whether their COM registrations exist. The live Windows CI also checks vendor-provided Office extension filters and automatic selection declarations; actual Office COM and GUI document comparison remain a separately required acceptance gate. See the [Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md).
 
+## One-run Office 4 acceptance and evidence
+
+On an **interactive disposable Windows PC** with Python 3.11+, run `scripts\Run-WinMerge-Office4.cmd` to inspect all four Office comparison integrations in one pass. The launcher automatically performs a pinned `install winmerge --recommended` if no managed installation exists, or `configure winmerge` for an existing matching catalog pin. It never silently updates mismatched versions or removes user documents.
+
+For a safe registration-only probe that **never launches Office**, run:
+
+    scripts\Run-WinMerge-Office4.cmd -ProbeOnly
+
+For actual four-app acceptance, first close all Office documents and run:
+
+    scripts\Run-WinMerge-Office4.cmd
+
+The script creates a uniquely named evidence folder plus a local ZIP and SHA-256 sidecar. The ZIP includes the exact console transcripts, CSV status per application, synthetic Office documents, HTML reports and a SHA-256 file manifest. **Nothing is uploaded.** Exit `0` means real Office integration passed, `1` failed, and `2` means prerequisites were unavailable / NOT VERIFIED (probe mode always returns 2). The real test checks that the HTML diff contains the synthetic `BASELINE` and `DIFFERENT` values; ZIP-only binary comparison cannot pass by accident.
+
+See [step-by-step Office acceptance guide](docs/WINMERGE_OFFICE_ACCEPTANCE.md). Hosted GitHub runners lack licensed Office and can only test the `-ProbeOnly` flow.
+
 ## Verification and releases
 
 Pull requests and `main` run the [Windows regression workflow](.github/workflows/windows-tests.yml) on Python 3.11 and 3.14. It uses mocks (no real app downloads). Before publishing, follow the [manual release acceptance checklist](docs/RELEASE_CHECKLIST.md), including isolated live downloads and full catalog verification. CI does not publish releases.

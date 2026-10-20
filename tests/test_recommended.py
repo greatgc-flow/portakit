@@ -169,6 +169,31 @@ class RecommendedCatalogTests(fixtures.Workspace):
                 self.write_catalog([entry(recommended=config)])
                 pk.load_catalog(self.catalog)
 
+    def test_winmerge_bundled_plugin_catalog_rejects_unsafe_names(self):
+        for values in (
+                "CompareMSExcelFiles.sct",
+                ["../outside.sct"],
+                ["nested/CompareMSExcelFiles.sct"],
+                ["CON.sct"],
+                ["Plugin.exe"],
+                ["CompareMSExcelFiles.sct", "comparemsexcelfiles.SCT"],
+                [12]):
+            with self.subTest(values=values), self.assertRaisesRegex(
+                    pk.PortakitError, "recommended.bundledPlugins"):
+                self.write_catalog([entry(id="winmerge", dest="winmerge",
+                                          recommended={"settings": "winmerge-dev",
+                                                       "plugins": [],
+                                                       "bundledPlugins": values})])
+                pk.load_catalog(self.catalog)
+
+    def test_office_bundled_plugins_are_winmerge_only(self):
+        self.write_catalog([entry(id="notepad++", dest="notepad++",
+                                  recommended={"settings": "notepad++-dev",
+                                               "plugins": [],
+                                               "bundledPlugins": ["CompareMSExcelFiles.sct"]})])
+        with self.assertRaisesRegex(pk.PortakitError, "WinMerge-only"):
+            pk.load_catalog(self.catalog)
+
     def test_recommended_requires_install_command(self):
         self.write_catalog([entry()])
         for cmd in (("list",), ("update", "demo"), ("remove", "demo")):

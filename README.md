@@ -16,15 +16,16 @@ The default root is `portable`, relative to the current directory. No PATH edits
 
 ## Commands
 
-`list | install ID | update ID | remove ID`. Global flags: `--json`, `--root DIR`, `-h/--help` (human text, exit 0, never an envelope).
+`list | install ID | update ID | configure ID | remove ID`. Global flags: `--json`, `--root DIR`, `-h/--help` (human text, exit 0, never an envelope).
 
 - `install ID` downloads the pinned asset, verifies its SHA256, extracts it into a stage folder and renames the stage to `ROOT\<dest>`. An installed ID is refused (use `update`); an existing `dest` or `dest.old` is treated as unmanaged and refused (delete or rename it).
 - `update ID` compares the installed `version` and `sha256` with the catalog pin. Any difference (up, down, or a new digest at the same version) updates; identical with the folder present is a no-op without downloading (`changed: false`); a missing folder is repaired. Files and folders listed in `preserveOnUpdate` are copied from the old folder over the packaged copies. To force a reinstall of an identical pin, `remove` then `install` (preserved paths are not kept).
+- `configure ID` explicitly applies recommended settings and missing verified plugins to a **currently managed** installation, without re-downloading the application. Only an exact catalog-pin match is accepted; run `update ID` first if pins differ. The tool copies the existing directory into a private staging folder, checks for links/junctions, changes only the selected recommended settings and missing plugin paths, and swaps with rollback. Other files and settings are preserved; running it again is a no-op. **Close the editor first.**
 - `remove ID` deletes `dest`, then `dest.old`, then the state entry last, and removes everything in `dest` including user data. It never loads the catalog and touches nothing else.
 
 ### Plugins and updates
 
-Notepad++'s pinned **standard portable ZIP** includes its bundled plugins and Plugins Admin; WinMerge installs only the plugins shipped in its chosen archive. PortaKit does **not** install additional third-party plugins automatically. Add them using each application's own instructions.
+Notepad++'s pinned **standard portable ZIP** includes its bundled plugins and Plugins Admin; WinMerge installs only the plugins shipped in its chosen archive. PortaKit installs additional pinned Notepad++ plugins **only** on `install --recommended` or `configure`; otherwise it leaves third-party plugin installation to each application.
 
 For the shipped catalog, updated versions keep additional plugin files under `notepad++/plugins` and `winmerge/MergePlugins` using `preserveMissingOnUpdate`. Files included in the new vendor package always win at the same path (including the Notepad++ plugin list DLL); absent user-added files are copied to the staged version. This avoids forcing old bundled plugin binaries back over the updated distribution, but any extra plugin may still be incompatible with a newer application. If a plugin was removed by the vendor it can remain from the old installation; review third-party plugins after upgrades. Do not use `remove` followed by `install` to retain plugins: `remove` deletes them.
 
@@ -64,13 +65,16 @@ To bump a pin, edit `version`, `url` and `sha256` together. Configuration seedin
 ```powershell
 python -I portakit.py install notepad++ --recommended
 python -I portakit.py install winmerge --recommended
+# Already installed via PortaKit:
+python -I portakit.py configure notepad++
+python -I portakit.py configure winmerge
 ```
 
-- Without `--recommended`, `install` behaves exactly as before. The flag is accepted **only by install**, not update/remove/list. Existing installations are not changed.
+- Without `--recommended`, `install` behaves exactly as before. The flag is accepted **only by install**, not update/configure/remove/list. To opt in on an existing PortaKit-managed installation, run `configure ID`; ordinary install/update never silently adds third-party plugins.
 - Notepad++: local portable configuration, 4-space indentation; additionally download and SHA-256 verify the **x64 ComparePlus 3.0.0** and **JSON Tools 8.5** plugin ZIPs from their pinned upstream GitHub releases. Extract into `plugins/ComparePlus` and `plugins/JsonTools`. These are executable third-party DLLs; the flag is explicit consent to running third-party plugins when the editor starts. Upstream pins are checked against the official Notepad++ x64 plugin list; upgrades require explicit catalog review.
 - WinMerge: verify that the pinned vendor ZIP contains **CompareMSExcelFiles.sct**, **CompareMSWordFiles.sct**, **CompareMSPowerPointFiles.sct**, and **CompareMSVisioFiles.sct** in `MergePlugins/`; never download duplicates. Seed `WinMerge.ini` in WinMerge's actual `[WinMerge]` format (`Settings/ViewLineNumbers=1`, `Settings/PluginsEnabled=1`, `Settings/UnpackerMode=1`) so its bundled Office unpackers are automatically selected by extension. These scripts require the corresponding desktop **Microsoft Excel, Word, PowerPoint, or Visio** application installed; they compare extracted text/content, not original visual formatting. Without Office installed, those comparisons cannot work. No Office programs are installed by PortaKit. WinMerge may still use some Windows registry data even with an INI; this setup does **not** change file associations or add Explorer shell integrations.
 - Downloads are pinned and verified **before** staging is committed. Any plugin failure aborts the new installation, leaves no managed destination/state entry, and cleans temporary files. Existing files are not adopted or overwritten.
-- Profiles seed **only new installations**. Updates retain the config and extra plugin files per the existing preservation rules. `remove` deletes all managed data, including added plugins and settings. Stop the editor before updating.
+- Profiles seed new installations, or are applied explicitly with `configure ID` to an existing managed installation. Updates retain the config and extra plugin files per the existing preservation rules. `remove` deletes all managed data, including added plugins and settings. Stop the editor before updating.
 
 ## Verification and releases
 

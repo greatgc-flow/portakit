@@ -1,15 +1,23 @@
 # portakit specification
 Windows CLI, Python 3.11+ stdlib only, single module `portakit.py` + `catalog.json`. No JSON schemas.
-Commands: `list | install ID | update ID | remove ID`; global `--json`, `--root DIR`.
+Commands: `list | install ID | update ID | configure ID | remove ID`; global `--json`, `--root DIR`.
 MVP tools: notepad++, winmerge, jq (single exe). Limits: 100 MiB download cap, reserved names (`.portakit*`, `*.old`), single-root zip flatten.
-Out of scope: download cache, automatic or silent configuration, offline bundles, doctor, pip tools, shims, general nested/plugin destinations, installed status in `list`, and force reinstall flags. Exception: explicit `install ID --recommended` profile on new installs only.
+Out of scope: download cache, automatic or silent configuration, offline bundles, doctor, pip tools, shims, general nested/plugin destinations, installed status in `list`, and force reinstall flags. Exception: `install ID --recommended` for new installs and explicit `configure ID` for existing managed installations.
 
 ## 0. Opt-in recommended installation
 
-- Optional global `--recommended` is valid only for `install ID`; all other commands return usage 1. When absent, all original behavior remains unchanged; state schema and result envelopes are unchanged.
+- Optional global `--recommended` is valid only for `install ID`; all other commands return usage 1. `configure ID` explicitly applies recommendations without the flag. When absent, all original behavior remains unchanged; state schema and result envelopes are unchanged.
 - `recommended` is an optional catalog object: `{ "settings": "notepad++-dev"|"winmerge-dev", "plugins": [{ "id", "version", "url", "sha256", "dest", "requiredFile" }] }`. Validate all entries at catalog load. Plugins require pinned HTTPS URL, 64-hex SHA, destination `plugins/<name>`, and a top-level DLL file name, with at most 8 unique plugin destinations. Settings profile must match tool ID. Only shipped Notepad++ x64 profile requests external plugins; WinMerge profile seeds local INI and requires bundled vendor Office scripts. Optional `bundledPlugins` (WinMerge only) must be a list of up to 20 unique single-segment `.sct`/`.dll` filenames within `MergePlugins`, validated at catalog load and checked in the freshly extracted stage before commit. Generic package installation is not a supported feature.
 - On an opted-in `install`, download and safely unpack the normal application to a private stage. Apply recommended settings to this stage (Notepad++ portable marker, XML TabSetting 4/yes; WinMerge portable INI `[WinMerge]` section with `Settings/ViewLineNumbers=1`, `Settings/PluginsEnabled=1`, and `Settings/UnpackerMode=1` (verified against upstream 2.16.46 OptionsDef.h / IniOptionsMgr.cpp)), then download each pinned plugin to a private temp, enforce existing 100 MiB SHA-256 and safe ZIP rules, extract under the plugin's destination and assert `requiredFile` exists. Refuse pre-existing plugin destination; never overwrite packaged files. Commit the stage with the original two-phase rename/state process **only when all steps succeed**. Network, integrity, archive, config, or missing DLL errors abort with no managed install and temps cleaned.
 - After install, updates preserve user configuration and third-party files through the original `preserveOnUpdate` and `preserveMissingOnUpdate` semantics. No additional auto-download of third-party plugin updates. No global PATH, registry modifications or automatic plugin execution by PortaKit; the editor may load plugins on launch.
+
+## 0a. Configuring an existing managed installation
+
+- `configure ID` requires an existing PortaKit-managed installation with the same destination, version, SHA-256 and a supported recommended profile as the current catalog. Otherwise abort; if pins differ, `update ID` must run first. It never downloads the main application.
+- Refuse any reparse point, junction or symlink anywhere in the source installation. Make a private full staged copy, seed only selected recommended settings, check WinMerge bundled Office plugin scripts and download only missing SHA-pinned Notepad++ plugin archives. If an existing plugin directory is incomplete, refuse rather than overwrite its contents.
+- Compare configuration bytes and plugin installation results. If there are no effective changes, discard the stage and return `changed:false`. Otherwise commit with the same reversible rename, state-write and rollback sequence as update, leaving the persisted state values unchanged.
+- Existing unrelated files and settings are kept. Selected recommended settings can change by explicit user request. `configure` does not change the OS registry, PATH or Windows file associations; the target editor must be closed. Standard `update` never implicitly invokes configure.
+- JSON result keys for `configure` are `id`, `version`, `dest`, `changed`. A second configure normally performs no downloads or modifications.
 
 ## 1. Root, layout, lock
 - `--root` default `portable`, relative to the cwd. No PATH edits, no shims. install/update/remove mkdir ROOT (parents) before locking; `list` never does.

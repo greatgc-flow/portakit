@@ -64,3 +64,7 @@ Check the manually dispatched [Windows live archive smoke](../.github/workflows/
 ## Open scope
 
 Future features (doctor, offline bundles, config seeding, pip tools, shims, nested destinations, installed-state listing) are deliberately deferred pending new requirements and their own test-first changes.
+
+## Existing-install profile gate
+
+In a disposable test root, install each editor *without* `--recommended`, add a private marker file, execute `configure ID`, then run it again. Confirm the marker and state remain unchanged, first configure installs/activates the profile, and second returns `changed:false` with no external asset downloads. Verify failure injection for invalid plugin SHA, incomplete plugin folder, symlink/junction and write-state rollback. Running Office comparison inside WinMerge GUI with licensed desktop Office apps remains a separate release blocker.

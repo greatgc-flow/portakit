@@ -491,12 +491,20 @@ def seed_recommended_settings(settings, stage):
             ini.write(out)
 
 
-def stage_recommended(tool, stage, root, downloader):
+def stage_recommended(tool, stage, root, downloader, *, existing=False):
     config = tool.get("recommended")
     if not config:
         raise PortakitError("catalog", f"{tool['id']}: no recommended profile")
     validate_recommended(config)
+    config_name = "config.xml" if config["settings"] == "notepad++-dev" else "WinMerge.ini"
+    settings_path = safe_path(stage, config_name, "recommended.settings", "state")
+    marker_path = (safe_path(stage, "doLocalConf.xml", "recommended.settings", "state")
+                   if config["settings"] == "notepad++-dev" else None)
+    before = settings_path.read_bytes() if settings_path.exists() else None
+    marker_before = marker_path.exists() if marker_path else False
     seed_recommended_settings(config["settings"], stage)
+    changed = (before != settings_path.read_bytes() or
+               (marker_path is not None and marker_before != marker_path.exists()))
     for name in config.get("bundledPlugins", []):
         plugin = safe_path(stage, "MergePlugins/" + name,
                            "recommended.bundledPlugins", "archive")
@@ -506,7 +514,16 @@ def stage_recommended(tool, stage, root, downloader):
     for index, plugin in enumerate(config["plugins"]):
         destination = safe_path(stage, plugin["dest"], "recommended.plugins.dest", "state")
         if os.path.lexists(destination):
+            if existing:
+                required = safe_path(destination, plugin["requiredFile"],
+                                     "recommended.plugins.requiredFile", "state")
+                if destination.is_dir() and required.is_file():
+                    continue
+                raise PortakitError("state",
+                                    f"recommended.plugins.requiredFile: {required} missing; "
+                                    "refusing to overwrite an existing plugin folder")
             raise PortakitError("state", f"recommended.plugins.dest: {destination} exists")
+        changed = True
         archive = root / f".portakit-dl-{tool['id']}-rec-{index}.tmp"
         try:
             fetch_archive(plugin, archive, downloader)
@@ -518,6 +535,7 @@ def stage_recommended(tool, stage, root, downloader):
         finally:
             if os.path.lexists(archive):
                 remove_tree(archive)
+    return changed
 
 
 def rename(source, target):
@@ -644,6 +662,69 @@ def update(tool, root, downloader=None, *, state=None):
     return deploy(tool, root, state, downloader, update_mode=True)
 
 
+def configure(tool, root, downloader=None, *, state=None):
+    """Add recommended settings and plugins to an already managed installation.
+
+    Work on a complete private copy; never download/reinstall the main app.
+    Rollback restores the original directory on any precommit failure.
+    """
+    check_links(root)
+    root = Path(root).resolve()
+    if state is None:
+        state = read_state(root)
+    identifier = tool["id"]
+    if not tool.get("recommended"):
+        raise PortakitError("catalog", f"{identifier}: no recommended profile")
+    if identifier not in state:
+        raise PortakitError("state", f"{identifier}: not installed")
+    installed = state[identifier]
+    if installed["dest"] != tool["dest"]:
+        raise PortakitError("state", f"{identifier}: dest changed; remove and install again")
+    if (installed.get("version") != tool["version"]
+            or installed.get("sha256") != tool["sha256"].lower()):
+        raise PortakitError("state", f"{identifier}: catalog pin changed; update {identifier} first")
+    dest, old = dest_paths(root, tool["dest"])
+    has_dest, has_old = os.path.lexists(dest), os.path.lexists(old)
+    if has_dest and has_old:
+        raise PortakitError("state", f"{dest} and {old} both exist; recover manually before configure")
+    if has_old:
+        check_links(old)
+        rename(old, dest)
+    check_dest_kind(dest)
+    if not dest.is_dir():
+        raise PortakitError("state", f"{identifier}: installed folder missing; update to repair")
+    reject_links(dest)
+    stage = root / f".portakit-stage-{identifier}.tmp"
+    check_links(stage)
+    moved_old = staged = False
+    try:
+        if os.path.lexists(stage):
+            remove_tree(stage)
+        shutil.copytree(dest, stage)
+        changed = stage_recommended(tool, stage, root, downloader, existing=True)
+        if not changed:
+            return dict(id=identifier, version=tool["version"], dest=str(dest), changed=False)
+        rename(dest, old)
+        moved_old = True
+        rename(stage, dest)
+        staged = True
+        write_state(root, state)
+    except BaseException as exc:
+        rollback(dest, old, staged, moved_old)
+        if isinstance(exc, PortakitError) or not isinstance(exc, Exception):
+            raise
+        raise PortakitError("state", f"configure: {exc}") from exc
+    finally:
+        if os.path.lexists(stage):
+            remove_tree(stage)
+    try:
+        remove_tree(old)
+    except OSError:
+        print(f"warning: could not delete {old}; delete it before the next operation on {identifier}",
+              file=sys.stderr)
+    return dict(id=identifier, version=tool["version"], dest=str(dest), changed=True)
+
+
 def remove(identifier, root, *, state=None):
     check_links(root)
     root = Path(root).resolve()
@@ -725,6 +806,10 @@ def execute(args, downloader):
                 return install(catalog[identifier], root, downloader, state=state,
                                recommended=True)
             return install(catalog[identifier], root, downloader, state=state)
+        if command == "configure":
+            if identifier not in catalog:
+                raise PortakitError("state", f"{identifier}: not in catalog")
+            return configure(catalog[identifier], root, downloader, state=state)
         if command == "update":
             if identifier not in state:
                 raise PortakitError("state", f"{identifier}: not installed")
@@ -746,16 +831,17 @@ def main(argv=None, downloader=None):
                     "  list        Show catalog pins; takes no ID.\n"
                     "  install ID  Download, verify and install a catalog pin.\n"
                     "  update ID   Apply the catalog pin; identical installs skip download.\n"
+                    "  configure ID  Add recommended settings/plugins to a managed install.\n"
                     "  remove ID   Delete the installed folder, backup and all user data,\n"
                     "              then forget the state entry; no catalog needed.\n"
-                    "install/update/remove require ID."))
+                    "install/update/configure/remove require ID."))
         parser.add_argument("--recommended", action="store_true",
                             help="opt in to pinned recommended settings and plugins (install only)")
         parser.add_argument("--json", action="store_true",
                             help="emit one JSON result envelope (help stays human text)")
         parser.add_argument("--root", type=Path, default=Path("portable"), metavar="DIR",
                             help="install root (default: portable in the current directory)")
-        parser.add_argument("command", choices=("list", "install", "update", "remove"),
+        parser.add_argument("command", choices=("list", "install", "update", "configure", "remove"),
                             help="operation to perform (see Commands below)")
         parser.add_argument("id", nargs="?", metavar="ID",
                             help="tool ID; required except for list")
@@ -765,7 +851,7 @@ def main(argv=None, downloader=None):
             return exc.code if isinstance(exc.code, int) else 0
         command = args.command
         if (command == "list") != (args.id is None):
-            raise PortakitError("usage", "list takes no ID; install/update/remove require ID")
+            raise PortakitError("usage", "list takes no ID; other commands require ID")
         if args.recommended and command != "install":
             raise PortakitError("usage", "--recommended applies only to install")
         data = execute(args, downloader)

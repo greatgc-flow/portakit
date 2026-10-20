@@ -77,8 +77,8 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "$id removal failed" }
               if (Test-Path -LiteralPath $dir) { throw "$id directory remains after remove" }
             }
-            $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json
-            if ($state.PSObject.Properties.Count -ne 0) { throw 'State not empty after removals' }
+            $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
+            if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
             Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
           }
           finally {

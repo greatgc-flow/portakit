@@ -22,7 +22,7 @@ class CatalogTests(fixtures.Workspace):
         self.assertEqual(set(catalog), {"notepad++", "winmerge", "jq",
                                         "ripgrep", "fd", "fzf", "bat", "sd",
                                         "yq", "delta", "hyperfine", "7zr",
-                                        "everything", "grepwin", "miller", "dasel"})
+                                        "everything", "grepwin", "miller", "dasel", "7zip"})
         for tool in raw["tools"]:
             with self.subTest(id=tool["id"]):
                 for removed in ("kind", "repo", "tag", "asset", "github_url", "defaultConfig"):

@@ -1,5 +1,8 @@
 # Optional toolsets (Common / OS / NW / Dev / Data / Diagnostics)
 
+**Research reference (not installed):** [2026-10-20 corporate air-gapped free-software TOP 30](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md). Includes business-use license/EULA, ZIP/portable feasibility, Windows privilege and driver risks, and role-based rollout gates. The current pinned catalog remains limited to 3 tools.
+
+
 **Architecture:** `catalog.json` owns the actual pinned downloads, versions, SHA-256 digests and installation semantics. `toolsets.json` is a **pure selection manifest**: it never holds URLs, commands, installers, or permission to modify Windows. A tool can appear in several categories without being downloaded twice. A profile composes categories and the result is a stable, deduplicated list.
 
 ## Current catalogue and category mapping

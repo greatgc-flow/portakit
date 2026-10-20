@@ -26,6 +26,13 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - Office comparison acceptance requires original semantic markers in HTML diff as proof of actual extracted content, besides WinMerge exit 0/1. This prevents fake passes on raw ZIP byte comparisons; only a dedicated licensed Office workstation can verify 4 actual COM integrations. Hosted CI only runs probe-only and checks NOT_VERIFIED plus ZIP checksums.
 - Results stay local; do not automatically upload or publish Office files, and do not consider missing licensed Office a pass.
 
+## Independent Office evidence verification (2026-10-20)
+
+- The one-run Office4 launcher now verifies its sealed ZIP using `scripts/verify_office_evidence.py`. The verifier is read-only, Python 3.11+ standard library, and does not need Office or WinMerge.
+- For each ZIP, check SHA-256 sidecar, ZIP members, manifest file ledger, `results.csv` four-program statuses, and synthetic BASELINE/DIFFERENT content in every claimed PASS HTML diff. The `--require-pass` option returns 0 only for a fully validated four-app PASS; returns 2 for a valid but incomplete/not-passed result, and 1 for corrupt/inconsistent evidence.
+- Tested negative cases: forged PASS status without four results, mismatched SHA-256, untracked ZIP members, unsafe paths, and missing extracted content. Hosted CI's real result is NOT_VERIFIED due to no Office COM registrations; it must not be mislabeled as a successful Office integration.
+- Gate C/D requires a licensed interactive Windows desktop and human GUI verification. No automatic release is authorized.
+
 ## PeerHub cross-project status
 
 - [PeerHub #180](https://github.com/greatgc-flow/peerhub/issues/180) was closed 2026-10-19; it concerned in-place `pip install --target --upgrade` during an active ask on Windows and is not a PortaKit CLI failure.

@@ -50,3 +50,22 @@ jobs:
           }
           python -I portakit.py --help | Out-Null
           if ($LASTEXITCODE -ne 0) { throw "portakit help failed (exit $LASTEXITCODE)" }
+
+      - name: Parse Windows PowerShell acceptance scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($path in @(
+            'scripts/WinMerge-RuntimeSmoke.ps1',
+            'scripts/WinMerge-OfficeAcceptance.ps1'
+          )) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path -LiteralPath $path).Path, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error ('{0}: {1}' -f $path, $_) }
+              throw "PowerShell parse errors in $path"
+            }
+            Write-Host "PowerShell syntax OK: $path"
+          }

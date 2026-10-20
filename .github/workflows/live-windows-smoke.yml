@@ -160,6 +160,17 @@ jobs:
               python -I portakit.py --root "$root" remove $id
               if ($LASTEXITCODE -ne 0) { throw "$id recommended remove failed" }
             }
+            Write-Host 'Running real WinMerge executable smoke against isolated text fixtures'
+            $verified = python -I portakit.py --json --root "$root" install winmerge --recommended
+            if ($LASTEXITCODE -ne 0 -or -not ($verified | ConvertFrom-Json).ok) {
+              throw 'Could not install WinMerge for executable acceptance test'
+            }
+            $wmExe = Join-Path (Join-Path $root 'winmerge') 'WinMergeU.exe'
+            $wmEvidence = Join-Path $env:RUNNER_TEMP 'portakit-winmerge-runtime-evidence'
+            & (Join-Path $PWD 'scripts/WinMerge-RuntimeSmoke.ps1') -WinMergeExe $wmExe -EvidenceDir $wmEvidence -TimeoutSeconds 90
+            if ($LASTEXITCODE -ne 0) { throw 'Real WinMerge executable smoke FAILED; check artifact' }
+            python -I portakit.py --root "$root" remove winmerge
+            if ($LASTEXITCODE -ne 0) { throw 'WinMerge cleanup after executable smoke failed' }
             $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
             if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
             Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
@@ -169,3 +180,12 @@ jobs:
               Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
             }
           }
+
+      - name: Upload WinMerge runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portakit-winmerge-runtime-evidence
+          path: ${{ runner.temp }}/portakit-winmerge-runtime-evidence/
+          if-no-files-found: warn
+          retention-days: 7

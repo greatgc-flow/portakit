@@ -54,6 +54,12 @@ Check the manually dispatched [Windows live archive smoke](../.github/workflows/
 - For a candidate release, explicitly inspect changes since the previous candidate for newly introduced paths, persistence changes, pin changes, and data-loss risks.
 - No auto-upgrades, PATH edits, unpinned URLs, remote scripts, or global side effects.
 
+## Gate C2: WinMerge executable + Office COM acceptance
+
+- Record the successful real Windows WinMergeU.exe noninteractive text comparison with both HTML reports, exit codes 0 (same) and 1 (different), and the console transcript artifact. The test runs on disposable synthetic files, never user documents.
+- Independently run scripts/WinMerge-OfficeAcceptance.ps1 on a licensed interactive Windows workstation for Excel (.xlsx), Word (.docx), PowerPoint (.pptx) and Visio (.vsdx), as applicable. See [WinMerge Office acceptance](WINMERGE_OFFICE_ACCEPTANCE.md). Retain console.log, results.csv, synthetic fixtures and HTML reports; use actual GUI inspection to confirm plugin selection/semantic results.
+- Missing Microsoft Office COM is NOT VERIFIED (exit 2), not success. Any GUI or plugin limitation must appear in release notes. Do not infer Office support from basic archive/file installation or text comparison only.
+
 ## Gate D: publication (human approval only)
 
 - Record: candidate commit SHA, both CI job links and conclusions, the three live test results, the catalog asset hash evidence, and remaining caveats.

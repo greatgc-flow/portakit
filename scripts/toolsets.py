@@ -1,0 +1,320 @@
+"""Optional, declarative Windows PortaKit toolsets (Python 3.11+ stdlib).
+
+The existing single-tool CLI is untouched. A category/profile is only a named
+selection of IDs in the SHA-pinned catalog, never a source of executable code.
+'plan' is read-only; 'apply --yes' installs missing pinned tools only (no update,
+remove, PATH, registry, profiles, or unreviewed executable downloads).
+"""
+import argparse
+from datetime import datetime
+import json
+import msvcrt
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import uuid
+
+REPO = Path(__file__).resolve().parents[1]
+MANIFEST = REPO / "toolsets.json"
+TOOL = REPO / "portakit.py"
+ID = re.compile(r"[a-z0-9][a-z0-9._+-]*\Z")
+sys.path.insert(0, str(REPO))
+import portakit as core  # noqa: E402  (reuse catalog, state, reparse checks)
+
+
+class ToolsetError(Exception):
+    pass
+
+
+def _validate_id(value):
+    if not isinstance(value, str) or not ID.fullmatch(value):
+        raise ToolsetError("Invalid category/profile or tool ID: " + str(value))
+    return value
+
+
+def load_manifest(path, catalog):
+    """Strict, bounded manifest; no URLs, commands, scripts, paths or auto-install flags."""
+    core.check_links(Path(path))
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ToolsetError("Cannot read toolsets manifest: " + str(exc)) from exc
+    if not isinstance(data, dict) or data.get("schemaVersion") != 1:
+        raise ToolsetError("toolsets.json must have schemaVersion=1")
+    categories, profiles = {}, {}
+    for field, output, members in (
+            ("categories", categories, "tools"),
+            ("profiles", profiles, "categories")):
+        entries = data.get(field)
+        if not isinstance(entries, list) or len(entries) > 32:
+            raise ToolsetError(field + ": expected a list with at most 32 entries")
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise ToolsetError(field + ": expected objects")
+            name = _validate_id(entry.get("id"))
+            if name in output:
+                raise ToolsetError(field + ": duplicate ID " + name)
+            if not isinstance(entry.get("label"), str) or not entry["label"].strip():
+                raise ToolsetError(field + ": missing label for " + name)
+            selected = entry.get(members)
+            if not isinstance(selected, list) or len(selected) > 64:
+                raise ToolsetError(field + "." + name + ": invalid members")
+            unique = set()
+            for value in selected:
+                value = _validate_id(value)
+                if value in unique:
+                    raise ToolsetError(field + "." + name + ": duplicate member " + value)
+                unique.add(value)
+            if field == "categories":
+                if (not isinstance(entry.get("description"), str)
+                        or len(entry["description"]) > 512):
+                    raise ToolsetError("categories." + name + ": invalid description")
+                if any(t not in catalog for t in selected):
+                    raise ToolsetError("categories." + name + ": unknown pinned tool ID")
+            output[name] = entry
+    if set(categories) & set(profiles):
+        raise ToolsetError("Category/profile IDs overlap")
+    for name, entry in profiles.items():
+        if any(c not in categories for c in entry["categories"]):
+            raise ToolsetError("profiles." + name + ": unknown category")
+    return categories, profiles
+
+
+def selection(names, include, exclude, categories, profiles, catalog):
+    if not names:
+        raise ToolsetError("Select one or more categories/profiles")
+    found = []
+    for name in names:
+        _validate_id(name)
+        if name in categories:
+            groups = (name,)
+        elif name in profiles:
+            groups = profiles[name]["categories"]
+        else:
+            raise ToolsetError("Unknown toolset/category: " + name)
+        for group in groups:
+            for tool in categories[group]["tools"]:
+                if tool not in found:
+                    found.append(tool)
+    for tool in include:
+        _validate_id(tool)
+        if tool not in catalog:
+            raise ToolsetError("Unknown pinned catalog tool: " + tool)
+        if tool not in found:
+            found.append(tool)
+    for tool in exclude:
+        _validate_id(tool)
+        if tool not in catalog:
+            raise ToolsetError("Unknown pinned catalog tool to exclude: " + tool)
+    return [tool for tool in found if tool not in set(exclude)]
+
+
+def status_of(tool, root, state):
+    """Installed/stale/unmanaged; never change state during planning."""
+    name, dest = tool["id"], tool["dest"]
+    install = root / dest
+    backup = root / (dest + ".old")
+    core.check_links(install)
+    core.check_links(backup)
+    if os.path.lexists(backup):
+        return "blocked-backup"
+    if name not in state:
+        return "blocked-unmanaged" if os.path.lexists(install) else "install"
+    record = state[name]
+    if record["dest"] != dest:
+        return "blocked-destination"
+    if (record.get("version") != tool["version"]
+            or record.get("sha256") != tool["sha256"]):
+        return "blocked-pin"
+    if not install.is_dir():
+        return "blocked-missing"
+    return "already-installed"
+
+
+def create_plan(names, include, exclude, root, manifest=MANIFEST, *,
+                load_catalog=core.load_catalog, read_state=core.read_state):
+    """Read-only deterministic plan; install only from validated pinned catalog."""
+    catalog = load_catalog(core.DEFAULT_CATALOG)
+    categories, profiles = load_manifest(manifest, catalog)
+    picked = selection(names, include, exclude, categories, profiles, catalog)
+    root = Path(os.path.abspath(str(root)))
+    core.check_links(root)
+    state = read_state(root)
+    operations = []
+    for ident in picked:
+        tool = catalog[ident]
+        operations.append({
+            "id": ident, "version": tool["version"], "sha256": tool["sha256"],
+            "status": status_of(tool, root, state),
+            "recommended_available": bool(tool.get("recommended")),
+        })
+    return {"selected": list(names), "root": str(root), "tools": operations}
+
+
+class Evidence:
+    """Copy each displayed line exactly to a new local UTF-8 audit log."""
+    def __init__(self, path):
+        self.path = Path(path)
+        core.check_links(self.path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.stream = self.path.open("x", encoding="utf-8", newline="\n")
+
+    def emit(self, message):
+        message = str(message)
+        print(message, flush=True)
+        self.stream.write(message + "\n")
+        self.stream.flush()
+
+    def close(self):
+        self.stream.close()
+
+
+class BatchLock:
+    """Second byte-0 lock serializes entire category runs, not just individual tools."""
+    def __init__(self, root):
+        self.path = root / ".portakit-toolset-lock"
+        self.fd = None
+
+    def __enter__(self):
+        core.check_links(self.path)
+        fd = os.open(str(self.path), os.O_CREAT | os.O_RDWR | os.O_BINARY)
+        try:
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        except OSError as exc:
+            os.close(fd)
+            raise ToolsetError("Another toolset operation is already in progress") from exc
+        self.fd = fd
+        return self
+
+    def __exit__(self, *_):
+        try:
+            os.lseek(self.fd, 0, 0)
+            msvcrt.locking(self.fd, msvcrt.LK_UNLCK, 1)
+        finally:
+            os.close(self.fd)
+
+
+def apply(plan, recommended, log, runner=subprocess.run):
+    root = Path(plan["root"])
+    if any(row["status"].startswith("blocked-") for row in plan["tools"]):
+        raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
+    root.mkdir(parents=True, exist_ok=True)
+    with BatchLock(root):
+        # Preflight again under batch lock, before downloading anything.
+        current = create_plan(plan["selected"], plan["include"], plan["exclude"],
+                              root, plan["manifest"])
+        if any(row["status"].startswith("blocked-") for row in current["tools"]):
+            raise ToolsetError("Blocked during apply preflight; no new tool downloaded")
+        with Evidence(log) as evidence:
+            evidence.emit("OPERATION: apply toolsets (explicit --yes)")
+            evidence.emit("ROOT: " + str(root))
+            evidence.emit("SELECTED: " + ", ".join(plan["selected"]))
+            evidence.emit("RECOMMENDED: " + ("YES (new installs only)" if recommended else "NO"))
+            evidence.emit("PLAN: " + ", ".join(row["id"] + "=" + row["status"]
+                                              for row in current["tools"]))
+            result = {"installed": [], "skipped": [], "failed": None}
+            for row in current["tools"]:
+                name = row["id"]
+                if row["status"] == "already-installed":
+                    result["skipped"].append(name)
+                    evidence.emit("SKIP: " + name + " (already managed; no update/config change)")
+                    continue
+                cmd = [sys.executable, "-I", str(TOOL), "--json", "--root", str(root),
+                       "install", name]
+                if recommended and row["recommended_available"]:
+                    cmd.append("--recommended")
+                evidence.emit("INSTALL: " + name + " (catalog SHA-pinned)")
+                completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
+                                   errors="replace", check=False)
+                for line in (completed.stdout or "").splitlines():
+                    evidence.emit("CHILD STDOUT: " + line)
+                for line in (completed.stderr or "").splitlines():
+                    evidence.emit("CHILD STDERR: " + line)
+                if completed.returncode != 0:
+                    result["failed"] = name
+                    evidence.emit("STOP: " + name + " exit=" + str(completed.returncode))
+                    evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
+                    break
+                try:
+                    parsed = json.loads(completed.stdout)
+                    if (parsed.get("ok") is not True or parsed.get("command") != "install"
+                            or parsed.get("data", {}).get("id") != name):
+                        raise ValueError("Unexpected core installer result")
+                except (ValueError, AttributeError, TypeError) as exc:
+                    result["failed"] = name
+                    evidence.emit("STOP: " + name + " invalid core result: " + str(exc))
+                    break
+                result["installed"].append(name)
+            evidence.emit("RESULT: " + ("FAILED" if result["failed"] else "COMPLETE"))
+            evidence.emit("EVIDENCE: " + str(Path(log).absolute()))
+            return result
+
+
+# Explicit context manager so evidence log closes on download/child exceptions.
+Evidence.__enter__ = lambda self: self
+Evidence.__exit__ = lambda self, *_: self.close()
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    parser.add_argument("command", choices=("list", "plan", "apply"))
+    parser.add_argument("toolsets", nargs="*", help="category or profile IDs")
+    parser.add_argument("--root", default="portable")
+    parser.add_argument("--manifest", default=str(MANIFEST))
+    parser.add_argument("--include", action="append", default=[], metavar="ID")
+    parser.add_argument("--exclude", action="append", default=[], metavar="ID")
+    parser.add_argument("--recommended", action="store_true",
+                        help="apply recommended settings/plugins on NEW installs only")
+    parser.add_argument("--yes", action="store_true",
+                        help="required acknowledgement for apply; never for plan/list")
+    parser.add_argument("--log-file", help="new log path for apply; must not exist")
+    args = parser.parse_args(argv)
+    try:
+        catalog = core.load_catalog(core.DEFAULT_CATALOG)
+        categories, profiles = load_manifest(args.manifest, catalog)
+        if args.command == "list":
+            if (args.toolsets or args.include or args.exclude or args.recommended
+                    or args.yes or args.log_file):
+                raise ToolsetError("list takes no selections/installation options")
+            print("CATEGORIES")
+            for name, group in categories.items():
+                print(name + "\t" + group["label"] + "\t" +
+                      (", ".join(group["tools"]) if group["tools"] else "(no verified pins yet)"))
+            print("PROFILES")
+            for name, profile in profiles.items():
+                print(name + "\t" + profile["label"] + "\t" +
+                      ", ".join(profile["categories"]))
+            return 0
+        if args.command == "plan" and (args.yes or args.log_file or args.recommended):
+            raise ToolsetError("plan is read-only; --yes/--recommended/--log-file apply only")
+        if args.command == "apply" and not args.yes:
+            raise ToolsetError("apply requires explicit --yes (plan first)")
+        root = Path(os.path.abspath(args.root))
+        plan = create_plan(args.toolsets, args.include, args.exclude, root, args.manifest)
+        if args.command == "plan":
+            print("PLAN: " + ", ".join(plan["selected"]))
+            print("ROOT: " + plan["root"])
+            for row in plan["tools"]:
+                print(row["id"] + "\t" + row["version"] + "\t" + row["status"])
+            if not plan["tools"]:
+                print("EMPTY: no SHA-pinned tools in selection")
+            if any(x["status"].startswith("blocked-") for x in plan["tools"]):
+                print("BLOCKED: resolve previous state/pin before apply")
+            print("NO CHANGES / NO DOWNLOADS")
+            return 0
+        plan.update(include=args.include, exclude=args.exclude, manifest=args.manifest)
+        root = Path(plan["root"])
+        log = args.log_file or str(root / ".portakit-evidence" /
+                 ("toolsets-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+                  + "-" + uuid.uuid4().hex[:8] + ".log"))
+        result = apply(plan, args.recommended, log)
+        return 1 if result["failed"] else 0
+    except (ToolsetError, core.PortakitError, OSError, ValueError) as exc:
+        print("ERROR: " + str(exc), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

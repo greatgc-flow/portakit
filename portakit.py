@@ -460,6 +460,7 @@ def seed_recommended_settings(settings, stage):
     elif settings == "winmerge-dev":
         config = safe_path(stage, "WinMerge.ini", "recommended.settings", "state")
         ini = configparser.ConfigParser(interpolation=None)
+        ini.optionxform = str  # Preserve WinMerge setting key case.
         try:
             if config.exists():
                 with config.open("r", encoding="utf-8-sig") as source:

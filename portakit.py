@@ -353,6 +353,14 @@ def extract_sfx7z(archive, destination, *, runner=subprocess.run):
                             errors="replace", timeout=60, check=False)
         if extraction.returncode:
             raise PortakitError("archive", "sfx7z: vendor archive extraction failed")
+        # 7zr lists archive FILE entries but materializes intermediate
+        # directories which may not be explicit archive members (e.g. Lang/).
+        # Permit only ancestor directories of validated file/member paths.
+        implicit_dirs = set()
+        for key in expected:
+            segments = key.split("/")
+            implicit_dirs.update("/".join(segments[:i])
+                                 for i in range(1, len(segments)))
         observed = set()
         for root, dirs, files in os.walk(destination, followlinks=False):
             for entry in dirs + files:
@@ -362,8 +370,12 @@ def extract_sfx7z(archive, destination, *, runner=subprocess.run):
                 name = actual.relative_to(destination).as_posix()
                 safe_path(destination, name, "sfx member", "archive")
                 key = name.lower()
-                if key in observed or key not in expected:
-                    raise PortakitError("archive", "sfx7z: extra or duplicate extracted member")
+                if key in observed:
+                    raise PortakitError("archive", "sfx7z: duplicate extracted member: " + name)
+                if key not in expected:
+                    if actual.is_dir() and key in implicit_dirs:
+                        continue
+                    raise PortakitError("archive", "sfx7z: unexpected extracted member: " + name)
                 planned, length, directory = expected[key]
                 if actual.is_dir() != directory or (not directory and actual.stat().st_size != length):
                     raise PortakitError("archive", "sfx7z: extracted member size/type mismatch")

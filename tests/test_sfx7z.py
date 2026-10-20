@@ -105,6 +105,39 @@ class SfxDependencyTests(fixtures.InstallWorkspace):
         self.assertEqual(result["error"]["code"], "archive")
         self.assertIn("SHA mismatch", result["error"]["message"])
 
+    def test_expected_implicit_parents_allowed_extra_files_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stage = Path(tmp) / "stage"
+            stage.mkdir()
+            archive = Path(tmp) / "vendor.exe"
+            archive.write_bytes(b"vendor")
+            output = listing([("Lang\\ko.txt", 2, "A", "-")])
+            records = {"7z.exe": 4, "7z.dll": 3, "7zFM.exe": 5,
+                       "7zG.exe": 5, "License.txt": 7, "Lang/ko.txt": 2}
+
+            def runner(cmd, **kwargs):
+                if cmd[1] == "l":
+                    return subprocess.CompletedProcess(cmd, 0, output, "")
+                for name, length in records.items():
+                    target = stage / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(b"x" * length)
+                return subprocess.CompletedProcess(cmd, 0, "Everything is Ok", "")
+
+            with mock.patch.object(pk, "trusted_sfx_extractor", return_value=archive):
+                pk.extract_sfx7z(archive, stage, runner=runner)
+                self.assertEqual((stage / "Lang/ko.txt").read_bytes(), b"xx")
+
+            def rogue(cmd, **kwargs):
+                response = runner(cmd, **kwargs)
+                if cmd[1] == "x":
+                    (stage / "unexpected.txt").write_text("rogue")
+                return response
+
+            with mock.patch.object(pk, "trusted_sfx_extractor", return_value=archive):
+                with self.assertRaisesRegex(pk.PortakitError, "unexpected"):
+                    pk.extract_sfx7z(archive, stage, runner=rogue)
+
     def test_extract_rejects_subprocess_errors_without_promoting(self):
         with tempfile.TemporaryDirectory() as tmp:
             stage = Path(tmp) / "staged"

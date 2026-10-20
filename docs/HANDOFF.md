@@ -30,3 +30,9 @@ Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optiona
 - Proposed `install ID --recommended` for Notepad++ and WinMerge; existing install/update/remove unchanged without flag.
 - ComparePlus 3.0.0 and JSON Tools 8.5 SHA-256 values taken from the official Notepad++ x64 Plugin List. Windows CI must confirm external archives, DLL destinations, NPP configuration and WinMerge INI before the feature is merged.
 - Live GUI plugin load and compatibility after real editor version transitions remain **manual release gates**, not implied by CLI smoke. Never advertise them as verified by file-only tests.
+
+## WinMerge bundled Office comparison setup (2026-10-20)
+
+- `install winmerge --recommended` ensures vendor `MergePlugins/CompareMSExcelFiles.sct`, `CompareMSWordFiles.sct`, `CompareMSPowerPointFiles.sct`, and `CompareMSVisioFiles.sct` are present. The SHA-verified WinMerge 2.16.46 ZIP already distributes them; no duplicate downloads.
+- WinMerge 2.16.46 source (`Src/Common/IniOptionsMgr.cpp`, `Src/Merge.cpp`, `Src/OptionsDef.h`) proves portable `WinMerge.ini` must contain `[WinMerge]` keys `Settings/ViewLineNumbers`, `Settings/PluginsEnabled`, `Settings/UnpackerMode`. Previous `[Settings]` formatting was ineffective; corrected here. CLI's `/inifile` is not required when an INI is alongside `WinMergeU.exe`.
+- Excel, Word, PowerPoint, and Visio Office COM automation dependencies are external and not installed. CLI smoke checks packaged scripts/INI; actual GUI and Office comparisons require a separately provisioned Windows desktop for release acceptance.

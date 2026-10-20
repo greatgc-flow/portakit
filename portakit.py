@@ -96,6 +96,18 @@ def validate_recommended(config):
     plugins = config.get("plugins")
     if not isinstance(plugins, list) or len(plugins) > 8:
         raise PortakitError("catalog", "recommended.plugins: expected at most 8 plugins")
+    bundled = config.get("bundledPlugins", [])
+    if not isinstance(bundled, list) or len(bundled) > 20:
+        raise PortakitError("catalog", "recommended.bundledPlugins: expected at most 20 filenames")
+    if bundled and config["settings"] != "winmerge-dev":
+        raise PortakitError("catalog", "recommended.bundledPlugins: WinMerge-only")
+    seen = set()
+    for name in bundled:
+        parts = path_parts(name, "recommended.bundledPlugins")
+        if (len(parts) != 1 or not name.lower().endswith((".sct", ".dll"))
+                or name.lower() in seen):
+            raise PortakitError("catalog", "recommended.bundledPlugins: unsafe or duplicate name")
+        seen.add(name.lower())
     destinations = set()
     for plugin in plugins:
         if not isinstance(plugin, dict):
@@ -467,9 +479,14 @@ def seed_recommended_settings(settings, stage):
                     ini.read_file(source)
         except (configparser.Error, UnicodeError) as exc:
             raise PortakitError("state", f"recommended.settings: bad WinMerge.ini: {exc}") from exc
-        if not ini.has_section("Settings"):
-            ini.add_section("Settings")
-        ini.set("Settings", "ViewLineNumbers", "1")
+        # WinMerge 2.16 reads [WinMerge] keys with the "Settings/" prefix.
+        # [Settings] is not recognized by its CIniOptionsMgr implementation.
+        if not ini.has_section("WinMerge"):
+            ini.add_section("WinMerge")
+        for name, value in (("ViewLineNumbers", "1"),
+                            ("PluginsEnabled", "1"),
+                            ("UnpackerMode", "1")):
+            ini.set("WinMerge", "Settings/" + name, value)
         with config.open("w", encoding="utf-8") as out:
             ini.write(out)
 
@@ -480,6 +497,12 @@ def stage_recommended(tool, stage, root, downloader):
         raise PortakitError("catalog", f"{tool['id']}: no recommended profile")
     validate_recommended(config)
     seed_recommended_settings(config["settings"], stage)
+    for name in config.get("bundledPlugins", []):
+        plugin = safe_path(stage, "MergePlugins/" + name,
+                           "recommended.bundledPlugins", "archive")
+        if not plugin.is_file():
+            raise PortakitError("archive",
+                                f"recommended.bundledPlugins: {name} missing from vendor archive")
     for index, plugin in enumerate(config["plugins"]):
         destination = safe_path(stage, plugin["dest"], "recommended.plugins.dest", "state")
         if os.path.lexists(destination):

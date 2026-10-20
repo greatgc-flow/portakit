@@ -52,7 +52,13 @@
       ],
       "recommended": {
         "settings": "winmerge-dev",
-        "plugins": []
+        "plugins": [],
+        "bundledPlugins": [
+          "CompareMSExcelFiles.sct",
+          "CompareMSWordFiles.sct",
+          "CompareMSPowerPointFiles.sct",
+          "CompareMSVisioFiles.sct"
+        ]
       }
     },
     {

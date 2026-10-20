@@ -367,7 +367,10 @@ jobs:
                 Write-Host "GUI FILE PRESENT, NOT LAUNCHED: $($tool.Id)"
               }
               else {
-                $versionOutput = (& $installed[0].FullName --version 2>&1 | Out-String)
+                # 7zr implements the legacy 7-Zip CLI, which intentionally has
+                # no --version switch; its no-argument banner reports the version.
+                $versionArgs = if ($tool.Id -eq '7zr') { @() } else { @('--version') }
+                $versionOutput = (& $installed[0].FullName @versionArgs 2>&1 | Out-String)
                 if ($tool.Id -eq '7zr') {
                   if ($versionOutput -notmatch '26.04') {
                     throw "7zr release/version output unexpected: $versionOutput"

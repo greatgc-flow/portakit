@@ -216,3 +216,16 @@ See `docs/SPEC.md` (contract), `docs/DECISIONS.md` (ratified decisions), `docs/H
 ## License
 
 [MIT](LICENSE), copyright 2026 greatgc-flow.
+
+## Non-production GUI acceptance and Sysinternals network licensing
+
+The portable installer never launches Everything, grepWin, or 7-Zip. A separate **user-invoked** [Windows GUI acceptance harness](docs/GUI_ACCEPTANCE_20261021.md) checks installed pins and local EXE SHA without opening windows, then (only with explicit consent) helps a human review the GUI on synthetic files while saving exact console lines to local evidence.
+
+```powershell
+.\scripts\GuiAcceptance.cmd --tools everything grepwin 7zip
+.\scripts\GuiAcceptance.cmd --review --launch --tools grepwin 7zip
+# Elevated/service/NTFS index first-run risks require a SECOND explicit flag:
+.\scripts\GuiAcceptance.cmd --review --launch --allow-everything-first-run --tools everything
+```
+
+**TCPView/PsPing remain metadata-only** in [corporate license and deployment intake](research/SYSINTERNALS_NETWORK_REVIEW_20261021.json), not automatically installable. Microsoft allows free company-device use but restricts third-party redistribution; PsPing is inside PsTools (which contains powerful unrelated administrative commands). Do not package vendor binaries into PortaKit or a shared internal bundle without corporate legal approval. No active network probes run by default.

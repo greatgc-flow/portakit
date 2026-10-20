@@ -202,10 +202,8 @@ try {
             Write-Host ("GENERATED " + $pair.Left + " / " + $pair.Right)
             $sameReport = Join-Path $folder "identical.html"
             $diffReport = Join-Path $folder "different.html"
-            [void](Invoke-OfficeCompare $exe $pair.Left $pair.Identical
-                    $sameReport $TimeoutSeconds 0)
-            [void](Invoke-OfficeCompare $exe $pair.Left $pair.Right
-                    $diffReport $TimeoutSeconds 1)
+            [void](Invoke-OfficeCompare $exe $pair.Left $pair.Identical $sameReport $TimeoutSeconds 0)
+            [void](Invoke-OfficeCompare $exe $pair.Left $pair.Right $diffReport $TimeoutSeconds 1)
             Write-Host ("PASS " + $name + ": identical=0 different=1; reports saved")
             $rows += New-Object PSObject -Property @{
                 Application=$name; Status="PASS"; Detail="Actual WinMerge + Office COM comparisons" }

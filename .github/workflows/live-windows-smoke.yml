@@ -2,8 +2,7 @@ name: Live Windows archive smoke
 
 on:
   workflow_dispatch:
-  # Run the real-download check on PRs that change the installer, catalog, or this smoke.
-  # No scheduled runs and no auto-publish. Manual dispatch is also supported.
+  # Real-asset smoke on relevant PRs or by manual dispatch; no push/release job.
   pull_request:
     paths:
       - .github/workflows/live-windows-smoke.yml
@@ -106,33 +105,21 @@ jobs:
                   'CompareMSVisioFiles.sct'
                 )
                 foreach ($name in $required) {
-                  $path = Join-Path (Join-Path $dir 'MergePlugins') $name
-                  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-                    throw "Missing bundled WinMerge Office comparison plugin: $name"
+                  $scriptPath = Join-Path (Join-Path $dir 'MergePlugins') $name
+                  if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+                    throw "WinMerge vendor Office script missing: $name"
                   }
                 }
                 $ini = Get-Content -LiteralPath (Join-Path $dir 'WinMerge.ini') -Raw
+                if ($ini -notmatch '(?im)^\s*\[WinMerge\]\s*$') {
+                  throw 'WinMerge INI missing [WinMerge] section'
+                }
                 foreach ($key in @('ViewLineNumbers','PluginsEnabled','UnpackerMode')) {
                   if ($ini -notmatch "(?im)^\s*Settings/$key\s*=\s*1\s*$") {
-                    throw "WinMerge recommended setting missing or disabled: $key"
+                    throw "WinMerge setting not enabled: $key"
                   }
                 }
-                if ($ini -notmatch '(?im)^\s*\[WinMerge\]\s*              python -I portakit.py --root "$root" remove $id
-              if ($LASTEXITCODE -ne 0) { throw "$id recommended remove failed" }
-            }
-            $state = Get-Content -LiteralPath (Join-Path $root '.portakit-state.json') -Raw | ConvertFrom-Json -AsHashtable
-            if ($state.Count -ne 0) { throw "State not empty after removals: $($state.Keys -join ',')" }
-            Write-Host 'Live SHA-256 verified archive checks and non-GUI smoke passed'
-          }
-          finally {
-            if (Test-Path -LiteralPath $root) {
-              Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
-            }
-          }
-) {
-                  throw 'WinMerge INI requires [WinMerge] section'
-                }
-                Write-Host 'Verified Office plugin files and automatic unpacker configuration; Office COM execution is not tested here'
+                Write-Host 'WinMerge bundled Office plugins and automatic unpacker settings verified (no COM test)'
               }
               python -I portakit.py --root "$root" remove $id
               if ($LASTEXITCODE -ne 0) { throw "$id recommended remove failed" }

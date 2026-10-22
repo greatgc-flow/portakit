@@ -1,5 +1,7 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+> **Current-context cross-reference:** [2026-10-22 handoff, live evidence and prioritized open gates](handoff/2026-10-22_FULL_CONTEXT.md). Some older sections below reflect the phased rollout (3 → 11 → 16 → **17 pinned tools**); **do not treat old candidate counts or “not yet installed” claims as the current catalog**. Current inventory: 108 = 17 pinned + 27 Windows built-ins + 64 research-only. GUI/Office4 human acceptance and Sysinternals redistribution decision remain explicitly open. No release approval.
+
 The [corporate/offline 30-software survey](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md) identifies **research-only** candidates and per-vendor redistribution gates. Do not silently add them to installable catalog or republish proprietary vendor binaries.
 
 

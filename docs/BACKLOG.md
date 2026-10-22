@@ -1,5 +1,7 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+> **Active handoff as of 2026-10-22:** [Verified cross-chat status and ordered P0–P2 gaps](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) · [new chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261022.md). The chronological sections below intentionally preserve older planning assumptions, some superseded by PRs #14–#18. Do not treat a past "candidate" or "not implemented" entry as current without checking main.
+
 The [corporate/offline 30-software survey](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md) identifies **research-only** candidates and per-vendor redistribution gates. Do not silently add them to installable catalog or republish proprietary vendor binaries.
 
 

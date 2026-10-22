@@ -1,5 +1,7 @@
 # Optional toolsets — generic MECE primary taxonomy and composable work profiles
 
+> **Current state 2026-10-22:** 17 installable SHA-pinned tools, 108 research entries (17 pinned / 27 Windows built-ins / 64 research-only). See the [2026-10-22 handoff and evidence map](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md). Historical phase-specific counts below are not current catalog totals.
+
 **2026-10-20 — schema v2.** This is a **Windows x64 air-gapped corporate** tool selection, intentionally not a platform/industry-specific scheme. It separates **what software fundamentally does** from **which task/role combines it**, and from **how it is packaged or approved**.
 
 ## Three independent axes (MECE within each axis, intentionally many-to-many across axes)

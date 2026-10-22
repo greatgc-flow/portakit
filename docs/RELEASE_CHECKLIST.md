@@ -1,5 +1,7 @@
 # Release acceptance checklist
 
+> **2026-10-22 evidence boundary:** [current comprehensive handoff](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md). At that point 17 official immutable source pins, 282 passing unit tests each on Python 3.11 and 3.14, **but workstation GUI, WinMerge Office4 semantic GUI and Sysinternals licensing gates remain NOT_VERIFIED**. No default automated Release or company security approval is implied.
+
 This is a **manual gate**, not an automated publish workflow. A green unit-test run is necessary but not enough to advertise a release.
 
 ## Scope and policy

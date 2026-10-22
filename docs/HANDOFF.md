@@ -1,5 +1,7 @@
 # Open work
 
+> **CURRENT PORTAKIT HANDOFF — 2026-10-22:** [Complete chat-to-Git handoff](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) and [START NEW CHAT](handoff/START_NEW_CHAT_PORTAKIT_20261022.md). This original document retains historical rounds, some stale counts, and earlier decisions. Do **not** treat older snapshots as the latest source of truth. Check live main/code/pins/tests first.
+
 Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optional recommended profile adds new behavior without changing ordinary install/update/remove semantics.
 
 ## Verification and release

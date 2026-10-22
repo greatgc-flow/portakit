@@ -1,5 +1,7 @@
 # Open work
 
+> **Latest checkpoint 2026-10-22:** [Comprehensive current-context handoff](handoff/2026-10-22_FULL_CONTEXT.md) · [Restart prompt](handoff/START_NEW_CHAT_20261022.md) · [All baseline source file blob SHAs](handoff/2026-10-22_REPO_SOURCE_MAP.json). The 2026-10-20 chronology below is historical; **do not treat older “3/11/16 tools” or prior test counts as current**. As of the verified baseline: 17 pinned, 108 researched, main SHA 09bd9fb0…, 282 Windows regression tests per Python 3.11/3.14. Public repository: exclude private conversation and company data.
+
 Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optional recommended profile adds new behavior without changing ordinary install/update/remove semantics.
 
 ## Verification and release

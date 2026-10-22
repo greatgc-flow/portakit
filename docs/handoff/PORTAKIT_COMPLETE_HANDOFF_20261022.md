@@ -183,6 +183,10 @@ python -I -m unittest discover -s tests -v
 6. Before handoff or release, repeat MECE review in both directions: every pin one primary owner, research status never exposed as installed, every P1 gap has observable acceptance evidence or explicit NOT_VERIFIED, no closed-loop claims without independent verification.
 7. Keep the source/trace links, pending gaps and next-chat prompt current. This handoff is an audited contextual snapshot, **not the complete original chat transcript**, because the entire chat (including private material) is not a safe/public-repo artifact.
 
+### Complete 48-file Git blob provenance
+
+- [2026-10-22_REPO_SOURCE_MAP.json](2026-10-22_REPO_SOURCE_MAP.json) is a read-only snapshot of **all 48 pre-handoff** tracked source/docs/tests/workflow files at the original baseline `main=09bd9fb0f44b77006f09f5d15fb4d22b3bd9dc25`, including each relative path, byte length, and **Git blob SHA**. The actual complete file contents remain stored by Git; this source map is an index, **not** vendor-download SHA-256 and **not** a copy of the full chat transcript. It intentionally does not include files created by PR #19 or this later source-map PR. Re-query the **current main tree** for any newest state, and do not confuse these baseline blob hashes with current HEAD.
+
 ## 10. Last verified provenance and handoff integrity
 
 - The current repo state was verified live on **2026-10-22** with GitHub connected actions: branch/main SHA, PR list (none open; #1–#18 merged), root file tree, pinned catalog, schema v2, 108-item research register, core/workflow source paths and exact CI conclusions.

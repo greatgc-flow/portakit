@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "checkpointDate": "2026-10-22",
+  "source": "GitHub live API",
+  "repository": "greatgc-flow/portakit",
+  "repoVisibilityAtCheckpoint": "public",
+  "branch": "main",
+  "baselineMainSha": "09bd9fb0f44b77006f09f5d15fb4d22b3bd9dc25",
+  "scope": "Repository source-tree provenance only. This is not a raw private conversation export. All file contents remain accessible via Git refs, and no third-party binaries are bundled.",
+  "contentPolicy": "No private personal/employer/infrastructure data, secrets or private chat transcript committed to public GitHub.",
+  "defaultAcceptance": [
+    "Windows-only Python 3.11+ stdlib",
+    "Enterprise air-gap and OSS-license review",
+    "Optional install (explicit --yes)",
+    "One primary functional category",
+    "Vendor immutable SHA256 pin",
+    "No implicit registry/service/driver/network scans",
+    "Verbatim local console evidence",
+    "Never claim interactive GUI/Office4 PASS from CI"
+  ],
+  "repositoryCounts": {
+    "fileCount": 48,
+    "trackedFilesBytes": 574620,
+    "catalogPins": 17,
+    "researchItems": 108,
+    "researchPinned": 17,
+    "researchOSBuiltIn": 27,
+    "researchUnadmitted": 64
+  },
+  "files": [
+    {
+      "path": ".github/workflows/live-windows-smoke.yml",
+      "gitBlobSha": "335876e96e36640eeb1efa8396bbf2bbaba2cdd0",
+      "bytes": 28538
+    },
+    {
+      "path": ".github/workflows/windows-tests.yml",
+      "gitBlobSha": "ac0c4e45439598dac74e429eb6342d38193e4683",
+      "bytes": 6831
+    },
+    {
+      "path": ".gitignore",
+      "gitBlobSha": "346062f0f4c0f84b84f45bfb8f4d9e680df8b865",
+      "bytes": 109
+    },
+    {
+      "path": "LICENSE",
+      "gitBlobSha": "1863d6d63d7d3be47976ffd927cde2042bdc5b72",
+      "bytes": 1069
+    },
+    {
+      "path": "README.md",
+      "gitBlobSha": "f9a2c82a246cb0bb4b9c05bae7b733978e11043e",
+      "bytes": 22139
+    },
+    {
+      "path": "catalog.json",
+      "gitBlobSha": "b211f135bee4e0a88f7bcf77b08814630a4af996",
+      "bytes": 7052
+    },
+    {
+      "path": "docs/BACKLOG.md",
+      "gitBlobSha": "532fcad276a690ad29667b4ccd70cb1539bce359",
+      "bytes": 11184
+    },
+    {
+      "path": "docs/COMPONENT_REVIEW_20261020.md",
+      "gitBlobSha": "ed9465d3b7ea3ad635b2165880b3096620a7889e",
+      "bytes": 5744
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "gitBlobSha": "a07d581649f01c10c9151c5f922b36cd29a9c052",
+      "bytes": 7125
+    },
+    {
+      "path": "docs/GUI_ACCEPTANCE_20261021.md",
+      "gitBlobSha": "ba3254e766f47872fc7f426b4a1d4c1b884c5be3",
+      "bytes": 5803
+    },
+    {
+      "path": "docs/HANDOFF.md",
+      "gitBlobSha": "8394a25c93752ec382b17ddca38127867345f928",
+      "bytes": 14460
+    },
+    {
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "gitBlobSha": "1f2b764e7b604cae68e2b793bdc494aa63fb6ea5",
+      "bytes": 16567
+    },
+    {
+      "path": "docs/RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md",
+      "gitBlobSha": "34df9a5d1273a681a9f17a95818af9d607797aba",
+      "bytes": 17064
+    },
+    {
+      "path": "docs/SPEC.md",
+      "gitBlobSha": "70a502653351c811df504d6484d8c31246769776",
+      "bytes": 22492
+    },
+    {
+      "path": "docs/TOOLSETS.md",
+      "gitBlobSha": "1edb40f2aebcb44e4d7f393b0ec722ffa10f09bd",
+      "bytes": 15727
+    },
+    {
+      "path": "docs/WINMERGE_OFFICE_ACCEPTANCE.md",
+      "gitBlobSha": "2e42d6e3bf96a61d385fb2a9e404dae3bd2a5986",
+      "bytes": 9832
+    },
+    {
+      "path": "portakit.py",
+      "gitBlobSha": "0ac742b293eb1547028b80f2bd22813f4f5d4cb2",
+      "bytes": 47671
+    },
+    {
+      "path": "research/SYSINTERNALS_NETWORK_REVIEW_20261021.json",
+      "gitBlobSha": "d4f12eeb5aeb087cdb32ea4cdd36989762d9f711",
+      "bytes": 4332
+    },
+    {
+      "path": "research/TOOLS_CANDIDATES_20261020.json",
+      "gitBlobSha": "a08c89c5123754420b70e66eaa27324b30fb3227",
+      "bytes": 57657
+    },
+    {
+      "path": "scripts/ContextMenu.cmd",
+      "gitBlobSha": "f5b385e18f874e16963493f8f3bc5819f3ccffab",
+      "bytes": 243
+    },
+    {
+      "path": "scripts/GuiAcceptance.cmd",
+      "gitBlobSha": "8eda9040df3e7c7afa84db4433d59f6e093f8ed6",
+      "bytes": 370
+    },
+    {
+      "path": "scripts/Run-WinMerge-Office4.cmd",
+      "gitBlobSha": "d66e8e1fba35deadd9a5a969693c601f405b7742",
+      "bytes": 317
+    },
+    {
+      "path": "scripts/Run-WinMerge-Office4.ps1",
+      "gitBlobSha": "1d5a9ae27ae25af843a1f1ccdf3036d3eba75649",
+      "bytes": 6715
+    },
+    {
+      "path": "scripts/Toolsets.cmd",
+      "gitBlobSha": "3a1ac5b195221cff1f0bfcb5c84de67f1c6d702c",
+      "bytes": 323
+    },
+    {
+      "path": "scripts/WinMerge-OfficeAcceptance.ps1",
+      "gitBlobSha": "e0b5b5d429a513e9455f299b4fab6f414be272ca",
+      "bytes": 11723
+    },
+    {
+      "path": "scripts/WinMerge-RuntimeSmoke.ps1",
+      "gitBlobSha": "a47eefa92f636e06d5f02bcb46cf2d33d9bec23f",
+      "bytes": 4210
+    },
+    {
+      "path": "scripts/context_menu.py",
+      "gitBlobSha": "5a204677bb04ff2631fde5d77cf09bfbf890bc4e",
+      "bytes": 11690
+    },
+    {
+      "path": "scripts/gui_acceptance.py",
+      "gitBlobSha": "8f85e1659163b483ae30780e717083ccabe0f898",
+      "bytes": 13008
+    },
+    {
+      "path": "scripts/package_office_evidence.py",
+      "gitBlobSha": "00726f76152e0adc27fa37a2cc970a345c6545ab",
+      "bytes": 4601
+    },
+    {
+      "path": "scripts/toolsets.py",
+      "gitBlobSha": "3df845f3bc8710ab2937bef79370fba149088cf8",
+      "bytes": 20258
+    },
+    {
+      "path": "scripts/verify_office_evidence.py",
+      "gitBlobSha": "282ae57b40c211aeb13a08b3720e58fa85c2958b",
+      "bytes": 9895
+    },
+    {
+      "path": "tests/support.py",
+      "gitBlobSha": "51c4ec912a50629b6bc7852c82b7e00cac395b4c",
+      "bytes": 7860
+    },
+    {
+      "path": "tests/test_archive.py",
+      "gitBlobSha": "d2446f4847070e1bf0c1e66d815d0f4261971d71",
+      "bytes": 13313
+    },
+    {
+      "path": "tests/test_catalog.py",
+      "gitBlobSha": "ab87880b61de272c2edd1a9b4a5194eb8fa48064",
+      "bytes": 5935
+    },
+    {
+      "path": "tests/test_cli.py",
+      "gitBlobSha": "c3f9a29e1cee9acefaf59cbc6beeb1128816f7ef",
+      "bytes": 12924
+    },
+    {
+      "path": "tests/test_configure.py",
+      "gitBlobSha": "436c7c3b994c104d20fd1e3e4e888500d083826a",
+      "bytes": 8979
+    },
+    {
+      "path": "tests/test_context_menu.py",
+      "gitBlobSha": "380274ce5d692fdf26b7d5ae2675510b1bd37096",
+      "bytes": 7797
+    },
+    {
+      "path": "tests/test_gui_acceptance.py",
+      "gitBlobSha": "bbb1c8da4e67a0c4bcb5a87d54ccfeef0f12ac7e",
+      "bytes": 7528
+    },
+    {
+      "path": "tests/test_lifecycle.py",
+      "gitBlobSha": "fab2ffab7cc03a184993612ed6688fb52989cd27",
+      "bytes": 48905
+    },
+    {
+      "path": "tests/test_links.py",
+      "gitBlobSha": "a708514fbfd529798cd96a551f913d5cce4f8639",
+      "bytes": 20845
+    },
+    {
+      "path": "tests/test_office_evidence.py",
+      "gitBlobSha": "9e8d333328d311632a4f557106e5c417e4658eb0",
+      "bytes": 3869
+    },
+    {
+      "path": "tests/test_office_verify.py",
+      "gitBlobSha": "6da5b614d3c6db46aaddb20e1b3de1ea682ec689",
+      "bytes": 5686
+    },
+    {
+      "path": "tests/test_offline.py",
+      "gitBlobSha": "ebf6ff14918d6d21b7b2322d0797852ca019c4bc",
+      "bytes": 6796
+    },
+    {
+      "path": "tests/test_recommended.py",
+      "gitBlobSha": "a6e85fd7e874c35f0a4fe6c759d0885e13f5bb24",
+      "bytes": 11196
+    },
+    {
+      "path": "tests/test_research_taxonomy.py",
+      "gitBlobSha": "99f83b4ded7f84d07c65a06d18c15e7bdf507ba1",
+      "bytes": 2964
+    },
+    {
+      "path": "tests/test_sfx7z.py",
+      "gitBlobSha": "c8754ef47b63ed88344402562a4a113da864567c",
+      "bytes": 7624
+    },
+    {
+      "path": "tests/test_toolsets.py",
+      "gitBlobSha": "46e71f3de645445a9f2241400a3adcede57f9ba2",
+      "bytes": 11872
+    },
+    {
+      "path": "toolsets.json",
+      "gitBlobSha": "871cdc4c98d002cde6a8d468608e59761a402fc2",
+      "bytes": 5778
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # portakit
 
-> **Latest verified conversation handoff (2026-10-22):** [Complete source/decision/evidence map](docs/handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) · [One copy-ready next-chat prompt](docs/handoff/START_NEW_CHAT_PORTAKIT_20261022.md). The most recent live main plus `catalog.json` and `toolsets.json` supersedes dated historical counts. Company GUI/Office/licensing acceptance remains NOT_VERIFIED.
+> **Latest verified conversation handoff (2026-10-22):** [Complete source/decision/evidence map](docs/handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) · [One copy-ready next-chat prompt](docs/handoff/START_NEW_CHAT_PORTAKIT_20261022.md) · [48-file baseline source map](docs/handoff/2026-10-22_REPO_SOURCE_MAP.json). The most recent live main plus `catalog.json` and `toolsets.json` supersedes dated historical counts. Company GUI/Office/licensing acceptance remains NOT_VERIFIED.
 
 Small Windows portable app manager. Python 3.11+, standard library only. Windows only; run one operation at a time.
 

@@ -1,5 +1,7 @@
 # portakit
 
+> **Latest restart / new-chat handoff (2026-10-22):** [Full project conversation context](docs/handoff/2026-10-22_FULL_CONTEXT.md) · [One new-chat prompt](docs/handoff/START_NEW_CHAT_20261022.md) · [Baseline 48-file Git source map](docs/handoff/2026-10-22_REPO_SOURCE_MAP.json). At checkpoint: 17 pinned installable apps, 108 research items, 10 exclusive primary domains and Windows Python 3.11/3.14 CI 282 tests each PASS. **This repository is PUBLIC**: never commit company-private, user-private or raw chat memory. Latest main always overrides the checkpoint.
+
 Small Windows portable app manager. Python 3.11+, standard library only. Windows only; run one operation at a time.
 
 ## Air-gapped local vendor archive installation (explicit opt-in)

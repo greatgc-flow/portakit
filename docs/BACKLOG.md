@@ -1,5 +1,12 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## R2 reconciliation (2026-10-23; review before changing latest main)
+
+- **Focused remediation (PR validation required):** baseline ZIP extractor lacked expanded-size and member-count guards. The [R2 code/audit change](review/2026-10-23_RECURSIVE_MECE_AUDIT.md) adds bounded ZIP preflight, streamed member-length checks and rollback regressions. Consider DONE only once Windows PR CI passes, change is merged, and main CI rechecked.
+- **Open human/licensing gates:** Everything / grepWin / full 7-Zip GUI remain `HUMAN_NOT_VERIFIED`; four Office semantic comparisons `NOT_VERIFIED`; TCPView/PsPing `RESEARCH_ONLY` pending vendor redistribution/internal transfer determination. Do not upgrade to PASS or add binaries because CI is green.
+- **Next optional robustness:** consider an opt-in console-to-file evidence mode for the single-tool core CLI; toolset apply and GUI/Office harnesses already write local evidence. Confirm exact stdout/stderr semantics and sensitive-data handling before generalizing.
+- **Usability:** explicit standalone `7zip` requires previously managed `7zr`; document prerequisite rather than silently installing it. Historical candidate lines below are intentionally not current installation status.
+
 > **Active handoff as of 2026-10-22:** [Verified cross-chat status and ordered P0–P2 gaps](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) · [new chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261022.md). The chronological sections below intentionally preserve older planning assumptions, some superseded by PRs #14–#18. Do not treat a past "candidate" or "not implemented" entry as current without checking main.
 
 The [corporate/offline 30-software survey](RESEARCH_CORPORATE_OFFLINE_FREE_TOP30_20261020.md) identifies **research-only** candidates and per-vendor redistribution gates. Do not silently add them to installable catalog or republish proprietary vendor binaries.

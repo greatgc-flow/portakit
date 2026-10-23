@@ -24,6 +24,10 @@ import xml.etree.ElementTree as ET
 
 DEFAULT_CATALOG = Path(__file__).with_name("catalog.json")
 MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
+# Guard against ZIP bombs independently of the compressed vendor-download cap.
+# Review these limits when admitting unusually large new official packages.
+MAX_ZIP_MEMBERS = 4096
+MAX_ZIP_EXPANDED_BYTES = 512 * 1024 * 1024
 EXIT_CODES = dict(ok=0, usage=1, catalog=2, fetch=3, archive=4, state=5, busy=6)
 DEVICE_NAME = re.compile(r"(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?")
 
@@ -402,11 +406,20 @@ def extract(artifact, tool, destination):
         with zipfile.ZipFile(artifact) as archive:
             members = []
             paths = {}
-            for info in archive.infolist():
+            infos = archive.infolist()
+            if len(infos) > MAX_ZIP_MEMBERS:
+                raise PortakitError("archive", "zip: member count limit exceeded")
+            expanded = 0
+            for info in infos:
                 name = info.filename.replace("\\", "/")
                 directory = name.endswith("/")
                 name = name[:-1] if directory else name
                 safe_path(destination, name, "zip member")
+                if directory and info.file_size:
+                    raise PortakitError("archive", "zip: directory contains file data")
+                if info.file_size > MAX_ZIP_EXPANDED_BYTES - expanded:
+                    raise PortakitError("archive", "zip: expanded size limit exceeded")
+                expanded += info.file_size
                 mode = info.external_attr >> 16
                 if (info.external_attr & stat.FILE_ATTRIBUTE_REPARSE_POINT or stat.S_ISLNK(mode)
                         or stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR)):
@@ -437,7 +450,19 @@ def extract(artifact, tool, destination):
                 else:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     with archive.open(info) as source, target.open("wb") as out:
-                        shutil.copyfileobj(source, out)
+                        written = 0
+                        while True:
+                            chunk = source.read(1024 * 1024)
+                            if not chunk:
+                                break
+                            written += len(chunk)
+                            if written > info.file_size:
+                                raise PortakitError("archive",
+                                                    "zip: expanded member exceeds declared size")
+                            out.write(chunk)
+                        if written != info.file_size:
+                            raise PortakitError("archive",
+                                                "zip: expanded member size mismatch")
     except PortakitError as exc:
         raise PortakitError("archive", str(exc)) from exc
     except (zipfile.BadZipFile, RuntimeError, NotImplementedError, zlib.error, EOFError) as exc:

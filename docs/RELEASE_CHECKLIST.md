@@ -1,5 +1,9 @@
 # Release acceptance checklist
 
+## R2 ZIP extraction acceptance addition (2026-10-23)
+
+The general ZIP importer has a proposed explicit **4,096-member / 512 MiB expanded-data** bounded preflight and actual-byte verification independent of the 100 MiB downloaded-asset cap. Before accepting the change, verify the five corresponding `tests/test_zip_bounds.py` cases on Windows Python **3.11 and 3.14**, including update rollback and no unapproved local changes. For real vendor archives, use the separately opt-in Windows live smoke; passing synthetic tests alone is not GUI/licensed-Office/corporate-security acceptance. Never publish a release without the existing human Gate D.
+
 > **2026-10-22 evidence boundary:** [current comprehensive handoff](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md). At that point 17 official immutable source pins, 282 passing unit tests each on Python 3.11 and 3.14, **but workstation GUI, WinMerge Office4 semantic GUI and Sysinternals licensing gates remain NOT_VERIFIED**. No default automated Release or company security approval is implied.
 
 This is a **manual gate**, not an automated publish workflow. A green unit-test run is necessary but not enough to advertise a release.

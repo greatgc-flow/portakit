@@ -1,4 +1,9 @@
 # portakit specification
+
+## General ZIP expanded-data safety limit (R2, 2026-10-23)
+
+In addition to the 100 MiB compressed vendor-download limit, standard ZIP archives are rejected **before extraction** when there are more than **4,096 entries** (including directories) or more than **512 MiB of declared expanded content** in aggregate. Streaming extraction also rejects any member whose actual extracted byte count differs from its declared size, before promoting the stage into a managed installation. The official 7-Zip SFX-as-DATA extractor retains its own separate stricter limits. A future unusually large vendor ZIP must undergo a reviewed limit/size change with explicit negative tests, not an implicit bypass. There is no automatic override or fallback download. This is an application-level bound, not a substitute for OS disk quotas, anti-malware validation, or a trusted vendor SHA pin.
+
 Windows CLI, Python 3.11+ stdlib only, single module `portakit.py` + `catalog.json`. No JSON schemas.
 Commands: `list | install ID | update ID | configure ID | remove ID`; global `--json`, `--root DIR`.
 MVP tools: notepad++, winmerge, jq (single exe). Limits: 100 MiB download cap, reserved names (`.portakit*`, `*.old`), single-root zip flatten.

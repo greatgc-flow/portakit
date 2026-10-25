@@ -38,6 +38,27 @@ jobs:
       - name: Run offline regression suite
         run: python -I -m unittest discover -s tests -v
 
+      - name: Verify personal toolkit isolated CLI (no downloads or installs)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $list = @(python -I scripts/my_toolkit.py list --all)
+          if ($LASTEXITCODE -ne 0 -or $list[-1] -ne 'TOTAL: 151') {
+            throw 'Personal toolkit cannot browse the full research inventory'
+          }
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-not-created'
+          python -I scripts/my_toolkit.py create --name ci-kit --tool jq --tool duckdb-cli --out $kit
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $kit)) {
+            throw 'Personal toolkit profile creation failed'
+          }
+          $plan = @(python -I scripts/my_toolkit.py plan --kit $kit --root $root)
+          if ($LASTEXITCODE -ne 0 -or -not ($plan -match 'duckdb-cli\s+RESEARCH_ONLY')) {
+            throw 'Personal toolkit failed to gate unapproved research tool'
+          }
+          if (Test-Path -LiteralPath $root) { throw 'Plan created an install directory' }
+          Write-Host 'Personal toolkit isolated CLI + research boundary PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

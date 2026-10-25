@@ -39,7 +39,9 @@
       "primary": "text",
       "stage": "ALREADY_PINNED",
       "existingAdmission": "PINNED_CATALOG",
-      "gates": [],
+      "gates": [
+        "RECOMMENDED_PLUGINS_EXPLICIT_OPT_IN"
+      ],
       "vendorReferenceToVerify": null
     },
     {
@@ -49,7 +51,9 @@
       "primary": "files",
       "stage": "ALREADY_PINNED",
       "existingAdmission": "PINNED_CATALOG",
-      "gates": [],
+      "gates": [
+        "OFFICE4_SEMANTIC_GUI_NOT_VERIFIED"
+      ],
       "vendorReferenceToVerify": null
     },
     {
@@ -109,7 +113,10 @@
       "primary": "structured-data",
       "stage": "NEW_RESEARCH_ONLY",
       "existingAdmission": null,
-      "gates": [],
+      "gates": [
+        "SINGLE_BINARY_PLATFORM_VERSION_GATE",
+        "RESOURCE_USAGE_BENCHMARK"
+      ],
       "vendorReferenceToVerify": null
     },
     {
@@ -119,7 +126,11 @@
       "primary": "files",
       "stage": "ALREADY_PINNED",
       "existingAdmission": "PINNED_CATALOG",
-      "gates": [],
+      "gates": [
+        "FIRST_RUN_MAY_REQUEST_SERVICE_OR_UAC",
+        "WHOLE_NTFS_INDEX_PRIVACY",
+        "HTTP_ETP_MUST_REMAIN_DISABLED"
+      ],
       "vendorReferenceToVerify": "https://www.voidtools.com/support/everything/everything_service/"
     },
     {
@@ -199,7 +210,8 @@
       "existingAdmission": null,
       "gates": [
         "REDISTRIBUTION_REVIEW",
-        "TOOL_BUNDLE_PRIVILEGED"
+        "TOOL_BUNDLE_PRIVILEGED",
+        "PRIVILEGED_TOOLS_IN_BUNDLE"
       ],
       "vendorReferenceToVerify": "https://learn.microsoft.com/en-us/sysinternals/license-faq"
     },
@@ -230,7 +242,10 @@
       "primary": "security",
       "stage": "NEW_RESEARCH_ONLY",
       "existingAdmission": null,
-      "gates": [],
+      "gates": [
+        "OFFLINE_BUNDLE_DEPENDENCIES",
+        "BROWSER_SECURITY_POLICY"
+      ],
       "vendorReferenceToVerify": null
     },
     {
@@ -240,7 +255,10 @@
       "primary": "security",
       "stage": "NEW_RESEARCH_ONLY",
       "existingAdmission": null,
-      "gates": [],
+      "gates": [
+        "PRIVATE_KEY_HANDLING",
+        "JAVA_RUNTIME_COMPATIBILITY"
+      ],
       "vendorReferenceToVerify": null
     },
     {
@@ -252,7 +270,8 @@
       "existingAdmission": null,
       "gates": [
         "VENDOR_EULA_REVIEW",
-        "ACTIVE_NETWORK_PROBE"
+        "ACTIVE_NETWORK_PROBE",
+        "REDISTRIBUTION_REVIEW"
       ],
       "vendorReferenceToVerify": null
     },
@@ -339,7 +358,8 @@
       "existingAdmission": null,
       "gates": [
         "MSI_PORTABILITY_NOT_ESTABLISHED",
-        "USER_PROFILE_SETTINGS"
+        "USER_PROFILE_SETTINGS",
+        "PRIVILEGE_REQUIREMENT_TO_VERIFY"
       ],
       "vendorReferenceToVerify": "https://github.com/glzr-io/glazewm"
     },
@@ -429,7 +449,8 @@
       "existingAdmission": null,
       "gates": [
         "NOT_SELF_CONTAINED_SIMULATOR",
-        "DOTNET_RUNTIME_COMPATIBILITY"
+        "DOTNET_RUNTIME_COMPATIBILITY",
+        "VS2015_UNSUPPORTED_FOR_NEW_TARGETS"
       ],
       "vendorReferenceToVerify": "https://github.com/mkjeff/secs4net"
     },
@@ -467,7 +488,8 @@
       "existingAdmission": null,
       "gates": [
         "CLIENT_NOT_SERVER",
-        "UNSAFE_EXAMPLE_BIND_ALL_INTERFACES"
+        "UNSAFE_EXAMPLE_BIND_ALL_INTERFACES",
+        "PROTOCOL_CONFORMANCE_REQUIRED"
       ],
       "vendorReferenceToVerify": "https://github.com/senrust/pymcprotocol"
     },

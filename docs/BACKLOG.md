@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## Enterprise/industrial research intake (2026-10-25, opt-in and metadata only)
+
+- **Acquired source**: one 31-page research DOCX (private, never upload to PUBLIC repo); [53 matrix-family crosswalk](../research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) and [technical/license fact review](../research/ENTERPRISE_PORTABLE_REVIEW_20261025.md), including six related editor plugin mentions. Keep current 17 catalog pins and 108 canonical research entries unchanged; 43 newly discovered research-only IDs are *staged*, not installed/approved.
+- **P1 research candidates**: DuckDB CLI, xsv, Tailviewer: independently verify official versions, SHA, archive/unpacked sizes, Windows compatibility, runtime dependencies, corporate-use and redistribution license, offline behavior, and synthetic functional tests; retain RESEARCH_ONLY until all admission gates pass.
+- **P1 safety corrections**: `pymcprotocol` is PLC client, not a proven simulator server; report's 0.0.0.0 server sketch untrusted and never run; PowerShell 7 legacy OS compatibility, Everything auto-service, Secs4Net modern .NET runtime, GlazeWM MSI portability, com0com driver, NSSM service and Sysinternals redistribution each require explicit policy check.
+- **P2 optional domain profiles**: industrial-secs-gem, industrial-plc-fieldbus, industrial-telemetry, ergonomics, legacy-cli (cross-domain, no installable memberships unless independently pinned and tested). Production ports/real PLC scans or raw socket listeners forbidden by default. Apply the report via candidate metadata and reviewed branches, never a wholesale taxonomy migration.
+
+
 ## R2 reconciliation (2026-10-23; review before changing latest main)
 
 - **Focused remediation (PR validation required):** baseline ZIP extractor lacked expanded-size and member-count guards. The [R2 code/audit change](review/2026-10-23_RECURSIVE_MECE_AUDIT.md) adds bounded ZIP preflight, streamed member-length checks and rollback regressions. Consider DONE only once Windows PR CI passes, change is merged, and main CI rechecked.

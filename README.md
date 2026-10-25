@@ -1,5 +1,9 @@
 # portakit
 
+## New enterprise/industrial portable-tool intake (2026-10-25)
+
+A [53-family DOCX research crosswalk](research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) is now kept **separately** from the 17-item approved install catalog and the existing 108-record canonical candidate ledger. [Review and correction notes](research/ENTERPRISE_PORTABLE_REVIEW_20261025.md) explain 5 already-pinned items, 5 existing research items and 43 *new research-only* suggestions, including industrial protocols, large logs, ergonomics and IIoT. This is metadata only; no new vendor binary, service/driver, internet access, industrial listener or automatic settings change is approved. See [the 2026-10-25 handoff](docs/handoff/PORTAKIT_HANDOFF_20261025_ENTERPRISE_RESEARCH.md).
+
 ## 2026-10-23 R2 quality and ZIP safety review
 
 The [R2 MECE/code/security audit](docs/review/2026-10-23_RECURSIVE_MECE_AUDIT.md) and [current public-safe handoff](docs/handoff/PORTAKIT_HANDOFF_20261023_R2.md) describe the bounded ordinary-ZIP extraction hardening, independent regression tests and remaining **human/not-verified** release gates. The older handoff links below remain historical evidence, not the current Git main SHA. **Do not use this project as permission to redistribute vendor packages or to operate on production systems.**

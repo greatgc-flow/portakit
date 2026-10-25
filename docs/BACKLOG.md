@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## Personal portable toolkit composition (2026-10-25)
+
+- **Implemented candidate PR (CI/merge gate)**: `scripts/my_toolkit.py`, `scripts/MyToolkit.cmd`, and [guide](PERSONAL_KITS.md) allow selecting any of the current 151 tool IDs into a personal JSON toolkit, with immutable approved-version SHA locks, category/preset composition, research-only and OS built-in partitions, zero-write planning, explicit safe install and offline SHA preflight via existing `toolsets.apply`. No changes to catalog or canonical taxonomy. Confirm Windows Python 3.11/3.14 tests and post-merge CI before labeling as released.
+- **P1 next**: optional tiny interactive wizard/catalog search and configuration export/import that preserve all trust boundaries, if human UX acceptance shows CLI friction. No mandatory GUI runtime or auto-download of research-only tools.
+- **P1 intake**: 43 additional research-only software families from [2026-10-25 report](../research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) remain *selectable but non-installable* until independently approved. Safe partial build requires explicit `--skip-pending`.
+- **P2**: license-compliant optional offline media packaging and installed-footprint budgeting, reversible portable launcher session (never system PATH), and metadata-only tool discovery/filter by role. Must revalidate redistribution rights; do not bundle closed vendor binaries by default.
+
+
 ## Enterprise/industrial research intake (2026-10-25, opt-in and metadata only)
 
 - **Acquired source**: one 31-page research DOCX (private, never upload to PUBLIC repo); [53 matrix-family crosswalk](../research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) and [technical/license fact review](../research/ENTERPRISE_PORTABLE_REVIEW_20261025.md), including six related editor plugin mentions. Keep current 17 catalog pins and 108 canonical research entries unchanged; 43 newly discovered research-only IDs are *staged*, not installed/approved.

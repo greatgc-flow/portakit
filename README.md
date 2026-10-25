@@ -1,5 +1,19 @@
 # portakit
 
+## Build your own portable toolkit (2026-10-25)
+
+Every known tool is now *selectable* into your own reusable JSON toolkit, but only the **17 verified SHA-pinned** tools are installable. Use [Personal Kits guide](docs/PERSONAL_KITS.md), `scripts/MyToolkit.cmd` or `python -I scripts/my_toolkit.py`. The separate inventory union has **151 IDs = 17 pinned + 27 Windows native + 107 unverified research items**. Unverified items can be saved and planned, never silently installed.
+
+```cmd
+scripts\MyToolkit.cmd list --all
+scripts\MyToolkit.cmd create --name my-support --preset essentials --tool ripgrep --tool duckdb-cli --out MySupport.json
+scripts\MyToolkit.cmd plan --kit MySupport.json --root D:\MyPortableApps
+scripts\MyToolkit.cmd build --kit MySupport.json --root D:\MyPortableApps --offline-dir D:\ApprovedVendorArchives --skip-pending --yes
+```
+
+`create` writes a new profile plus exact matching local console evidence; `plan` never mutates disk; `build --yes` reuses the existing validated per-tool installer. Research-only items block the whole build unless the user explicitly supplies `--skip-pending`. No new tool binaries, auto updates, services, drivers, registry/OS path edits, active network probes or releases are enabled. All archives must be separately approved and acquired by the user. This is the initial Very Simple CLI; optional GUI tooling remains deferred.
+
+
 ## New enterprise/industrial portable-tool intake (2026-10-25)
 
 A [53-family DOCX research crosswalk](research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) is now kept **separately** from the 17-item approved install catalog and the existing 108-record canonical candidate ledger. [Review and correction notes](research/ENTERPRISE_PORTABLE_REVIEW_20261025.md) explain 5 already-pinned items, 5 existing research items and 43 *new research-only* suggestions, including industrial protocols, large logs, ergonomics and IIoT. This is metadata only; no new vendor binary, service/driver, internet access, industrial listener or automatic settings change is approved. See [the 2026-10-25 handoff](docs/handoff/PORTAKIT_HANDOFF_20261025_ENTERPRISE_RESEARCH.md).

@@ -1,0 +1,72 @@
+# Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
+
+> **Working implementation**, Windows/Python 3.11+ stdlib, no web UI, no new third-party packages. Built on the existing `scripts/toolsets.py` SHA-pinned installer. Personal selections are inert **JSON files** until explicit `build --yes`. No automatic service/driver, registry, PATH, shell, auto-update or Release change.
+
+## A. One model, every tool selectable, each in exactly one primary domain
+
+`scripts/MyToolkit.cmd` / `python -I scripts/my_toolkit.py` covers the *union* of the 108-entry canonical research register and the 43 unique research-only new software families from the supplied enterprise report: **151 unique selectable IDs** at this checkpoint, with 10 primary functional domains and cross-domain presets. Four statuses matter:
+- `READY`: **17** existing immutable SHA-pinned `catalog.json` installable tools; only these can be installed by PortaKit after explicit consent.
+- `RESEARCH_ONLY`: **107** candidates (64 older, 43 newly inventoried); selectable/savable but **never downloaded or installed** until independent vendor/license/EDR/Windows approval and reviewed catalogue promotion.
+- `OS_ONLY`: **27** Windows built-ins (some depend on OS optional features); selectable as notes; **never copied/installed** by PortaKit. They may not be present on every Windows image.
+- **Category / preset**: compose only current 17 approved pins, de-duplicate by ID, no scope creep if candidates appear later. Every ID belongs to exactly one primary domain; optional personal profiles are intentionally many-to-many.
+
+All 151 selectable *IDs* do not imply all 151 are ready-made portable EXEs or that a family (e.g. a simulator SDK) is a complete runnable product.
+
+## B. Commands (copy/paste from repository root in an approved nonproduction Windows workstation)
+
+```cmd
+rem Explore 17 approved installable pins (does not create files)
+scripts\MyToolkit.cmd list
+
+rem Browse all 151 candidates, filter by exactly one domain
+scripts\MyToolkit.cmd list --all
+scripts\MyToolkit.cmd list --all --category network
+
+rem Create personal JSON kit + exact console transcript .log (no installation)
+scripts\MyToolkit.cmd create --name my-support --preset essentials --tool ripgrep --tool duckdb-cli --tool tcping --out MySupport.json
+
+rem Read-only plan (no downloads, files, registry or services touched)
+scripts\MyToolkit.cmd plan --kit MySupport.json --root D:\MyPortableApps
+
+rem This intentionally FAILS CLOSED because duckdb-cli/tcping remain research only.
+scripts\MyToolkit.cmd build --kit MySupport.json --root D:\MyPortableApps --yes
+
+rem Explicit safe partial installation from preapproved vendor archives only;
+rem all selected original archives preflight SHA-256 before any install
+scripts\MyToolkit.cmd build --kit MySupport.json --root D:\MyPortableApps --offline-dir D:\ApprovedArchives --skip-pending --yes
+
+rem Or define a fully approved pinned kit (recommended before offline transfer).
+scripts\MyToolkit.cmd create --name compact-ops --tool notepad++ --tool jq --tool ripgrep --tool 7zr --tool 7zip --out CompactOps.json
+scripts\MyToolkit.cmd plan --kit CompactOps.json --root D:\MyPortableApps
+scripts\MyToolkit.cmd build --kit CompactOps.json --root D:\MyPortableApps --offline-dir D:\ApprovedArchives --yes
+```
+
+Alternatively use `--category files`, `--category text`, `--preset lightweight`, or any combination, plus repeated `--tool` and `--exclude`. Duplicate IDs are removed deterministically and a selected `7zr` is moved before `7zip`, since official full 7-Zip SFX must be extracted as data by the verified prerequisite. Selecting `7zip` alone requires an already managed, matching `7zr`; there is no silent install.
+
+## C. Three stages and recoverability
+
+| Stage | Side effects | Validation |
+| --- | --- | --- |
+| `list [--all]` | Read-only | Known IDs, primary domains and strict install/research/OS boundary |
+| `create` | Writes only **new** `KIT.json` plus same-basename `KIT.log`; refuses overwrite or junctions | Saved file includes exact selected IDs, `lockedPins` (version/SHA/dest), separate built-ins/pending snapshot |
+| `plan --kit` | Read-only; prints installed/missing/blocked plus pending entries | Re-verifies saved pins against *current* catalog, version drift fails closed |
+| `build --kit --yes` | Installs missing approved subset under `--root` only | Uses existing `toolsets.apply` locking, SHA, offline preflight, per-tool rollback, exact local console-evidence logs; no auto-update/removal |
+
+**Default blocking rule:** If *any* research candidate is present in the kit, `build --yes` refuses to install anything. Use `--skip-pending` only when you explicitly accept a **partial toolkit**. Even if a research candidate is later promoted to an official pinned ID, old personal kit JSON keeps it noninstallable until recreated (fresh user consent). If an approved version/hash changes, a locked kit fails until newly reviewed/re-created; never silently upgrades.
+
+Per-tool install is transactional; **whole-batch atomicity is not promised**. Already-installed matching tools are skipped. All original archives must be separately authorized to transfer and copied offline by the user; `--offline-dir` is **not** a source auto-downloader or general redistribution license. `--recommended` only affects new approved online editor installs and never happens by default; cannot combine it with `--offline-dir`.
+
+`build` logs the actual toolset installer console at `ROOT\.portakit-evidence\personal-<timestamp>-<suffix>.log` (or explicit `--log-file`); `create` writes exact mirrored console text next to the JSON. `plan/list` default to read-only and intentionally do not write evidence files; for local read-only capture, redirect their console output to a locally approved file when needed. **No sensitive log is uploaded to the public GitHub repository**.
+
+## D. Deliberate non-goals & acceptance gates
+
+- Selection and export **do not grant** corporate-use/redistribution permission. Review the actual vendor EULA, release hash, signed binaries, runtime and offline dependencies, OS support, legal/EDR and package notices. Some 'portable' programs can still write settings or request privileges when launched; the catalog's GUI evidence gates remain open.
+- No active probes, real SECS/GEM/PLC simulator listeners, service registration (NSSM), kernel drivers (com0com), non-default Everything indexing, clipboard persistence or unapproved outgoing links are enabled by building research-only selections.
+- `PowerShell 2.x/5.x`, JDK 8 and Visual Studio 2015 constraints for enterprise scripts remain applicable; the PortaKit management tool itself already requires an approved Python 3.11+ runtime on Windows.
+- **Not a graphical wizard yet.** This initial interface is a small documented CLI; a lightweight optional GUI/wizard can be designed separately if it materially improves adoption without creating heavyweight runtime dependencies.
+
+## E. Regression and future growth
+
+`tests/test_my_toolkit.py` validates 151 ID union, exact stage partition, profiles/categories selection and dedup, safe JSON evidence, no overwrite, pin locking, tampering, all-research block, explicit partial safe build, built-in-only no-op and 7-Zip prerequisite. Windows CI runs on Python 3.11 and 3.14 and checks isolated CLI `-I` imports.
+
+Newly approved software should enter the canonical research and SHA-pinned install catalog only after independent review and separate PR; personal kits are not a shortcut into the trust boundary. Optional portable UI/wizard, device independent size budgeting and license-compliant export bundles can follow after verified user need.

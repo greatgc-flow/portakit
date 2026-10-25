@@ -1,0 +1,699 @@
+{
+  "schemaVersion": 1,
+  "title": "Enterprise portable/industrial communication source intake (research only)",
+  "source": {
+    "type": "user-provided DOCX",
+    "fileName": "기업용 포터블 업무·설비통신·운영편의 툴체인 딥리서치 계획.docx",
+    "sha256": "1411703d56de2ace98d20d2471442bf7ecc9e44b782e6be1035740baeb48bf1d",
+    "reportedPages": 31,
+    "table": "Enterprise portable toolchain master matrix",
+    "matrixSoftwareRows": 53
+  },
+  "authority": "Supplemental intake only; canonical research/TOOLS_CANDIDATES_20261020.json and catalog.json remain authoritative. No permission to download, execute, modify services, or redistribute.",
+  "domainPolicy": "Use existing exactly-one-of-10 PRIMARY domains; industry protocol/simulator labels are optional cross-domain PROFILES, NOT new primary categories.",
+  "statusMeaning": {
+    "ALREADY_PINNED": "Listed in 17 immutable approved hashes in catalog",
+    "EXISTING_RESEARCH_ONLY": "Already in the 108-entry research ledger but NOT installable",
+    "NEW_RESEARCH_ONLY": "New from the report, unverified and NOT installable"
+  },
+  "counts": {
+    "matrixRows": 53,
+    "alreadyPinned": 5,
+    "existingResearchOnly": 5,
+    "newResearchOnly": 43,
+    "existingResearchLedger": 108,
+    "potentialUnionDistinct": 151,
+    "relatedPlugins": 6
+  },
+  "crossReferenceNotes": [
+    "Subgroups and bundles are one MATRIX FAMILY, not necessarily one software asset. Never install entire Sysinternals Suite or com0com drivers from research entries.",
+    "Every license, portable format, binary hash, compressed/expanded footprint, enterprise use/redistribution, signature, OS runtime and network side effect must be independently verified before promotion.",
+    "Paper sample IPs and protocol settings are NOT production configuration. No example servers are executable source in this intake.",
+    "Existing pinned Notepad++ plugins ComparePlus and JsonTools are separate explicit opt-ins, not part of the 17 tool ID count."
+  ],
+  "records": [
+    {
+      "matrixRow": 1,
+      "id": "notepad++",
+      "name": "Notepad++",
+      "primary": "text",
+      "stage": "ALREADY_PINNED",
+      "existingAdmission": "PINNED_CATALOG",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 2,
+      "id": "winmerge",
+      "name": "WinMerge",
+      "primary": "files",
+      "stage": "ALREADY_PINNED",
+      "existingAdmission": "PINNED_CATALOG",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 3,
+      "id": "cudatext",
+      "name": "CudaText",
+      "primary": "text",
+      "stage": "EXISTING_RESEARCH_ONLY",
+      "existingAdmission": "RESEARCH_ONLY",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 4,
+      "id": "klogg",
+      "name": "klogg",
+      "primary": "text",
+      "stage": "EXISTING_RESEARCH_ONLY",
+      "existingAdmission": "RESEARCH_ONLY",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 5,
+      "id": "tailviewer",
+      "name": "Tailviewer",
+      "primary": "text",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 6,
+      "id": "xsv",
+      "name": "xsv",
+      "primary": "structured-data",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 7,
+      "id": "jq",
+      "name": "jq",
+      "primary": "structured-data",
+      "stage": "ALREADY_PINNED",
+      "existingAdmission": "PINNED_CATALOG",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 8,
+      "id": "duckdb-cli",
+      "name": "DuckDB CLI",
+      "primary": "structured-data",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 9,
+      "id": "everything",
+      "name": "Everything",
+      "primary": "files",
+      "stage": "ALREADY_PINNED",
+      "existingAdmission": "PINNED_CATALOG",
+      "gates": [],
+      "vendorReferenceToVerify": "https://www.voidtools.com/support/everything/everything_service/"
+    },
+    {
+      "matrixRow": 10,
+      "id": "ripgrep",
+      "name": "ripgrep",
+      "primary": "text",
+      "stage": "ALREADY_PINNED",
+      "existingAdmission": "PINNED_CATALOG",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 11,
+      "id": "double-commander",
+      "name": "Double Commander",
+      "primary": "files",
+      "stage": "EXISTING_RESEARCH_ONLY",
+      "existingAdmission": "RESEARCH_ONLY",
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 12,
+      "id": "czkawka",
+      "name": "Czkawka",
+      "primary": "files",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 13,
+      "id": "system-informer",
+      "name": "System Informer",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "KERNEL_DRIVER_POSSIBLE",
+        "PRIVILEGED_ACTIONS"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 14,
+      "id": "nssm",
+      "name": "NSSM",
+      "primary": "automation",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "SERVICE_CREATE_START",
+        "ADMIN_OR_POLICY_APPROVAL"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 15,
+      "id": "fulleventlogview",
+      "name": "FullEventLogView",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "VENDOR_EULA_REVIEW"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 16,
+      "id": "sysinternals-suite",
+      "name": "Sysinternals Suite",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "REDISTRIBUTION_REVIEW",
+        "TOOL_BUNDLE_PRIVILEGED"
+      ],
+      "vendorReferenceToVerify": "https://learn.microsoft.com/en-us/sysinternals/license-faq"
+    },
+    {
+      "matrixRow": 17,
+      "id": "imhex",
+      "name": "ImHex",
+      "primary": "security",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 18,
+      "id": "dependencies",
+      "name": "Dependencies",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 19,
+      "id": "cyberchef",
+      "name": "CyberChef",
+      "primary": "security",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 20,
+      "id": "keystore-explorer",
+      "name": "KeyStore Explorer",
+      "primary": "security",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 21,
+      "id": "portqry",
+      "name": "PortQry",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "VENDOR_EULA_REVIEW",
+        "ACTIVE_NETWORK_PROBE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 22,
+      "id": "ncat",
+      "name": "Ncat",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_NETWORK_LISTENER_OR_PROBE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 23,
+      "id": "tcping",
+      "name": "tcping",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "VENDOR_EULA_REVIEW",
+        "ACTIVE_NETWORK_PROBE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 24,
+      "id": "currports",
+      "name": "CurrPorts",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "VENDOR_EULA_REVIEW",
+        "SOCKET_TERMINATION_FEATURE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 25,
+      "id": "packet-sender",
+      "name": "Packet Sender",
+      "primary": "network",
+      "stage": "EXISTING_RESEARCH_ONLY",
+      "existingAdmission": "RESEARCH_ONLY",
+      "gates": [
+        "ACTIVE_NETWORK_SEND_OR_LISTEN"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 26,
+      "id": "wireshark",
+      "name": "Wireshark",
+      "primary": "network",
+      "stage": "EXISTING_RESEARCH_ONLY",
+      "existingAdmission": "RESEARCH_ONLY",
+      "gates": [
+        "CAPTURE_DRIVER_REQUIRED_FOR_LIVE_CAPTURE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 27,
+      "id": "winmtr-redux",
+      "name": "WinMTR-Redux",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_NETWORK_PROBE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 28,
+      "id": "glazewm",
+      "name": "GlazeWM",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "MSI_PORTABILITY_NOT_ESTABLISHED",
+        "USER_PROFILE_SETTINGS"
+      ],
+      "vendorReferenceToVerify": "https://github.com/glzr-io/glazewm"
+    },
+    {
+      "matrixRow": 29,
+      "id": "altsnap",
+      "name": "AltSnap",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 30,
+      "id": "sizer4",
+      "name": "Sizer 4.0",
+      "primary": "system",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 31,
+      "id": "powershell7-portable",
+      "name": "PowerShell 7 portable",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "LEGACY_OS_UNSUPPORTED",
+        "RUNTIME_COMPATIBILITY"
+      ],
+      "vendorReferenceToVerify": "https://learn.microsoft.com/en-us/powershell/scripting/whats-new/migrating-from-windows-powershell-51-to-powershell-7"
+    },
+    {
+      "matrixRow": 32,
+      "id": "busybox-w32",
+      "name": "busybox-w32",
+      "primary": "automation",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 33,
+      "id": "ditto",
+      "name": "Ditto",
+      "primary": "text",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "CLIPBOARD_SENSITIVE_DATA_PERSISTENCE"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 34,
+      "id": "mremoteng",
+      "name": "mRemoteNG",
+      "primary": "transfer",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "CREDENTIALS_AND_REMOTE_ACCESS"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 35,
+      "id": "keypirinha",
+      "name": "Keypirinha",
+      "primary": "automation",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 36,
+      "id": "secs4net",
+      "name": "Secs4Net",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "NOT_SELF_CONTAINED_SIMULATOR",
+        "DOTNET_RUNTIME_COMPATIBILITY"
+      ],
+      "vendorReferenceToVerify": "https://github.com/mkjeff/secs4net"
+    },
+    {
+      "matrixRow": 37,
+      "id": "secsgem",
+      "name": "secsgem",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "PYTHON_DEPENDENCIES",
+        "ACTIVE_LISTENER_IF_ENABLED"
+      ],
+      "vendorReferenceToVerify": "https://github.com/bparzella/secsgem"
+    },
+    {
+      "matrixRow": 38,
+      "id": "hsms-lua",
+      "name": "HSMS Wireshark Lua dissector",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "PLUGIN_LICENSE_AND_PCAP_REVIEW"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 39,
+      "id": "pymcprotocol",
+      "name": "pymcprotocol",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "CLIENT_NOT_SERVER",
+        "UNSAFE_EXAMPLE_BIND_ALL_INTERFACES"
+      ],
+      "vendorReferenceToVerify": "https://github.com/senrust/pymcprotocol"
+    },
+    {
+      "matrixRow": 40,
+      "id": "snap7-server",
+      "name": "Snap7 ServerPartner",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_LISTENER",
+        "PROTOCOL_EMULATION_VALIDATION"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 41,
+      "id": "cpppo",
+      "name": "cpppo",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_LISTENER",
+        "PYTHON_DEPENDENCIES"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 42,
+      "id": "pyxgt",
+      "name": "pyXGT",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "CLIENT_SERVER_ROLE_NOT_VERIFIED"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 43,
+      "id": "qmodmaster",
+      "name": "QModMaster",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_NETWORK_PROBE",
+        "MASTER_CLIENT_NOT_SERVER"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 44,
+      "id": "open62541",
+      "name": "open62541",
+      "primary": "development",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "SDK_NOT_READY_SINGLE_EXE",
+        "EXPLICIT_BUILD"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 45,
+      "id": "com0com-hub4com",
+      "name": "com0com / hub4com",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "KERNEL_DRIVER_INSTALL",
+        "ADMIN_APPROVAL_REQUIRED"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 46,
+      "id": "savvycan",
+      "name": "SavvyCAN",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "CAN_INTERFACE_DRIVER",
+        "PASSIVE_PCAP_OPTION"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 47,
+      "id": "serial-studio",
+      "name": "Serial-Studio",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "SERIAL_NETWORK_ACCESS",
+        "GUI_RUNTIME_DEPENDENCIES"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 48,
+      "id": "telegraf",
+      "name": "Telegraf",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "ACTIVE_POLLING",
+        "SENSITIVE_TELEMETRY"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 49,
+      "id": "victoriametrics",
+      "name": "VictoriaMetrics",
+      "primary": "structured-data",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "NETWORK_LISTENER",
+        "DATA_RETENTION"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 50,
+      "id": "mosquitto",
+      "name": "Eclipse Mosquitto",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "NETWORK_LISTENER",
+        "AUTHENTICATION_CONFIG"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 51,
+      "id": "nats-server",
+      "name": "NATS Server",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "NETWORK_LISTENER",
+        "AUTHENTICATION_CONFIG"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 52,
+      "id": "bac0",
+      "name": "BAC0",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "BROADCAST_DISCOVERY",
+        "ACTIVE_CONTROL_COMMANDS"
+      ],
+      "vendorReferenceToVerify": null
+    },
+    {
+      "matrixRow": 53,
+      "id": "termite",
+      "name": "Termite",
+      "primary": "network",
+      "stage": "NEW_RESEARCH_ONLY",
+      "existingAdmission": null,
+      "gates": [
+        "SERIAL_PORT_IO"
+      ],
+      "vendorReferenceToVerify": null
+    }
+  ],
+  "relatedEditorPlugins": [
+    {
+      "id": "compareplus",
+      "name": "ComparePlus",
+      "host": "notepad++",
+      "stage": "ALREADY_PINNED_PLUGIN_AS_OPTION",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    },
+    {
+      "id": "jsontools-npp",
+      "name": "JsonTools",
+      "host": "notepad++",
+      "stage": "ALREADY_PINNED_PLUGIN_AS_OPTION",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    },
+    {
+      "id": "csvlint-npp",
+      "name": "CSV Lint",
+      "host": "notepad++",
+      "stage": "REVIEW_ONLY_PLUGIN",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    },
+    {
+      "id": "nppexec",
+      "name": "NppExec",
+      "host": "notepad++",
+      "stage": "REVIEW_ONLY_PLUGIN",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    },
+    {
+      "id": "xdocdiff",
+      "name": "xdocdiff",
+      "host": "winmerge",
+      "stage": "REVIEW_ONLY_PLUGIN",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    },
+    {
+      "id": "merge7z",
+      "name": "Merge7z",
+      "host": "winmerge",
+      "stage": "REVIEW_ONLY_PLUGIN",
+      "licenseAndOfflineGate": "NOT_VERIFIED"
+    }
+  ]
+}

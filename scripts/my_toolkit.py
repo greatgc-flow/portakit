@@ -16,6 +16,7 @@ from datetime import datetime
 
 HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import portakit as core  # noqa: E402
 import toolsets as sets  # noqa: E402
 
@@ -77,10 +78,16 @@ def inventory():
             raise KitError("Malformed additional research item")
         ident = sets._validate_id(row["id"])
         if row.get("stage") == "NEW_RESEARCH_ONLY":
-            if ident in known or row.get("primary") not in categories:
-                raise KitError("Intake collision or unclassified tool: " + ident)
-            known[ident] = {"id": ident, "name": row["name"],
-                            "primary": row["primary"], "admission": "RESEARCH_ONLY"}
+            if row.get("primary") not in categories:
+                raise KitError("Unclassified intake tool: " + ident)
+            # Once a candidate is promoted into the canonical inventory,
+            # the dated sidecar stays valid without duplicating the entry.
+            if ident in known:
+                if known[ident]["primary"] != row["primary"]:
+                    raise KitError("Intake primary ownership conflict: " + ident)
+            else:
+                known[ident] = {"id": ident, "name": row["name"],
+                                "primary": row["primary"], "admission": "RESEARCH_ONLY"}
         elif ident not in known:
             raise KitError("Unresolved existing intake tool: " + ident)
     return pins, categories, profiles, known

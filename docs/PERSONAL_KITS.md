@@ -1,5 +1,10 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Readiness GUI per-tool measured bytes (2026-10-30 refinement)
+
+In the existing **Inspect readiness / size…** window, each pinned tool now displays its original vendor filename, installed/source status and **measured installed logical bytes**; missing/uninstalled pinned tools explicitly show **`size=UNKNOWN`**, not zero or a forecast. An inconsistent status-to-footprint mapping fails closed. Overall installed logical bytes are not the total eventual toolkit size, and `READY` still does not grant licensing, redistribution or EDR approval.
+
+
 ## Read-only GUI readiness and installed-size inspector (2026-10-30)
 
 The optional `scripts\MyToolkitGUI.cmd` picker now has **Inspect readiness / size…**. It reads the **current selected kit** (saving it first is not required) and opens a separate inspection window with an installation root, optional directory of separately licensed original vendor archives, optional logical-size limit in MiB, and explicit **Inspect pinned subset** toggle. Click **Inspect current selection (read-only)** to show all selected pinned, unapproved research, OS built-in and separately chosen editor plugin counts, then each original filename and source SHA/availability.

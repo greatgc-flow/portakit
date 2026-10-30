@@ -52,12 +52,16 @@ def assess(saved, pins, root, archive_dir=None, skip_pending=False):
 
     folder = None
     directory_exists = False
+    # Already-installed tools never require original archives. Do not mark a
+    # missing optional archive directory as a blocker when no source is needed.
+    needs_originals = any(row["status"] == "install" for row in plan["tools"])
     if archive_dir is not None:
         folder = Path(os.path.abspath(str(archive_dir)))
-        kit.core.check_links(folder)
-        directory_exists = folder.is_dir()
-        if not directory_exists:
-            blockers.append("SOURCE_DIRECTORY_MISSING: " + str(folder))
+        if needs_originals:
+            kit.core.check_links(folder)
+            directory_exists = folder.is_dir()
+            if not directory_exists:
+                blockers.append("SOURCE_DIRECTORY_MISSING: " + str(folder))
     by_id = {row["id"]: row for row in manifest["assets"]}
     result_rows = []
     for operation in plan["tools"]:

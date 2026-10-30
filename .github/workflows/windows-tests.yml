@@ -48,6 +48,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Picker headless tests syntax failed' }
           Write-Host 'Personal toolkit GUI source checks PASS (visual acceptance still manual)'
 
+      - name: Check optional read-only GUI overview syntax without Tk or vendors
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -I -c "import ast,pathlib; ast.parse(pathlib.Path('scripts/kit_overview.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('tests/test_kit_overview.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Read-only overview source invalid' }
+          Write-Host 'Picker readiness/size overview headless source PASS'
+
       - name: Verify personal toolkit isolated CLI (no downloads or installs)
         shell: pwsh
         run: |

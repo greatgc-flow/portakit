@@ -38,6 +38,16 @@ jobs:
       - name: Run offline regression suite
         run: python -I -m unittest discover -s tests -v
 
+      - name: Parse optional desktop picker without starting Tk or vendor processes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -I -c "import ast,pathlib; ast.parse(pathlib.Path('scripts/toolkit_picker.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Optional Tk GUI syntax failed' }
+          python -I -c "import ast,pathlib; ast.parse(pathlib.Path('tests/test_toolkit_picker.py').read_text(encoding='utf-8'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Picker headless tests syntax failed' }
+          Write-Host 'Personal toolkit GUI source checks PASS (visual acceptance still manual)'
+
       - name: Verify personal toolkit isolated CLI (no downloads or installs)
         shell: pwsh
         run: |

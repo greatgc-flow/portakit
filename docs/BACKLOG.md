@@ -1,5 +1,12 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — personal-toolkit picker follow-up
+
+- **Implemented in candidate PR; verify/merge first:** optional Python standard-library Tkinter **mouse-based, zero-install selection-only GUI** `scripts/toolkit_picker.py` and `scripts/MyToolkitGUI.cmd`. Dynamic 151-ID browse/search/category and approval filters, multi-select, pin-only presets, imported saved kits, new schema-v1 JSON and mirrored log, research-only consent preservation. Independent headless tests, Windows CI parser gate. No code path installs binaries or changes OS settings.
+- **Still unverified:** real human GUI acceptance on approved Windows desktop (Tk availability, scaling at 100/150/200%, Korean text, keyboard-only operation, screen-reader behavior, window responsiveness with larger inventories, screenshot evidence). CLI remains authoritative fallback.
+- **Still deferred:** individually-selectable optional editor plugins beyond existing approved recommended plugins, vendor-rights-compliant offline redistribution/package build, measured size budgets, full single-tool CLI read-only/error evidence mirroring, real Office4/Everything/grepWin/7-Zip GUI acceptance. Keep #25 legal/protocol gates independent; no new service, driver, live network scan or release.
+
+
 ## Personal portable toolkit composition (2026-10-25)
 
 - **Implemented candidate PR (CI/merge gate)**: `scripts/my_toolkit.py`, `scripts/MyToolkit.cmd`, and [guide](PERSONAL_KITS.md) allow selecting any of the current 151 tool IDs into a personal JSON toolkit, with immutable approved-version SHA locks, category/preset composition, research-only and OS built-in partitions, zero-write planning, explicit safe install and offline SHA preflight via existing `toolsets.apply`. No changes to catalog or canonical taxonomy. Confirm Windows Python 3.11/3.14 tests and post-merge CI before labeling as released.

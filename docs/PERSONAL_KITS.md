@@ -1,5 +1,22 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Optional mouse-based personal kit picker (2026-10-30)
+
+On an approved interactive Windows PC with the **standard** Python 3.11+ distribution and optional Tkinter runtime, use:
+
+```cmd
+scripts\MyToolkitGUI.cmd
+:: or
+python -I scripts/toolkit_picker.py
+```
+
+The GUI is **optional**. Some embedded Python runtimes do not ship Tk; if it is unavailable or the desktop is headless, fall back to the fully supported `scripts\MyToolkit.cmd` commands below. GUI filters on all known IDs (current union 151, dynamic), on primary domain, and on explicit state **READY** (immutable catalog pins only), **OS_ONLY** (Windows built-in, informational) or **RESEARCH_ONLY** (unverified, never installed). Search supports Unicode and casefold. Multi-select highlighted, add all filtered, remove, approved-only, clear, add an existing *pinned-only* preset. Save a *new* `KIT.json` and exact console-mirrored `KIT.log` with no overwrite; optionally import existing `KIT.json`, with full schema/hash/pin verification. Old research candidates remain locked as research even if later promoted in the current catalog until the user deliberately deselects and reselects them.
+
+**Safety-first interface:** the GUI only selects and saves. It deliberately has **no install/build/auto-download** button. Then inspect `scripts\MyToolkit.cmd plan --kit KIT.json` and separately authorize `scripts\MyToolkit.cmd build --kit KIT.json --yes`; any research-only item blocks building unless `--skip-pending` explicitly opts into an approved subset. Offline `--offline-dir` still requires original separately legally acquired, locally SHA-verified vendor archives. No program is automatically elevated, executed, redistributed or modified by the GUI.
+
+**Validation boundary:** `tests/test_toolkit_picker.py` tests the GUI's pure model with no Tk or display; Windows CI parses the GUI source and verifies the CLI import path. **Live Tk window, appearance, accessibility, keyboard navigation, actual first run, and packaged Python/Tk availability require a separate human GUI acceptance on a non-production Windows PC.** No vendor binaries are bundled and there is no independent deployment engine.
+
+
 > **Working implementation**, Windows/Python 3.11+ stdlib, no web UI, no new third-party packages. Built on the existing `scripts/toolsets.py` SHA-pinned installer. Personal selections are inert **JSON files** until explicit `build --yes`. No automatic service/driver, registry, PATH, shell, auto-update or Release change.
 
 ## A. One model, every tool selectable, each in exactly one primary domain

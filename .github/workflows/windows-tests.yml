@@ -119,6 +119,9 @@ jobs:
             throw 'Read-only readiness created managed installation root'
           }
           Write-Host 'Unified offline readiness and fail-closed research gate PASS'
+          # Intentional status=2 means NEEDS_ARCHIVES/BLOCKED_PENDING.
+          # GitHub's pwsh wrapper otherwise returns the last native exit code.
+          exit 0
 
       - name: Verify read-only footprint and incomplete budget states
         shell: pwsh

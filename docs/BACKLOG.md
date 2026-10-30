@@ -1,5 +1,8 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+> **Verified milestones (2026-10-30):** personal-kit CLI PR #26, optional selection-only GUI PR #31, and source-only offline manifest PR #32 are merged and Windows post-merge matrix CI is green. Actual desktop GUI/Office4 acceptance, vendor transfer rights, and full ZIP bundling are still open. [Current handoff](handoff/START_NEW_CHAT_PORTAKIT_20261030_CURRENT.md) records exact scope and remaining gates. Dated older work items remain as history below.
+
+
 ## 2026-10-30 — offline handoff refinement
 
 - **MERGED #32 (post-merge CI PASS):** metadata-only personal asset inventory/export/verify (`scripts/offline_assets.py`) backed by source catalog SHA pins and existing `toolsets.verify_offline_assets` before tool installation; `docs/OFFLINE_ASSETS.md`. New-only JSON+mirrored log, missing/wrong/duplicate filename and hash guards, no download or vendor bundling; Windows 3.11/3.14 tests.

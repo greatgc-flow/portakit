@@ -148,12 +148,95 @@ class PickerTests(unittest.TestCase):
             self.model.draft("safe")
             self.model.rows(status="READY")
 
+    def test_batch_add_fails_without_partial_mutation(self):
+        self.model.add(["jq"])
+        before = list(self.model.selected)
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.add(["ripgrep", "not-existing"])
+        self.assertEqual(self.model.selected, before)
+
+    def test_batch_toggle_preserves_unique_selection(self):
+        self.model.add(["jq", "cmd"])
+        self.assertEqual(self.model.toggle(["jq", "ripgrep", "ripgrep"]),
+                         ["cmd", "ripgrep"])
+        self.assertEqual(self.model.toggle(["cmd", "jq"]), ["ripgrep", "jq"])
+
+    def test_batch_toggle_rejects_invalid_ids_atomically(self):
+        self.model.add(["jq", "cmd"])
+        original = self.model.draft("untouched")
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.toggle(["jq", "not-an-id"])
+        self.assertEqual(self.model.draft("untouched"), original)
+        with self.assertRaisesRegex(picker.kit.KitError, "Selections must be a list"):
+            self.model.toggle(None)
+
+    def test_keyboard_shortcuts_are_ui_only_and_table_local(self):
+        script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
+        import ast
+        ast.parse(script)
+        for key in ("<Control-f>", "<Control-s>", "<Control-o>",
+                    "<Control-a>", "<space>", "<Return>", "<Delete>", "<Escape>"):
+            self.assertIn(key, script)
+        self.assertIn('table.bind("<Control-a>"', script)
+        self.assertIn('table.bind("<Delete>"', script)
+        self.assertIn('root.bind("<Control-f>"', script)
+        self.assertIn("focused = table.focus()", script)
+        self.assertIn("table.selection_set(*kept)", script)
+        self.assertNotIn(".apply(", script)
+
     def test_wizard_source_has_no_executable_install_branch(self):
         import ast
         script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
         ast.parse(script)
         self.assertNotIn("subprocess.run(", script)
         self.assertNotIn("shell=True", script)
+        self.assertNotIn(".apply(", script)
+
+    def test_keyboard_toggle_preserves_deterministic_membership(self):
+        self.model.add(["jq", "ripgrep"])
+        self.assertEqual(self.model.toggle(["jq", "duckdb-cli", "jq"]),
+                         ["ripgrep", "duckdb-cli"])
+        self.assertEqual(self.model.toggle(["duckdb-cli", "jq"]),
+                         ["ripgrep", "jq"])
+        self.assertEqual(self.model.toggle([]), ["ripgrep", "jq"])
+
+    def test_invalid_multi_add_is_atomic(self):
+        self.model.add(["jq"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.add(["ripgrep", "nonexistent-tool"])
+        self.assertEqual(self.model.selected, ["jq"])
+
+    def test_invalid_keyboard_toggle_is_atomic(self):
+        self.model.add(["jq", "duckdb-cli"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.toggle(["jq", "bogus"])
+        self.assertEqual(self.model.selected, ["jq", "duckdb-cli"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Selections must be"):
+            self.model.toggle(None)
+        self.assertEqual(self.model.selected, ["jq", "duckdb-cli"])
+
+    def test_keyboard_toggle_host_removes_dependent_plugin_choice(self):
+        self.model.add(["notepad++", "jq"])
+        self.model.add_plugin("compareplus")
+        self.assertIn("compareplus", self.model.selected_plugins)
+        self.model.toggle(["notepad++"])
+        self.assertNotIn("notepad++", self.model.selected)
+        self.assertNotIn("compareplus", self.model.selected_plugins)
+        self.model.toggle(["notepad++"])
+        self.assertIn("notepad++", self.model.selected)
+        self.assertNotIn("compareplus", self.model.selected_plugins)
+
+    def test_keyboard_bindings_and_no_ui_install_path(self):
+        script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
+        for binding in ('table.bind("<space>"', 'table.bind("<Return>"',
+                        'table.bind("<Control-a>"', 'table.bind("<Delete>"',
+                        'table.bind("<Escape>"', 'root.bind("<Control-f>"',
+                        'root.bind("<Control-s>"', 'root.bind("<Control-o>"'):
+            self.assertIn(binding, script)
+        self.assertIn("root.after_idle(search_entry.focus_set)", script)
+        self.assertIn("table.selection_set(*kept)", script)
+        self.assertIn("table.focus(focused)", script)
+        self.assertNotIn("subprocess.run(", script)
         self.assertNotIn(".apply(", script)
 
 

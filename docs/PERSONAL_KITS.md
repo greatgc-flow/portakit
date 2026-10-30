@@ -1,5 +1,14 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+
+## Keyboard-first visual selection (2026-10-30 enhancement)
+
+Run `scripts\MyToolkitGUI.cmd` on an approved Windows Python 3.11+ workstation with Tkinter. The optional picker is still **selection/save only**; no install, network probing, service/driver, registry or global PATH changes. For keyboard usage: `Ctrl+F` focuses the search box; arrow keys navigate highlighted rows; `Space` or `Enter` toggles selected tools; `Ctrl+A` highlights the currently visible results in the table; `Delete` removes highlighted IDs from the personal selection; `Escape` clears highlight; `Ctrl+O` imports a kit and `Ctrl+S` saves a new JSON/log pair. All selected tool IDs remain in the kit when a search filter hides them.
+
+These are code-level affordances and model tests, **not** verified desktop display/accessibility acceptance. Keyboard/layout/DPI and screen-reader testing must use the [human acceptance checklist](GUI_PICKER_ACCEPTANCE_20261030.md). Installation continues in the CLI with explicit `build --yes` and SHA/license gates.
+
+
+
 ## Optional approved-host offline plugin application
 
 For plugin-containing v2 kits, host-only `MyToolkit.cmd build --skip-pending --yes` still never installs plugin DLLs. A separate controlled `python -I scripts/plugin_offline.py plan|verify|apply` is available **only** for individually selected ComparePlus/JsonTools pinned metadata, only when operator-supplied original ZIP hashes match, a managed pinned Notepad++ host is present, and separate `--yes --policy-approved` are supplied. All other plugins remain unapproved. The GUI remains selection-only. See [complete security, rollback and enterprise permission procedure](PLUGIN_OFFLINE_APPLY.md).

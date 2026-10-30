@@ -60,11 +60,13 @@ class PickerModel:
     def add(self, ids):
         if not isinstance(ids, (list, tuple)):
             raise kit.KitError("Selections must be a list")
-        if not ids:
-            return list(self.selected)
+        # Validate all IDs before modifying the selected set.
         for ident in ids:
             if not isinstance(ident, str) or ident not in self.known:
                 raise kit.KitError("Unknown tool: " + str(ident))
+        if not ids:
+            return list(self.selected)
+        for ident in ids:
             if ident not in self.selected:
                 self.selected.append(ident)
         # 7zr is the manually selected prerequisite for 7zip. Existing
@@ -91,8 +93,21 @@ class PickerModel:
             if k in self.selected_plugins}
         return list(self.selected)
 
+    def toggle(self, ids):
+        """Toggle one fully validated group, without installer side effects."""
+        if not isinstance(ids, (list, tuple)):
+            raise kit.KitError("Selections must be a list")
+        if any(not isinstance(x, str) or x not in self.known for x in ids):
+            raise kit.KitError("Unknown tool in toggle selection")
+        unique = list(dict.fromkeys(ids))
+        previous = set(self.selected)
+        self.remove([x for x in unique if x in previous])
+        self.add([x for x in unique if x not in previous])
+        return list(self.selected)
+
     def clear(self):
         self.selected = []
+
         self.frozen_pending.clear()
         self.selected_plugins = []
         self.frozen_plugin_choices.clear()
@@ -223,11 +238,17 @@ def launch():
         frame, text="Pinned does not mean corporate approval. "
                     "Research remains inert; this window never installs.",
         fg="#abc1cf", bg="#121e2b", font=("Segoe UI", 10))
-    subtitle.pack(anchor="w", pady=(3, 16))
+    subtitle.pack(anchor="w", pady=(3, 8))
+    tk.Label(frame, text=("Keyboard: Ctrl+F search | arrows navigate | "
+                          "Space/Enter toggle | Ctrl+A highlight visible | "
+                          "Delete remove | Ctrl+O import | Ctrl+S save"),
+             fg="#d5dfe9", bg="#121e2b", font=("Segoe UI", 9),
+             anchor="w").pack(fill="x", pady=(0, 12))
 
     filters = tk.Frame(frame, bg="#121e2b")
     filters.pack(fill="x", pady=(0, 10))
-    ttk.Entry(filters, textvariable=search, width=38).pack(side="left", padx=(0, 9))
+    search_entry = ttk.Entry(filters, textvariable=search, width=38)
+    search_entry.pack(side="left", padx=(0, 9))
     ttk.Combobox(filters, textvariable=domain, width=18, state="readonly",
                  values=["all"] + list(model.categories)).pack(side="left", padx=(0, 9))
     ttk.Combobox(filters, textvariable=status, width=17, state="readonly",
@@ -256,12 +277,19 @@ def launch():
     table.configure(yscrollcommand=bar.set)
     table.pack(fill="both", expand=True, side="left")
     bar.pack(fill="y", side="right")
+    results_text = tk.StringVar(value="")
+    tk.Label(frame, textvariable=results_text, fg="#c8d6e2", bg="#121e2b",
+             anchor="w", font=("Segoe UI", 9)).pack(fill="x", pady=(5, 0))
 
     def refresh(*_):
+        # Preserve keyboard highlight and focus after selecting tools.
+        highlighted = set(table.selection())
+        focused = table.focus()
         old_rows = table.get_children()
         if old_rows:
             table.delete(*old_rows)
-        for row in model.rows(search.get(), domain.get(), status.get()):
+        visible = model.rows(search.get(), domain.get(), status.get())
+        for row in visible:
             chosen = "●" if row["selected"] else ""
             st = "PENDING (locked)" if row["locked_pending"] else row["status"]
             tag = ("ready" if row["status"] == "READY" else
@@ -269,6 +297,14 @@ def launch():
             table.insert("", "end", iid=row["id"],
                          values=(chosen, row["id"], row["name"], row["primary"], st),
                          tags=(tag,))
+        shown_ids = {row["id"] for row in visible}
+        kept = [ident for ident in highlighted if ident in shown_ids]
+        if kept:
+            table.selection_set(*kept)
+        if focused in shown_ids:
+            table.focus(focused)
+        results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.".format(
+            len(visible), len(model.known), len(kept)))
         counts = model.summary()
         summary_text.set(("Selected {selected}  •  Pinned {approved}  •  "
                           "Research {pending}  •  OS {os}  •  Plugins {plugins} "
@@ -287,17 +323,34 @@ def launch():
 
     def toggle_row(_event=None):
         ids = picked()
-        if not ids:
-            return
-        def mutation():
-            off = [x for x in ids if x in model.selected]
-            on = [x for x in ids if x not in model.selected]
-            model.remove(off)
-            model.add(on)
-        action(mutation)
+        if ids:
+            action(lambda: model.toggle(ids))
+        return "break"
+
+    def highlight_all(_event=None):
+        ids = table.get_children()
+        if ids:
+            table.selection_set(*ids)
+            table.focus(ids[0])
+        return "break"
+
+    def remove_highlighted(_event=None):
+        ids = picked()
+        if ids:
+            action(lambda: model.remove(ids))
+        return "break"
+
+    def clear_highlight(_event=None):
+        if table.selection():
+            table.selection_remove(*table.selection())
+        return "break"
 
     table.bind("<Double-1>", toggle_row)
     table.bind("<space>", toggle_row)
+    table.bind("<Return>", toggle_row)
+    table.bind("<Control-a>", highlight_all)
+    table.bind("<Delete>", remove_highlighted)
+    table.bind("<Escape>", clear_highlight)
     for var in (search, domain, status):
         var.trace_add("write", refresh)
 
@@ -379,7 +432,25 @@ def launch():
                command=save_kit).pack(side="left")
     tk.Label(foot, text="No install, download or registry edits",
              bg="#121e2b", fg="#b2c1cc").pack(side="right")
+    def focus_search(_event=None):
+        search_entry.focus_set()
+        search_entry.selection_range(0, "end")
+        return "break"
+
+    def save_shortcut(_event=None):
+        save_kit()
+        return "break"
+
+    def import_shortcut(_event=None):
+        import_kit()
+        return "break"
+
+    # Global shortcuts do not modify the OS. Ctrl+A/Delete apply to the table only.
+    root.bind("<Control-f>", focus_search)
+    root.bind("<Control-s>", save_shortcut)
+    root.bind("<Control-o>", import_shortcut)
     refresh()
+    root.after_idle(search_entry.focus_set)
     root.mainloop()
 
 

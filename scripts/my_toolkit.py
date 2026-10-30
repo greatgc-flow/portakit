@@ -134,9 +134,11 @@ def plugin_inventory(pins):
 
 def plugin_choices(requested, selected, pins, inventory=None):
     """Validate host prerequisite, dedup and snapshot optional plugin intent."""
-    known = inventory if inventory is not None else plugin_inventory(pins)
     if not isinstance(requested, (list, tuple)):
         raise KitError("Plugin choices must be a list")
+    if not requested:
+        return []
+    known = inventory if inventory is not None else plugin_inventory(pins)
     selected_set = set(selected)
     items = []
     for ident in dict.fromkeys(requested):

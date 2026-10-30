@@ -195,8 +195,10 @@ def launch():
     tk.Label(filters, text="Search name / ID / category", fg="#a9bdc9",
              bg="#121e2b").pack(side="left")
 
+    holder = tk.Frame(frame, bg="#121e2b")
+    holder.pack(fill="both", expand=True)
     cols = ("chosen", "id", "name", "category", "status")
-    table = ttk.Treeview(frame, columns=cols, show="headings", selectmode="extended",
+    table = ttk.Treeview(holder, columns=cols, show="headings", selectmode="extended",
                          style="PK.Treeview", height=15)
     headings = {"chosen": "✓", "id": "Tool ID", "name": "Tool",
                 "category": "Primary domain", "status": "Approval state"}
@@ -209,12 +211,10 @@ def launch():
     table.tag_configure("pending", foreground="#e6ba7b")
     table.tag_configure("ready", foreground="#d8f0e7")
     table.tag_configure("os", foreground="#b9caed")
-    bar = ttk.Scrollbar(frame, orient="vertical", command=table.yview)
+    bar = ttk.Scrollbar(holder, orient="vertical", command=table.yview)
     table.configure(yscrollcommand=bar.set)
-    holder = tk.Frame(frame, bg="#121e2b")
-    holder.pack(fill="both", expand=True)
-    table.pack(in_=holder, fill="both", expand=True, side="left")
-    bar.pack(in_=holder, fill="y", side="right")
+    table.pack(fill="both", expand=True, side="left")
+    bar.pack(fill="y", side="right")
 
     def refresh(*_):
         table.delete(*table.get_children())

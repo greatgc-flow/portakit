@@ -25,6 +25,9 @@ INTAKE = HERE / "research" / "INTAKE_ENTERPRISE_PORTABLE_20261025.json"
 KIT_VERSION = 1
 KIT_FIELDS = frozenset(("schemaVersion", "name", "tools", "lockedPins",
                         "researchOnly", "osBuiltins"))
+KIT_V2_FIELDS = KIT_FIELDS | {"pluginSelections"}
+# The report's JsonTools ID differs from its vendor plugin ID.
+PLUGIN_PIN_ALIASES = {"jsontools-npp": "jsontools"}
 ALLOWED_PIN_FIELDS = frozenset(("version", "sha256", "dest"))
 NAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
 
@@ -93,6 +96,63 @@ def inventory():
     return pins, categories, profiles, known
 
 
+def plugin_inventory(pins):
+    """Six independently selectable editor plugin families, report sourced.
+
+    SHA-pinned profile plugins are still NOT independently installable. Their
+    status is metadata-only. Vendor copyright/licensing and transfer gate remain.
+    """
+    incoming = json_file(INTAKE)
+    rows = incoming.get("relatedEditorPlugins")
+    if not isinstance(rows, list) or len(rows) > 64:
+        raise KitError("Malformed editor plugin inventory")
+    known = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            raise KitError("Malformed editor plugin")
+        ident = sets._validate_id(row["id"])
+        host = row.get("host")
+        if (ident in known or host not in ("notepad++", "winmerge")
+                or host not in pins):
+            raise KitError("Duplicate or unsupported editor plugin host")
+        pin_id = PLUGIN_PIN_ALIASES.get(ident, ident)
+        pinned = next((p for p in pins[host].get("recommended", {}).get("plugins", [])
+                       if p["id"] == pin_id), None)
+        status = "PINNED_METADATA_ONLY" if pinned is not None else "RESEARCH_ONLY"
+        if row.get("stage") == "ALREADY_PINNED_PLUGIN_AS_OPTION" and pinned is None:
+            raise KitError("Pinned plugin mapping missing: " + ident)
+        if row.get("stage") == "REVIEW_ONLY_PLUGIN" and pinned is not None:
+            raise KitError("Report plugin admission mismatch: " + ident)
+        if row.get("stage") not in ("REVIEW_ONLY_PLUGIN", "ALREADY_PINNED_PLUGIN_AS_OPTION"):
+            raise KitError("Unrecognized editor plugin stage: " + ident)
+        known[ident] = {"id": ident, "name": row["name"], "host": host,
+                        "status": status,
+                        "pin": ({k: pinned[k] for k in ("version", "sha256", "dest")}
+                                if pinned is not None else None)}
+    return known
+
+
+def plugin_choices(requested, selected, pins, inventory=None):
+    """Validate host prerequisite, dedup and snapshot optional plugin intent."""
+    known = inventory if inventory is not None else plugin_inventory(pins)
+    if not isinstance(requested, (list, tuple)):
+        raise KitError("Plugin choices must be a list")
+    selected_set = set(selected)
+    items = []
+    for ident in dict.fromkeys(requested):
+        if not isinstance(ident, str) or ident not in known:
+            raise KitError("Unknown editor plugin: " + str(ident))
+        plugin = known[ident]
+        if plugin["host"] not in selected_set:
+            raise KitError("Plugin host must be selected: " + plugin["host"])
+        if plugin["host"] not in pins:
+            raise KitError("Plugin host is not approved catalog pin")
+        items.append({"id": ident, "host": plugin["host"],
+                      "status": plugin["status"],
+                      "lockedPin": (dict(plugin["pin"]) if plugin["pin"] else None)})
+    return items
+
+
 def requested_ids(tools, profiles_selected, domains, excluded, pins, categories,
                   profiles, known):
     """Select exact research IDs plus deduplicated pinned groups/presets."""
@@ -126,7 +186,9 @@ def requested_ids(tools, profiles_selected, domains, excluded, pins, categories,
     return selected
 
 
-def make_kit(name, selected, pins, known):
+def make_kit(name, selected, pins, known, *, plugins=()):
+    """v1 if no plugins; v2 only when individually chosen plugins exist."""
+
     if not isinstance(name, str) or not NAME.fullmatch(name):
         raise KitError("Kit name must be 1-64 lowercase letters/digits/._-")
     locks = {}
@@ -141,16 +203,28 @@ def make_kit(name, selected, pins, known):
             builtin.append(ident)
         else:
             pending.append(ident)
-    return {"schemaVersion": KIT_VERSION, "name": name, "tools": selected,
-            "lockedPins": locks, "researchOnly": pending, "osBuiltins": builtin}
+    result = {"schemaVersion": KIT_VERSION, "name": name, "tools": selected,
+              "lockedPins": locks, "researchOnly": pending, "osBuiltins": builtin}
+    chosen = plugin_choices(plugins, selected, pins)
+    if chosen:
+        for item in chosen:
+            if item["host"] not in locks:
+                raise KitError("Plugin host must be pinned in the selected kit")
+        result["schemaVersion"] = 2
+        result["pluginSelections"] = chosen
+    return result
 
 
 def read_kit(path, pins, known):
     data = json_file(path)
-    if not isinstance(data, dict) or set(data) != KIT_FIELDS:
+    if not isinstance(data, dict):
         raise KitError("Unknown/invalid kit file schema")
-    if type(data["schemaVersion"]) is not int or data["schemaVersion"] != KIT_VERSION:
+    if (type(data.get("schemaVersion")) is not int
+            or data["schemaVersion"] not in (1, 2)):
         raise KitError("Unsupported kit schema version")
+    expected = KIT_FIELDS if data["schemaVersion"] == 1 else KIT_V2_FIELDS
+    if set(data) != expected:
+        raise KitError("Unknown/invalid kit file schema")
     if not isinstance(data["name"], str) or not NAME.fullmatch(data["name"]):
         raise KitError("Invalid kit name")
     ids = data["tools"]
@@ -189,6 +263,31 @@ def read_kit(path, pins, known):
             raise KitError("Pending classification changed: " + ident)
         # A newly approved tool MUST stay inert in an older saved kit until
         # explicitly reselected/re-locked by creating a new kit file.
+    if data["schemaVersion"] == 2:
+        choices = data["pluginSelections"]
+        if (not isinstance(choices, list) or not choices or len(choices) > 64):
+            raise KitError("Invalid individual plugin selections")
+        inventory_plugins = plugin_inventory(pins)
+        seen = set()
+        for item in choices:
+            if not isinstance(item, dict) or set(item) != {
+                    "id", "host", "status", "lockedPin"}:
+                raise KitError("Malformed individual plugin selection")
+            ident = item["id"]
+            if not isinstance(ident, str) or ident in seen or ident not in inventory_plugins:
+                raise KitError("Unknown or duplicated editor plugin")
+            seen.add(ident)
+            current = inventory_plugins[ident]
+            if item["host"] != current["host"] or item["host"] not in locks:
+                raise KitError("Plugin host missing or mismatched for " + ident)
+            if item["status"] not in ("PINNED_METADATA_ONLY", "RESEARCH_ONLY"):
+                raise KitError("Invalid editor plugin status")
+            if item["status"] == "RESEARCH_ONLY":
+                if item["lockedPin"] is not None:
+                    raise KitError("Research plugin must not have executable lock")
+            elif item["lockedPin"] != current["pin"] or current["pin"] is None:
+                raise KitError("Plugin PIN_CHANGED for " + ident)
+            # Both states are selection metadata only, never installed by v2.
     return data
 
 
@@ -229,6 +328,9 @@ def save_new(data, path, log_file=None):
         log.emit("READY_PINNED: " + str(len(data["lockedPins"])))
         log.emit("RESEARCH_ONLY: " + str(len(data["researchOnly"])))
         log.emit("OS_BUILTIN: " + str(len(data["osBuiltins"])))
+        if data["schemaVersion"] == 2:
+            log.emit("EDITOR_PLUGINS_METADATA_ONLY: " +
+                     ", ".join(x["id"] for x in data["pluginSelections"]))
         log.emit("NO INSTALL / NO NETWORK / NO SYSTEM CHANGES")
 
 
@@ -274,6 +376,10 @@ def show_plan(kit, plan):
     print("SUMMARY: approved=" + str(len(kit["lockedPins"])) +
           " built_in=" + str(len(kit["osBuiltins"])) +
           " pending=" + str(len(kit["researchOnly"])))
+    if kit["schemaVersion"] == 2:
+        for item in kit["pluginSelections"]:
+            print("PLUGIN: " + item["id"] + " (" + item["host"] +
+                  ") " + item["status"] + " / NOT INSTALLED")
     print("NO CHANGES / NO DOWNLOADS")
 
 
@@ -294,6 +400,9 @@ def run(argv=None):
                         help="select only approved pins from a primary domain")
     create.add_argument("--exclude", action="append", default=[], metavar="ID")
     create.add_argument("--log-file", help="new evidence log path, default KIT.log")
+    create.add_argument("--plugin", action="append", default=[], metavar="ID",
+                        help="select an editor plugin separately; research/metadata only")
+    plug = sub.add_parser("plugins", help="browse six editor plugin choices (no install)")
     for cmd in ("plan", "build"):
         p = sub.add_parser(cmd, help=("read-only preview" if cmd == "plan" else
                                       "explicit opt-in apply using existing SHA-pinned engine"))
@@ -315,10 +424,15 @@ def run(argv=None):
                 raise KitError("Unknown category: " + args.category)
             print_inventory(known, args.category, args.all)
             return 0
+        if args.command == "plugins":
+            for item in plugin_inventory(pins).values():
+                print(item["host"] + "\t" + item["id"] + "\t" +
+                      item["status"] + "\t" + item["name"])
+            return 0
         if args.command == "create":
             selected = requested_ids(args.tool, args.preset, args.category,
                                      args.exclude, pins, categories, profiles, known)
-            data = make_kit(args.name, selected, pins, known)
+            data = make_kit(args.name, selected, pins, known, plugins=args.plugin)
             save_new(data, args.out, args.log_file)
             return 0
         kit = read_kit(args.kit, pins, known)
@@ -329,6 +443,13 @@ def run(argv=None):
             return 0
         if not args.yes:
             raise KitError("build requires explicit --yes (run plan first)")
+        if kit["schemaVersion"] == 2 and args.recommended:
+            raise KitError("--recommended conflicts with explicit plugin choices; "
+                           "no editor plugins were installed")
+        if kit["schemaVersion"] == 2 and not args.skip_pending:
+            raise KitError("Individual editor plugins are metadata-only and "
+                           "cannot be deployed by build; use --skip-pending "
+                           "to build only pinned host applications")
         if kit["researchOnly"] and not args.skip_pending:
             raise KitError("Research-only candidates remain unapproved: " +
                            ", ".join(kit["researchOnly"]) +

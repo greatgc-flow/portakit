@@ -1,5 +1,8 @@
 # portakit
 
+> **Current SSOT (2026-10-30):** Catalog 19 SHA-pinned, 108 canonical research (19/27/62), plus 43 additional research candidates; 151 selectable IDs (19 pinned / 27 built-in / 105 unverified). Historical counts in dated sections below explain past phases, not today's installation status. Start continuation at [2026-10-30 current handoff](docs/handoff/START_NEW_CHAT_PORTAKIT_20261030_CURRENT.md). Actual current source files always override snapshots.
+
+
 ## Metadata-only offline asset checklist (2026-10-30)
 
 After creating a personal kit, use `python -I scripts/offline_assets.py list --kit MyKit.json` to see official original filenames and exact catalog SHA-256; `export --kit MyKit.json --out MyKit.assets.json` creates new-only metadata plus matching local log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks **all** selected pinned original files using the unchanged offline SHA preflight before any installation. [Offline guide](docs/OFFLINE_ASSETS.md). **No download, vendor binary bundling, third-party redistribution, service/driver, or automatic installation** is performed. Research-only and OS-native tools are listed as exclusions; vendor/legal/EDR approvals remain independent.

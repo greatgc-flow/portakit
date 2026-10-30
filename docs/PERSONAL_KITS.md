@@ -1,5 +1,8 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+> **Updated 2026-10-30:** 151 selectable IDs = 19 currently SHA-pinned + 27 OS built-ins + 105 research-only; installable *software choices* are only the current pinned subset. This does not certify corporate approval or vendor binary redistribution. For current authority use `catalog.json` and the research ledgers, not older historical handoffs.
+
+
 ## Metadata-only offline source checklist
 
 For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.json` displays the selected pinned original asset filename, URL and hash; `export --kit MyKit.json --out MyKit.assets.json` writes the new JSON metadata + mirrored log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks separately acquired, approved original files and logs the result before an explicit separate `build --yes`. Never confuse metadata/checksum validation with vendor redistribution permission. See [offline guide](OFFLINE_ASSETS.md).
@@ -27,17 +30,17 @@ The GUI is **optional**. Some embedded Python runtimes do not ship Tk; if it is 
 ## A. One model, every tool selectable, each in exactly one primary domain
 
 `scripts/MyToolkit.cmd` / `python -I scripts/my_toolkit.py` covers the *union* of the 108-entry canonical research register and the 43 unique research-only new software families from the supplied enterprise report: **151 unique selectable IDs** at this checkpoint, with 10 primary functional domains and cross-domain presets. Four statuses matter:
-- `READY`: **17** existing immutable SHA-pinned `catalog.json` installable tools; only these can be installed by PortaKit after explicit consent.
-- `RESEARCH_ONLY`: **107** candidates (64 older, 43 newly inventoried); selectable/savable but **never downloaded or installed** until independent vendor/license/EDR/Windows approval and reviewed catalogue promotion.
+- `READY`: **19** current immutable SHA-pinned `catalog.json` installable tools; only these can be installed by PortaKit after explicit consent.
+- `RESEARCH_ONLY`: **105** candidates (62 existing research-only, 43 newly inventoried); selectable/savable but **never downloaded or installed** until independent vendor/license/EDR/Windows approval and reviewed catalogue promotion.
 - `OS_ONLY`: **27** Windows built-ins (some depend on OS optional features); selectable as notes; **never copied/installed** by PortaKit. They may not be present on every Windows image.
-- **Category / preset**: compose only current 17 approved pins, de-duplicate by ID, no scope creep if candidates appear later. Every ID belongs to exactly one primary domain; optional personal profiles are intentionally many-to-many.
+- **Category / preset**: compose only current 19 SHA-pinned entries, de-duplicate by ID, no scope creep if candidates appear later. Every ID belongs to exactly one primary domain; optional personal profiles are intentionally many-to-many.
 
 All 151 selectable *IDs* do not imply all 151 are ready-made portable EXEs or that a family (e.g. a simulator SDK) is a complete runnable product.
 
 ## B. Commands (copy/paste from repository root in an approved nonproduction Windows workstation)
 
 ```cmd
-rem Explore 17 approved installable pins (does not create files)
+rem Explore current SHA-pinned installable entries (19 as of 2026-10-30) (does not create files)
 scripts\MyToolkit.cmd list
 
 rem Browse all 151 candidates, filter by exactly one domain

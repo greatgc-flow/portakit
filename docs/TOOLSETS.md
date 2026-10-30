@@ -6,7 +6,7 @@
 
 ## Three independent axes (MECE within each axis, intentionally many-to-many across axes)
 
-1. **Primary functional domain** (exclusive): each installable catalog ID has exactly one domain. This is validated at load time: missing or repeated assignments fail before any download. Research candidates use the same one-primary-domain taxonomy in [107-tool inventory](../research/TOOLS_CANDIDATES_20261020.json).
+1. **Primary functional domain** (exclusive): each installable catalog ID has exactly one domain. This is validated at load time: missing or repeated assignments fail before any download. Research candidates use the same one-primary-domain taxonomy in [108-tool inventory](../research/TOOLS_CANDIDATES_20261020.json).
 2. **Work profile** (composable): user-purpose and optional profile IDs can span many domains. A tool can appear in many profiles, but resolution deduplicates by its unique pinned tool ID; no repeated download. No business-only category or hard-coded industry.
 3. **Deployment and risk** (orthogonal): pinned download versus built-in versus research-only, exact archive bytes only when attested, license evidence, offline driver/elevation/active-network/cloud/PII risk. Small/portable is NOT the same as safe, legally redistributable or approved.
 
@@ -14,18 +14,18 @@
 
 | Canonical ID | Coverage | Current SHA-pinned IDs |
 | --- | --- | --- |
-| `files` | File location, navigation, diff, archive, storage | `winmerge`, `fd`, `fzf` |
-| `text` | Text editing, log finding/reading, string transformation | `notepad++`, `ripgrep`, `bat`, `sd` |
-| `structured-data` | JSON/YAML/XML/CSV/DB manipulation | `jq`, `yq` |
+| `files` | File location, navigation, diff, archive, storage | `winmerge`, `fd`, `fzf`, `7zr`, `everything`, `7zip` |
+| `text` | Text editing, log finding/reading, string transformation | `notepad++`, `ripgrep`, `bat`, `sd`, `grepwin` |
+| `structured-data` | JSON/YAML/XML/CSV/DB manipulation | `jq`, `yq`, `miller`, `dasel` |
 | `system` | OS process, performance, memory and event diagnostics | Empty until pin admission |
-| `network` | Connection, latency, protocol and packet diagnostics | Empty until pin admission |
+| `network` | Connection, latency, protocol and packet diagnostics | `tcpview`, `psping` (direct vendor source, separate legal gate) |
 | `security` | Software signatures, digests, permissions and encryption | Empty until pin admission |
 | `development` | Versioning, compilers, runtimes and developer inspections | `delta` |
 | `automation` | Repeatable operations and command benchmarking | `hyperfine` |
 | `documents` | PDF/images/screenshots and report review | Empty until pin admission |
 | `transfer` | Approved file transport and remote terminal | Empty until pin admission |
 
-**Taxonomy is a primary owner, not a claim of only one use.** A JSON viewer may also help development, but `structured-data` remains its primary category; an incident-response profile may select it. See [research inventory](../research/TOOLS_CANDIDATES_20261020.json) for **107 unique items: 11 pinned, 27 OS built-ins/optional built-ins, 69 research-only** (no runtime installation permissions implied).
+**Taxonomy is a primary owner, not a claim of only one use.** A JSON viewer may also help development, but `structured-data` remains its primary category; an incident-response profile may select it. See [research inventory](../research/TOOLS_CANDIDATES_20261020.json) for **108 unique items: 19 pinned, 27 OS built-ins/optional built-ins, 62 research-only** (no runtime installation permissions implied).
 
 ## Generic profiles (optional; no default installation)
 
@@ -34,10 +34,10 @@
 | `essentials` | Small minimum everyday set | Notepad++, WinMerge, jq |
 | `lightweight` | **Compact CLI productivity add-ons** | ripgrep, fd, fzf, bat, sd, yq, delta, hyperfine |
 | `workstation` | Text + files + data without unnecessary apps | 7 approved pins |
-| `incident-response` | Restricted-network troubleshooting | Currently 8 pinned tools; OS/NW/Security candidate tools are **not** installed |
+| `incident-response` | Restricted-network troubleshooting | Current category+direct composition selects 10 pins, including optional `tcpview` and `psping` (legal/active-probe gates remain) |
 | `engineering` | Version control, text, data, file tools, command automation | Category union, deduplicated |
 | `data-work` | Structured data + text workflows | Category union |
-| `all-curated` | All 11 actually pinned programs | Category union |
+| `all-curated` | All 19 currently pinned programs | Category union |
 | `minimal`, `mes-support`, `developer` | Historical profiles | Frozen original results for compatibility, not promoted as canonical new names |
 
 **Legacy selectors:** `common` → Npp/WinMerge, `os` → WinMerge, `nw` → empty, `dev` → Npp/jq, `data` → jq, `diag` → WinMerge/jq. These are kept as **frozen aliases**, listed separately, not counted as new MECE categories. Existing scripts and scenarios keep their exact scope. New scripts should use the canonical category/profile names.
@@ -88,7 +88,7 @@ The config is versioned `toolsets.json`. `scripts/toolsets.py` remains standard-
 
 - Core `portakit.py install|configure|update|remove` is untouched. `list`/`plan` are read-only; `apply` needs `--yes`, uses a batch lock and invokes existing per-tool SHA-256 protected installer. Existing exact-pin installs are skipped, stale/unmanaged/backup/reparse paths block the group.
 - The batch is **not globally transactional**. A failure stops new installs but retains earlier successful ones, with full console-mirrored local evidence logs. No automatic registry PATH, drivers, packet capture, telemetry or uploads.
-- **Research is not installation:** [107 candidate register](../research/TOOLS_CANDIDATES_20261020.json) includes Windows built-ins and conditional Sysinternals/Wireshark items. Programs without pinned release URL+digest are excluded from catalog. Company's OSS/EDR/license approval remains mandatory for all.
+- **Research is not installation:** [108 candidate register](../research/TOOLS_CANDIDATES_20261020.json) includes Windows built-ins and conditional Sysinternals/Wireshark items. Programs without pinned release URL+digest are excluded from catalog. Company's OSS/EDR/license approval remains mandatory for all.
 - For Microsoft Sysinternals, free commercial *use* does not imply general third-party redistribution; [licensing FAQ](https://learn.microsoft.com/en-us/sysinternals/license-faq). For Wireshark, live Windows capture may require Npcap driver with [independent commercial-use conditions](https://npcap.com/oem/internal). Do not run active network tests on production equipment without explicit target/time/cadence approval.
 - Windows CI must validate catalog hashes, exact-one primary domains, frozen legacy selection, idempotence/empty-plan/unknown-ID failures and **real ZIP download → SHA-256 → extraction → version** for the new pinned subset. Offline client end-to-end approval remains separate from CI.
 
@@ -105,7 +105,7 @@ During the genuine Windows x64 CI run, the official GitHub **sd v1.1.0 ZIP** (pi
 
 ## Phase 2 — 2026-10-21 small verified pins and true disconnected installation
 
-**Five fixed-version packages** appended without changing the original 11 pins. At that phase directly installable IDs = **16**. Current after full 7-Zip admission: **17 pinned**. Research register = **108 unique entries (17 pinned / 27 Windows built-ins / 64 research-only)**.
+**Five fixed-version packages** appended without changing the original 11 pins. At that historical phase directly installable IDs = **16**. After full 7-Zip admission (2026-10-21): **17 pinned**. Research register = **108 unique entries (17 pinned / 27 Windows built-ins / 64 research-only)**.
 
 | Tool | Official vendor asset and size metadata | Pinned SHA provenance | Practical guardrail |
 | --- | --- | --- | --- |

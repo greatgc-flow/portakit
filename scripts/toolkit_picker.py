@@ -181,8 +181,8 @@ def launch():
                      font=("Segoe UI Semibold", 23), fg="#f1f7fc", bg="#121e2b")
     title.pack(anchor="w")
     subtitle = tk.Label(
-        frame, text="Pick freely. Only verified SHA-pinned apps can be built; "
-                    "research entries remain inert. No installations from this window.",
+        frame, text="Pinned does not mean corporate approval. "
+                    "Research remains inert; this window never installs.",
         fg="#abc1cf", bg="#121e2b", font=("Segoe UI", 10))
     subtitle.pack(anchor="w", pady=(3, 16))
 
@@ -219,7 +219,9 @@ def launch():
     bar.pack(fill="y", side="right")
 
     def refresh(*_):
-        table.delete(*table.get_children())
+        old_rows = table.get_children()
+        if old_rows:
+            table.delete(*old_rows)
         for row in model.rows(search.get(), domain.get(), status.get()):
             chosen = "●" if row["selected"] else ""
             st = "PENDING (locked)" if row["locked_pending"] else row["status"]
@@ -269,7 +271,7 @@ def launch():
     command("Add filtered", lambda: action(
         lambda: model.add([x["id"] for x in model.rows(search.get(), domain.get(),
                                                        status.get())])))
-    command("Approved only", lambda: action(model.set_approved_only))
+    command("Pinned only", lambda: action(model.set_approved_only))
     command("Clear", lambda: action(model.clear))
     ttk.Combobox(buttons, textvariable=preset, width=17, state="readonly",
                  values=[k for k, v in model.profiles.items()

@@ -63,9 +63,9 @@ class PluginHealthTests(unittest.TestCase):
                 health.offline.apply(self.saved, self.pins, self.root, self.archives,
                                      evidence=evidence)
 
-    def test_no_host_is_incomplete_and_does_not_create_root(self):
+    def test_no_host_is_blocked_and_does_not_create_root(self):
         result = health.inspect(self.saved, self.pins, self.root)
-        self.assertEqual(result["outcome"], "INCOMPLETE")
+        self.assertEqual(result["outcome"], "BLOCKED")
         self.assertEqual(result["plugins"][0]["sourceState"], "blocked-host-install")
         self.assertEqual(result["blocked"], 1)
         self.assertFalse(self.root.exists())

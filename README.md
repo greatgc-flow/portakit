@@ -1,5 +1,9 @@
 # portakit
 
+## Individually selectable editor plugins (2026-10-30)
+
+List six source-researched plugins with `scripts\MyToolkit.cmd plugins`; add `--plugin compareplus` or `--plugin csvlint-npp` to personal kit `create` while explicitly selecting the Notepad++ host. Optional GUI picker supports separate plugin choices. **Plugin selections are metadata-only**: a kit with plugins uses v2 JSON, old v1 remains compatible; no plugin DLL is downloaded or installed by individual choice. Building v2 blocks by default; `--skip-pending --yes` builds only pinned host apps, and `--recommended` is rejected for v2 to avoid implicit bundled plugins. [Plugin guide](docs/INDIVIDUAL_EDITOR_PLUGINS.md). Enterprise license/redistribution and live GUI proof remain separate.
+
 ## Read-only installed-size audit (2026-10-30)
 
 For a saved personal toolkit, `python -I scripts/kit_footprint.py --kit MyKit.json --root D:\\MyPortableApps` reports logical file bytes of **currently managed and matching** pinned folders. `--max-mib 100` optionally checks a logical-byte budget; any missing/research/OS selections produce UNKNOWN rather than fake PASS. `--out MyKit.footprint.json` creates a new-only local JSON and matching console-evidence log. No vendor binaries, network, OS changes or downloads. See [footprint guide](docs/FOOTPRINT_AUDIT.md). Real NTFS disk allocation and compressed package sizes are separate measurements.

@@ -105,7 +105,8 @@ class PickerModel:
             raise kit.KitError("Select pinned plugin host first: " + host)
         if ident not in self.selected_plugins:
             self.selected_plugins.append(ident)
-        self.frozen_plugin_choices.pop(ident, None)
+            # Only a true remove/reselect clears historical research status.
+            self.frozen_plugin_choices.pop(ident, None)
 
     def remove_plugin(self, ident):
         if ident not in self.plugin_catalog:

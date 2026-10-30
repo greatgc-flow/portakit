@@ -1,5 +1,26 @@
 # Offline toolkit asset handoff (2026-10-30)
 
+## One-command offline readiness (2026-10-30)
+
+The preceding `list/export/verify` workflow remains supported. For a **single read-only preflight** that combines a personal kit's installation-state plan, the required *original* approved vendor filenames and the existing per-artifact SHA-256 verifier, run:
+
+```cmd
+:: No files created. Exit 2 if source files or consent are still missing.
+scripts\OfflineCheck.cmd --kit MyKit.json --root D:\MyPortableApps
+
+:: After separately obtaining approved original vendor files, validate only
+:: the archives needed for missing pinned tools (already-installed pins skipped).
+scripts\OfflineCheck.cmd --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedVendorArchives --skip-pending
+
+:: Optional NEW JSON+exact console transcript log; never overwrite prior evidence.
+scripts\OfflineCheck.cmd --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedVendorArchives --skip-pending --out MyKit.readiness.json
+```
+
+`--skip-pending` explicitly excludes *all* research-only tools and individually chosen editor plugins; it does not install them. The status is `READY`, `READY_APPROVED_SUBSET`, `NO_OP`, or `BLOCKED`. Exit **0** for ready/no-op, **2** for blockers (including missing/wrong SHA files, unapproved selections without explicit subset consent, prerequisites or blocked managed paths), **1** for invalid input/security errors. The command reports each pinned item's `already-installed` / `install` / `blocked-*` state, original filename, catalog hash, official URL and source readiness.
+
+Only missing pinned applications require a local vendor archive; already managed matching installations are not re-downloaded. Exact hash comparisons reuse `toolsets.verify_offline_assets`; reparse/junction paths are refused. `--out` creates a new report JSON and exact console-mirrored .log *locally only*, with no overwrite. Default invocation has no writes. `READY` means **only a point-in-time local preflight** for approved pinned tools, never legal/company/EDR approval, installed-byte integrity, live desktop acceptance, or a guarantee that a subsequent state change will not block install. An actual build remains a **separate deliberate** `MyToolkit.cmd build ... --offline-dir ... --yes` operation, which rechecks all missing sources again under the install lock.
+
+
 This is a **metadata-only** workflow for collecting separately authorized, original vendor files for a chosen personal kit. It intentionally never downloads, bundles, redistributes, runs vendor software or changes an OS installation. A SHA-pinned tool's use on a corporate machine and its redistribution/transfer rights are independent decisions; obtain EULA, OSS, EDR and import approvals before transferring any vendor archive.
 
 ## Three commands

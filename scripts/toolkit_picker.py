@@ -323,17 +323,34 @@ def launch():
 
     def toggle_row(_event=None):
         ids = picked()
-        if not ids:
-            return
-        def mutation():
-            off = [x for x in ids if x in model.selected]
-            on = [x for x in ids if x not in model.selected]
-            model.remove(off)
-            model.add(on)
-        action(mutation)
+        if ids:
+            action(lambda: model.toggle(ids))
+        return "break"
+
+    def highlight_all(_event=None):
+        ids = table.get_children()
+        if ids:
+            table.selection_set(*ids)
+            table.focus(ids[0])
+        return "break"
+
+    def remove_highlighted(_event=None):
+        ids = picked()
+        if ids:
+            action(lambda: model.remove(ids))
+        return "break"
+
+    def clear_highlight(_event=None):
+        if table.selection():
+            table.selection_remove(*table.selection())
+        return "break"
 
     table.bind("<Double-1>", toggle_row)
     table.bind("<space>", toggle_row)
+    table.bind("<Return>", toggle_row)
+    table.bind("<Control-a>", highlight_all)
+    table.bind("<Delete>", remove_highlighted)
+    table.bind("<Escape>", clear_highlight)
     for var in (search, domain, status):
         var.trace_add("write", refresh)
 
@@ -415,7 +432,25 @@ def launch():
                command=save_kit).pack(side="left")
     tk.Label(foot, text="No install, download or registry edits",
              bg="#121e2b", fg="#b2c1cc").pack(side="right")
+    def focus_search(_event=None):
+        search_entry.focus_set()
+        search_entry.selection_range(0, "end")
+        return "break"
+
+    def save_shortcut(_event=None):
+        save_kit()
+        return "break"
+
+    def import_shortcut(_event=None):
+        import_kit()
+        return "break"
+
+    # Global shortcuts do not modify the OS. Ctrl+A/Delete apply to the table only.
+    root.bind("<Control-f>", focus_search)
+    root.bind("<Control-s>", save_shortcut)
+    root.bind("<Control-o>", import_shortcut)
     refresh()
+    root.after_idle(search_entry.focus_set)
     root.mainloop()
 
 

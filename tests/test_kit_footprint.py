@@ -143,6 +143,26 @@ class FootprintTests(unittest.TestCase):
         self.assertEqual(data["budgetResult"], "UNKNOWN_INCOMPLETE")
         self.assertEqual(data["tools"], [])
 
+    def test_cli_budget_unknown_is_nonzero_distinct_from_exceeded(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            foot.kit.save_new(self.saved("jq"), self.saved_path)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = foot.run(["--kit", str(self.saved_path), "--root",
+                             str(self.root), "--max-mib", "1"])
+        self.assertEqual(code, 2)
+        self.assertIn("BUDGET RESULT: UNKNOWN_INCOMPLETE", out.getvalue())
+        self.assertFalse(self.root.exists())
+
+        self.install_fixture(size=8)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = foot.run(["--kit", str(self.saved_path), "--root",
+                             str(self.root), "--max-mib", "0"])
+        self.assertEqual(code, 3)
+        self.assertIn("BUDGET RESULT: OVER_BUDGET", out.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(foot.run(["--kit", str(self.saved_path),
+                                       "--root", str(self.root)]), 0)
+
     def test_no_network_or_installer_called(self):
         self.install_fixture()
         with mock.patch.object(foot.kit.sets, "apply",

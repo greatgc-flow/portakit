@@ -83,7 +83,8 @@ def audit(saved, root, *, budget_mib=None):
     total = 0
     # Budget cannot certify a complete toolkit when OS-only or research
     # selections have no measured managed files.
-    complete = not (saved["researchOnly"] or saved["osBuiltins"])
+    complete = not (saved["researchOnly"] or saved["osBuiltins"]
+                    or saved.get("pluginSelections"))
     for ident in saved["tools"]:
         if ident not in saved["lockedPins"]:
             continue
@@ -119,6 +120,8 @@ def audit(saved, root, *, budget_mib=None):
         "budgetMiB": budget_mib, "budgetResult": budget_state,
         "researchOnlyNotMeasured": list(saved["researchOnly"]),
         "osBuiltinsNotMeasured": list(saved["osBuiltins"]),
+        "editorPluginsNotMeasured": [
+            x["id"] for x in saved.get("pluginSelections", [])],
         "notice": "Read-only, no software launched. A concurrent write can change these values.",
     }
 

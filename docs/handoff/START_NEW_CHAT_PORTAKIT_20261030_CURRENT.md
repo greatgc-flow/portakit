@@ -1,5 +1,7 @@
 # PortaKit — current next-chat continuation (2026-10-30)
 
+> **2026-10-30 append-only update candidate (verify PR and latest main before treating as merged):** independent editor plugin choice schema-v2, six records from report, host prerequisite, UI checkbox-like add/remove, offline/footprint exclusion, full v1 compatibility. See `docs/INDIVIDUAL_EDITOR_PLUGINS.md`. v2 never installs plugins. Prior 151 software IDs exclude six editor plugin choices. The live main SHA supersedes any historical SHA in this handoff.
+
 Continue https://github.com/greatgc-flow/portakit from the **actual latest remote main**, not from this dated commit. Public repository: do not publish private chat text, enterprise identifiers/logs/keys, third-party vendor executables or unapproved licenses. Check latest SHA, visibility, open PR/issues, Actions, branch protections, releases and source tree first.
 
 ## Last verified pre-docs baseline

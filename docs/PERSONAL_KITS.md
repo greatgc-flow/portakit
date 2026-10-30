@@ -1,5 +1,9 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Individually selected editor add-ons (metadata-only)
+
+Use `scripts\MyToolkit.cmd plugins` for 6 separately named choices; during create, add `--plugin compareplus` and select its `--tool notepad++` host. The GUI now has a separate editor-plugin dropdown and Add/Remove controls. New plugin-containing files are schema v2 (version/SHA locked if vendor pinned as recommended, research-only otherwise); old no-plugin schema v1 remains unchanged. **No selected plugin is deployed by v2**: use `--skip-pending --yes` only to install pinned host tools, and do not combine v2 with `--recommended`. [Details](INDIVIDUAL_EDITOR_PLUGINS.md).
+
 ## Read-only footprint and size budget
 
 After installing explicitly authorized pinned tools, run `python -I scripts/kit_footprint.py --kit MyKit.json --root D:\\MyPortableApps --max-mib 100`; add `--out MyKit.footprint.json` for a new-only JSON + exact console evidence log. This is **logical bytes measured only for existing managed pinned directories**, not a promise that pending/OS-only tools occupy zero space, nor physical NTFS allocation. [Full guide](FOOTPRINT_AUDIT.md). Unknown selections are not treated as a passing size budget.

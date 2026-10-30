@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## Editor plugins — 2026-10-30 metadata-only individual choice
+
+- **Candidate PR, CI/merge gate:** six individually selectable Notepad++/WinMerge editor plugin choices in CLI and optional Tk GUI, host prerequisite, v1 compatible v2 JSON, pinned/research distinction, no installation and no implicit download; offline manifest excludes chosen plugin binaries and footprint budget treats them as unknown. See [plugin selection guide](INDIVIDUAL_EDITOR_PLUGINS.md).
+- **Remaining P1**: independently approved vendor EULAs, transfer/redistribution, host compatibility, checked vendor packages, exact per-plugin hash and rollback/GUI acceptance *before* enabling **any** actual v2 plugin deployment. Leave existing legacy `--recommended` behavior unchanged but prohibit it for v2.
+
 ## 2026-10-30 — footprint diagnostics
 
 - **Candidate PR / CI gate:** read-only logical-byte and file-count measurement for installed, matching pinned personal-kit tools (`scripts/kit_footprint.py`, independent tests, [guide](FOOTPRINT_AUDIT.md)); symlink/junction and excessive size-tree denial; optional explicit local JSON + exact console evidence; do not infer uninstalled size or licensing from installed bytes.

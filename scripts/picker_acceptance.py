@@ -77,7 +77,7 @@ def answers_from_operator(emit, read=input):
             emit("ENTER: P=pass observed, F=fail observed, S=skip/not verified")
             try:
                 answer = read()
-            except (EOFError, KeyboardInterrupt) as exc:
+            except (EOFError, KeyboardInterrupt, StopIteration) as exc:
                 raise AcceptanceError("Operator review interrupted; incomplete evidence log retained") from exc
             choice = str(answer).strip().upper()
             if choice in ("P", "F", "S"):

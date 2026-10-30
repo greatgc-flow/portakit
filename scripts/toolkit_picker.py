@@ -93,6 +93,7 @@ class PickerModel:
 
     def clear(self):
         self.selected = []
+
         self.frozen_pending.clear()
         self.selected_plugins = []
         self.frozen_plugin_choices.clear()

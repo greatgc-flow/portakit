@@ -1,5 +1,9 @@
 # portakit
 
+## Offline-only individually selected editor plugin application (2026-10-30)
+
+New optional `python -I scripts/plugin_offline.py plan|verify|apply` provides separate **original vendor archive SHA preflight and opt-in Notepad++ plugin deployment** for the two existing nested catalog pins, ComparePlus and JsonTools. `apply` requires a schema-v2 personal kit, an already-managed exact-pinned host, all original local plugin ZIPs, `--yes --policy-approved`, dual stage+snapshot SHA validation, no existing unmanaged plugin folder, and new-only local evidence. No third-party assets are downloaded/bundled; research-only plugins remain inert. Corporate OSS/EDR and source-transfer permission plus live GUI acceptance are **separate unverified gates**. See [offline plugin procedure](docs/PLUGIN_OFFLINE_APPLY.md).
+
 ## Individually selectable editor plugins (2026-10-30)
 
 List six source-researched plugins with `scripts\MyToolkit.cmd plugins`; add `--plugin compareplus` or `--plugin csvlint-npp` to personal kit `create` while explicitly selecting the Notepad++ host. Optional GUI picker supports separate plugin choices. **Plugin selections are metadata-only**: a kit with plugins uses v2 JSON, old v1 remains compatible; no plugin DLL is downloaded or installed by individual choice. Building v2 blocks by default; `--skip-pending --yes` builds only pinned host apps, and `--recommended` is rejected for v2 to avoid implicit bundled plugins. [Plugin guide](docs/INDIVIDUAL_EDITOR_PLUGINS.md). Enterprise license/redistribution and live GUI proof remain separate.

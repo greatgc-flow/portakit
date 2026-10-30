@@ -24,6 +24,10 @@ Select the host application explicitly first (`--tool notepad++` or `--tool winm
 - `offline_assets.py` exports the original host files only; `editorPluginsNotPackaged` lists excluded selections. `kit_footprint.py` treats v2 plugin selections as unmeasured so a requested budget remains `UNKNOWN_INCOMPLETE` unless all selections, including plugin choices, are measured separately. Neither tool copies or executes plugin DLLs.
 - Files and local logs are new-only. Personal kit GUI does not install any binaries, edit Windows services/registry, or run an industrial network listener. Existing tool GUI and WinMerge Office acceptance remain human-not-verified.
 
+## Optional implementation progress — offline pinned plugin application (2026-10-30)
+
+An **additional explicit** `scripts/plugin_offline.py` supports separately permissioned, already catalog SHA-pinned ComparePlus/JsonTools plugin deployment only from locally provided original ZIP files. It requires an installed, managed Notepad++ host, `--yes --policy-approved`, a verified offline source, stage re-verification, no unmanaged overwrite and per-plugin rollback. This is **not** performed by the normal v2 `MyToolkit.cmd build` path or selection-only GUI. Full procedure and operator gates: [PLUGIN_OFFLINE_APPLY.md](PLUGIN_OFFLINE_APPLY.md). Other four plugins remain research-only; corporate licensing/transfer and real GUI acceptance are still not verified.
+
 ## Remaining gated implementation
 
 **Individual plugin deployment is NOT implemented.** It requires official vendor licenses (company use and separate transfer/redistribution), compatible host versions, exact individual vendor archive and SHA, safety/rollback preflight and explicit per-plugin permissions, new test fixtures, updated installer behavior, and actual approved Windows GUI acceptance. The previous `--recommended` legacy path has not been removed or modified. No Release is authorized by this work.

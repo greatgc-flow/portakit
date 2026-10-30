@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — individually approved offline editor plugin capability
+
+- **Candidate PR / Windows CI gate:** new opt-in, source-only `scripts/plugin_offline.py`: plan, verify and separately consented policy-approved apply of existing pinned ComparePlus/JsonTools original offline ZIPs into an existing managed Notepad++ host. Host/version/SHA, all-source preflight, second SHA snapshot, bounded ZIP extraction, no overwrite, per-plugin receipt and rollback; Windows synthetic tests and console-mirrored evidence. No unapproved vendor archive in GitHub, no default auto-install or elevated changes.
+- **Still open:** actual corporate permission, source transfer/redistribution obligations for ComparePlus GPL-3.0 and JsonTools Apache-2.0, third-party dependencies, EDR review, real GUI validation on approved workstation; four other plugin families research-only and entirely excluded. Full media ZIP and global GUI acceptance remain blocked pending legal/human evidence.
+
 ## Editor plugins — 2026-10-30 metadata-only individual choice
 
 - **Candidate PR, CI/merge gate:** six individually selectable Notepad++/WinMerge editor plugin choices in CLI and optional Tk GUI, host prerequisite, v1 compatible v2 JSON, pinned/research distinction, no installation and no implicit download; offline manifest excludes chosen plugin binaries and footprint budget treats them as unknown. See [plugin selection guide](INDIVIDUAL_EDITOR_PLUGINS.md).

@@ -1,8 +1,8 @@
 # PortaKit — current next-chat continuation (2026-10-30)
 
-## 2026-10-31 continuation candidate (recheck actual latest main)
+## 2026-10-31 continuation — source-only KitDoctor integrated
 
-A small independent `feat/read-only-personal-kit-doctor-20261031` change introduces `scripts/kit_doctor.py`, `scripts/KitDoctor.cmd`, `docs/KIT_DOCTOR.md` and isolated offline regressions. It **reuses** the local readiness / managed footprint / plugin health engines. Treat this as **candidate until PR, CI, merge and post-merge main CI are verified**. Its overall result never certifies corporate EULA/EDR, vendor authenticity, UI, redistribution or future physical capacity. Prefer latest main SHA and live GitHub state to this handoff's historical hashes.
+[PR #50](https://github.com/greatgc-flow/portakit/pull/50) merged as `3d486ea491f2893528f1ec128a9ae72573921767` and introduces `scripts/kit_doctor.py`, `scripts/KitDoctor.cmd`, `docs/KIT_DOCTOR.md` and isolated offline regressions. It **reuses** the local readiness / managed footprint / plugin health engines. PR and post-merge Windows Python 3.11/3.14 [main CI](https://github.com/greatgc-flow/portakit/actions/runs/41083220122) both report **461/461 PASS**. This proves only headless/offline tests, NOT a real enterprise Windows human session. Its overall result never certifies corporate EULA/EDR, vendor authenticity, UI, redistribution or future physical capacity. The current next backlog includes [#51 optional main governance](https://github.com/greatgc-flow/portakit/issues/51), alongside #25 research, #27 human GUI, #36 editor plugin enterprise licensing. Prefer live main SHA and GitHub state to this historical snapshot.
 
 
 > **2026-10-30 append-only update candidate (verify PR and latest main before treating as merged):** independent editor plugin choice schema-v2, six records from report, host prerequisite, UI checkbox-like add/remove, offline/footprint exclusion, full v1 compatibility. See `docs/INDIVIDUAL_EDITOR_PLUGINS.md`. v2 never installs plugins. Prior 151 software IDs exclude six editor plugin choices. The live main SHA supersedes any historical SHA in this handoff.

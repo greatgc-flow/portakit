@@ -1,5 +1,9 @@
 # Individually selected editor plugins — offline apply (2026-10-30)
 
+## Optional read-only health report
+
+Use `python -I scripts/plugin_health.py --kit Editor.json --root D:\PortableApps` to classify each selected editor plugin's existing managed state and keep explicit optional local JSON+console evidence with `--out Editor.health.json`. This does **not** install, alter or launch plugins. See [field procedure](PLUGIN_HEALTH.md). `LOCAL_HASH_PASS` proves only matching local per-file receipt hashes at the time inspected; do not confuse it with independent publisher/EDR/legal checks.
+
 ## Installed-file integrity audit (2026-10-30)
 
 New installs record a bounded SHA-256 inventory for **every extracted file**, including the required DLL and nested libraries, in the plugin receipt state. The no-write `plan` rehashes the installed plugin directory before saying `already-installed`; changed, added or missing files return `blocked-content-drift`. A pre-existing **older receipt without file hashes is accepted for inspection but is blocked as `blocked-legacy-unverified`**, never silently elevated to trusted. Do not delete, replace or regenerate these receipts automatically: reconcile manually with backups, original source archives and separately approved remediation. An unauthorized plugin change is not silently overwritten; the evidence remains available for investigation.

@@ -1,5 +1,15 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## Read-only overview window (additional human acceptance)
+
+- [ ] Open GUI, select some pinned/research/OS and editor plugins, open **Read-only overview…**. The main selection must not be saved or altered.
+- [ ] Input managed root, optionally original vendor archive folder, optionally whole-number MiB limit; click **Inspect only**. Validate explicitly visible `READY`/`READY_APPROVED_SUBSET`/`NO_OP`/`BLOCKED` statuses and source-missing blockers; no EXE/download/install process.
+- [ ] With no pinned entries, see `(no pinned tools selected)`; when pinned not installed, logical size must be `UNKNOWN`, not `0`. Already-managed matching pins may show measured logical bytes; never confuse logical size with physical disk allocation or full kit footprint.
+- [ ] Check `skip pending` checkbox; research tools/editor plugins remain excluded even when source checks become green. Original corporate transfer/EDR/license approvals remain independent.
+- [ ] Bad path/invalid budget must show a non-destructive error; no new files from overview scan. For filed JSON/log evidence use existing separate explicit CLI `--out`.
+- [ ] Windows 100%, 150%, 200% DPI: overview scroll, controls, contrast, Unicode and keyboard Tab navigation. Tests do not create a real Tk window; keep HUMAN_NOT_VERIFIED until operator screenshots and evidence.
+
+
 ## Individual editor plugin display — manual acceptance still required
 
 The picker now displays both the chosen plugin's host and verification stage and a separate visible **selected editor plugins** summary. Check all six plugin families (2 pinned-source metadata, 4 research-only). The summary must update immediately when a plugin is added, removed, a host application is de-selected, or an existing personal kit is imported. A previously research-only choice must not quietly become pinned after import. Resize to 850px and use 100/150/200% Windows DPI; confirm wrapping, contrast, Korean IME and keyboard navigation without clipping. These are **manual acceptance gates**, not proven by headless CI tests. All plugin installation remains a separate explicit offline workflow, never a GUI action.

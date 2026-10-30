@@ -1,5 +1,10 @@
 # portakit
 
+## Optional visual personal-toolkit picker (2026-10-30)
+
+Run `scripts\MyToolkitGUI.cmd` on an **authorized non-production Windows desktop with Python 3.11+ and Tkinter available**, or `python -I scripts/toolkit_picker.py`. The optional zero-dependency (beyond standard-library Tk) UI searches the entire current **151-ID** research/catalog union, filters by one-of-ten primary domains and approval state, multi-selects, imports a *validated* existing personal JSON, and saves a **new** pinned JSON + exactly mirrored local console evidence. **The window never installs/downloads/updates software or modifies services, drivers, shell, registry or PATH.** Install only with the separate existing CLI `scripts\MyToolkit.cmd build --kit ... --yes` after plan and permission checks. Python distributions without Tk can keep using the CLI without changes. [UI guide](docs/PERSONAL_KITS.md). Real visual/UI workstation acceptance and screenshots are NOT_VERIFIED by headless CI.
+
+
 ## Build your own portable toolkit (2026-10-25)
 
 Every known tool is now *selectable* into your own reusable JSON toolkit, but only the **19 verified SHA-pinned** tools are installable. Use [Personal Kits guide](docs/PERSONAL_KITS.md), `scripts/MyToolkit.cmd` or `python -I scripts/my_toolkit.py`. The separate inventory union has **151 IDs = 19 pinned + 27 Windows native + 105 unverified research items**. Unverified items can be saved and planned, never silently installed.

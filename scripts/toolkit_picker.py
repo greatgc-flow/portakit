@@ -446,9 +446,15 @@ def launch():
     tk.Label(plugin_details, textvariable=plugin_choice_text,
              fg="#c4d8e8", bg="#121e2b", font=("Segoe UI", 9),
              anchor="w", justify="left").pack(fill="x")
-    tk.Label(plugin_details, textvariable=plugin_selected_text,
-             fg="#a8dfcd", bg="#121e2b", font=("Segoe UI", 9),
-             anchor="w", justify="left", wraplength=1000).pack(fill="x")
+    selected_plugin_label = tk.Label(
+        plugin_details, textvariable=plugin_selected_text,
+        fg="#a8dfcd", bg="#121e2b", font=("Segoe UI", 9),
+        anchor="w", justify="left", wraplength=760)
+    selected_plugin_label.pack(fill="x")
+    # Responsive wrap for narrow Windows and high DPI, with a safe lower bound.
+    plugin_details.bind(
+        "<Configure>", lambda event: selected_plugin_label.configure(
+            wraplength=max(200, event.width - 24)))
 
     status_label = tk.Label(frame, textvariable=summary_text, bg="#121e2b",
                             fg="#a8dfcd", font=("Segoe UI Semibold", 11))

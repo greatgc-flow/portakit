@@ -1,5 +1,10 @@
 # portakit
 
+## Metadata-only offline asset checklist (2026-10-30)
+
+After creating a personal kit, use `python -I scripts/offline_assets.py list --kit MyKit.json` to see official original filenames and exact catalog SHA-256; `export --kit MyKit.json --out MyKit.assets.json` creates new-only metadata plus matching local log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks **all** selected pinned original files using the unchanged offline SHA preflight before any installation. [Offline guide](docs/OFFLINE_ASSETS.md). **No download, vendor binary bundling, third-party redistribution, service/driver, or automatic installation** is performed. Research-only and OS-native tools are listed as exclusions; vendor/legal/EDR approvals remain independent.
+
+
 ## Optional visual personal-toolkit picker (2026-10-30)
 
 Run `scripts\MyToolkitGUI.cmd` on an **authorized non-production Windows desktop with Python 3.11+ and Tkinter available**, or `python -I scripts/toolkit_picker.py`. The optional zero-dependency (beyond standard-library Tk) UI searches the entire current **151-ID** research/catalog union, filters by one-of-ten primary domains and approval state, multi-selects, imports a *validated* existing personal JSON, and saves a **new** pinned JSON + exactly mirrored local console evidence. **The window never installs/downloads/updates software or modifies services, drivers, shell, registry or PATH.** Install only with the separate existing CLI `scripts\MyToolkit.cmd build --kit ... --yes` after plan and permission checks. Python distributions without Tk can keep using the CLI without changes. [UI guide](docs/PERSONAL_KITS.md). Real visual/UI workstation acceptance and screenshots are NOT_VERIFIED by headless CI.

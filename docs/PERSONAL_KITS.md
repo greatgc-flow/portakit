@@ -1,5 +1,10 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Metadata-only offline source checklist
+
+For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.json` displays the selected pinned original asset filename, URL and hash; `export --kit MyKit.json --out MyKit.assets.json` writes the new JSON metadata + mirrored log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks separately acquired, approved original files and logs the result before an explicit separate `build --yes`. Never confuse metadata/checksum validation with vendor redistribution permission. See [offline guide](OFFLINE_ASSETS.md).
+
+
 ## Optional mouse-based personal kit picker (2026-10-30)
 
 On an approved interactive Windows PC with the **standard** Python 3.11+ distribution and optional Tkinter runtime, use:

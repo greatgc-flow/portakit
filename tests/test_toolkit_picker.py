@@ -235,7 +235,7 @@ class PickerTests(unittest.TestCase):
             self.assertIn(binding, script)
         self.assertIn("root.after_idle(search_entry.focus_set)", script)
         self.assertIn("table.selection_set(*kept)", script)
-        self.assertIn("shown_ids", script)
+        self.assertIn('shown = {row["id"] for row in visible}', script)
         self.assertNotIn("subprocess.run(", script)
         self.assertNotIn(".apply(", script)
 

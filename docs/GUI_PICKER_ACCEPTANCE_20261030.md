@@ -1,5 +1,20 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+
+## Keyboard UX follow-up (2026-10-30)
+
+Source change: validation of all highlighted IDs before any modification; keyboard hints and a focusable search field; persistent highlighted rows and tree focus after search/filter/selection refresh. Bind **Ctrl+F** to focus search, **Space/Enter** to toggle highlighted records, **Ctrl+A** to highlight visible filtered rows (tree only), **Delete** to remove highlighted from kit (tree only), **Escape** to clear highlight (tree only), **Ctrl+O** to import, **Ctrl+S** to create a new kit. Existing no-overwrite JSON + exact evidence log, v1/v2 plugin selection and original separated install-only CLI are unchanged.
+
+### Additional human-only checks
+- [ ] 100%/150%/200% display scales: keyboard help, filtered result count, buttons and save area not clipped.
+- [ ] Search Korean/ASCII/mixed case, Ctrl+F, Tab focus and full keyboard traversal.
+- [ ] Filter list, Ctrl+A visible and Space toggle, then change filter: selected kit items survive while hidden. Confirm original highlighted items persist when still visible.
+- [ ] Import a kit, Ctrl+S then attempt same output path: no overwrite; error dialog reachable by keyboard.
+- [ ] Contrast and screen-reader announcement of rows/selection/counts. CI **cannot** prove screen-reader correctness or real focus behavior; keep HUMAN_NOT_VERIFIED.
+- [ ] Esc/Del never remove a saved kit file or software install; they affect UI highlights/selection metadata only.
+
+
+
 **Status: NOT_VERIFIED — workstation-only interactive acceptance pending.** This is separate from the Python headless model tests and Windows Actions CI. Do not mark GUI visually accepted without a real approved Windows desktop session.
 
 ## Preconditions and non-production boundary

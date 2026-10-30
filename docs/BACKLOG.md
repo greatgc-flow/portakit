@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — simpler offline personal-kit readiness
+
+- New one-command **read-only** `scripts/OfflineCheck.cmd` + `scripts/offline_ready.py`: validate saved personal kit locks, reuse `my_toolkit.create_plan`, existing 7zr prerequisite and per-artifact SHA verifier; report exact missing original filenames, local installation status, pending/editor plugin exclusions and blockers. No network/binaries/install/registry/driver/service actions. `--skip-pending` allows readiness for pinned-only subset; `--out` creates a new local JSON+verbatim console log. Default no-write, error exit 2 for incomplete.
+- Remain open: approved physical airgap transfer, vendor corporate EULA/EDR/redistribution rights, live GUI/Office4, source executables and first-run effects, full legal-binary ZIP packaging. No automatic release or admission of research-only tools.
+
+
 ## 2026-10-30 — GUI plugin choice visibility
 
 - Add a selected-plugin summary with host and pinned-metadata/research-only labels, source-approved host precondition, retained historical research-only status, dynamic window width wrapping and four new headless regressions. Keep old CLI and plugin offline installation untouched. Human approved Windows GUI 850px/100-200% DPI, Korean IME and keyboard reading remain pending. This is selection-only display, not vendor binary or company-license approval.

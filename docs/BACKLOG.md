@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — offline handoff refinement
+
+- **Candidate PR (accept only after CI and merge):** metadata-only personal asset inventory/export/verify (`scripts/offline_assets.py`) backed by source catalog SHA pins and existing `toolsets.verify_offline_assets` before tool installation; `docs/OFFLINE_ASSETS.md`. New-only JSON+mirrored log, missing/wrong/duplicate filename and hash guards, no download or vendor bundling; Windows 3.11/3.14 tests.
+- **Still NOT implemented:** universal vendor-binary redistributable ZIP builder, license/EDR approval workflow, automated safe runtime launcher for every unverified tool, installed disk footprint measurement and GUI vendor acceptance. Keep these separate: legal authorization cannot be inferred from official download URLs or SHA.
+
+
 ## 2026-10-30 — personal-toolkit picker follow-up
 
 - **Implemented in candidate PR; verify/merge first:** optional Python standard-library Tkinter **mouse-based, zero-install selection-only GUI** `scripts/toolkit_picker.py` and `scripts/MyToolkitGUI.cmd`. Dynamic 151-ID browse/search/category and approval filters, multi-select, pin-only presets, imported saved kits, new schema-v1 JSON and mirrored log, research-only consent preservation. Independent headless tests, Windows CI parser gate. No code path installs binaries or changes OS settings.

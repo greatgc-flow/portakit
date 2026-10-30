@@ -24,6 +24,12 @@ Source change: validation of all highlighted IDs before any modification; keyboa
 - Run `scripts\MyToolkitGUI.cmd` or `python -I scripts/toolkit_picker.py`; it should require **no administrator access**. Use `scripts\MyToolkit.cmd` as CLI fallback if Tk missing.
 - Capture operator observations and approved synthetic screenshots *locally only*; do not publish enterprise locations, device identity, credentials or corporate policy notes to this PUBLIC repository.
 
+## Keyboard-first improvements — implementation versus human validation
+
+The selection-only Tk GUI now has `Ctrl+F` to focus/select the current search text, `Ctrl+O` to import, and `Ctrl+S` to save. **In the tool table only**, `Space` or `Enter` toggles highlighted IDs, `Ctrl+A` highlights visible rows, `Delete` removes highlighted IDs from the kit, and `Escape` clears the highlight. Arrow keys navigate the table. Filter changes retain highlight/focus for still-visible IDs; the display reports visible/highlighted counts. Invalid multi-item operations must fail without partially changing selection.
+
+These interactions are backed by deterministic headless source/model regression tests, **not** a real Windows Tk keyboard or assistive technology session. The on-site operator must still verify native widget behavior, selection/focus preservation, Korean IME, 100/150/200% scaling, high-contrast accessibility and errors with an actual mouse/keyboard and capture approved screenshots locally. A keyboard shortcut is not evidence of screen-reader accessibility.
+
 ## Execute / observe / retain result
 
 | # | User action | Expected behavior |

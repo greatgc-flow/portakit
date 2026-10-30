@@ -102,6 +102,9 @@ jobs:
           }
           if (Test-Path -LiteralPath $root) { throw 'Footprint scan unexpectedly created root' }
           Write-Host 'Read-only personal toolkit footprint gate PASS'
+          # GitHub Actions pwsh propagates the last native process exit code.
+          # We intentionally inspected Python exit 2 above; reset only after PASS.
+          $global:LASTEXITCODE = 0
 
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh

@@ -69,6 +69,27 @@ jobs:
           if (Test-Path -LiteralPath $root) { throw 'Plan created an install directory' }
           Write-Host 'Personal toolkit isolated CLI + research boundary PASS'
 
+      - name: Verify offline source manifest without downloading or executing vendors
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'
+          $output = @(python -I scripts/offline_assets.py list --kit $kit)
+          if ($LASTEXITCODE -ne 0 -or -not ($output -match 'NO DOWNLOAD / NO CHANGES')) {
+            throw 'Offline asset checklist read-only CLI failed'
+          }
+          $manifest = Join-Path $env:RUNNER_TEMP 'portakit-ci-assets.json'
+          python -I scripts/offline_assets.py export --kit $kit --out $manifest
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $manifest)) {
+            throw 'Offline source metadata-only export failed'
+          }
+          $m = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
+          if ($m.policy -ne 'METADATA_ONLY_NOT_LICENSED_FOR_REDISTRIBUTION' -or
+              $m.approvedCatalogPins -ne 1 -or $m.researchOnlyNotPackaged.Count -ne 1) {
+            throw 'Offline metadata unexpectedly includes unapproved research tools'
+          }
+          Write-Host 'Personal offline source-only checklist PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

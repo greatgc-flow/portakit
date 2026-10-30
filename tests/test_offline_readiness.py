@@ -216,6 +216,49 @@ class OfflineReadinessTests(unittest.TestCase):
             self.assertNotIn(forbidden, script)
         self.assertIn("verify_offline_assets", script)
 
+    def test_real_managed_state_with_missing_archives_is_noop(self):
+        """Exercise actual on-disk managed pin state, not a mocked planner."""
+        pin = self.pins["jq"]
+        self.root.mkdir()
+        (self.root / pin["dest"]).mkdir()
+        (self.root / ".portakit-state.json").write_text(
+            json.dumps({"jq": {"version": pin["version"],
+                                "sha256": pin["sha256"],
+                                "dest": pin["dest"]}}),
+            encoding="utf-8")
+        saved = ready.kit.make_kit("already", ["jq"], self.pins, self.known)
+        nonexistent = Path(self.tmp) / "no_vendor_archives_needed"
+        with mock.patch.object(ready.kit.sets, "verify_offline_assets",
+                               side_effect=AssertionError("unexpected SHA read")):
+            report = self.assess(saved=saved, folder=nonexistent)
+        self.assertEqual(report["outcome"], "NO_OP")
+        self.assertEqual(report["needInstall"], 0)
+        self.assertEqual(report["alreadyInstalled"], 1)
+        self.assertEqual(report["tools"][0]["sourceStatus"], "NOT_REQUIRED")
+        self.assertEqual(report["blockers"], [])
+        self.assertFalse(nonexistent.exists())
+
+    def test_mixed_real_managed_and_missing_app_requires_originals(self):
+        pin = self.pins["jq"]
+        self.root.mkdir()
+        (self.root / pin["dest"]).mkdir()
+        (self.root / ".portakit-state.json").write_text(
+            json.dumps({"jq": {"version": pin["version"],
+                                "sha256": pin["sha256"],
+                                "dest": pin["dest"]}}),
+            encoding="utf-8")
+        saved = ready.kit.make_kit("partial", ["jq", "ripgrep"],
+                                   self.pins, self.known)
+        nonexistent = Path(self.tmp) / "no_vendor_archives"
+        report = self.assess(saved=saved, folder=nonexistent)
+        self.assertEqual(report["outcome"], "BLOCKED")
+        self.assertEqual(report["alreadyInstalled"], 1)
+        self.assertEqual(report["needInstall"], 1)
+        self.assertEqual([x["id"] for x in report["tools"]], ["jq", "ripgrep"])
+        self.assertEqual(report["tools"][0]["sourceStatus"], "NOT_REQUIRED")
+        self.assertEqual(report["tools"][1]["sourceStatus"], "MISSING_DIRECTORY")
+        self.assertTrue(any("SOURCE_DIRECTORY_MISSING" in x for x in report["blockers"]))
+
 
 if __name__ == "__main__":
     unittest.main()

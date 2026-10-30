@@ -62,6 +62,8 @@ def make_manifest(saved, catalog):
         "approvedCatalogPins": len(rows),
         "osBuiltinsNotPackaged": list(saved["osBuiltins"]),
         "researchOnlyNotPackaged": list(saved["researchOnly"]),
+        "editorPluginsNotPackaged": [
+            x["id"] for x in saved.get("pluginSelections", [])],
         "assets": rows,
     }
 

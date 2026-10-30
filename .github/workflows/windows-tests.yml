@@ -106,6 +106,28 @@ jobs:
           # We intentionally inspected Python exit 2 above; reset only after PASS.
           $global:LASTEXITCODE = 0
 
+      - name: Verify isolated v1-v2 editor plugin choices, never install DLLs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $list = @(python -I scripts/my_toolkit.py plugins)
+          if ($LASTEXITCODE -ne 0 -or $list.Count -ne 6 -or
+              -not ($list -match 'compareplus') -or
+              -not ($list -match 'csvlint-npp')) {
+            throw 'Plugin inventory not independently selectable'
+          }
+          $file = Join-Path $env:RUNNER_TEMP 'portakit-ci-v2-editor.json'
+          python -I scripts/my_toolkit.py create --name ci-editor --tool notepad++ --plugin compareplus --plugin csvlint-npp --out $file
+          if ($LASTEXITCODE -ne 0) { throw 'Editor plugin kit save failed' }
+          $obj = Get-Content -LiteralPath $file -Raw | ConvertFrom-Json
+          if ($obj.schemaVersion -ne 2 -or $obj.pluginSelections.Count -ne 2) {
+            throw 'Editor plugin v2 schema mismatch'
+          }
+          python -I scripts/my_toolkit.py plan --kit $file
+          if ($LASTEXITCODE -ne 0) { throw 'Editor plugin read-only plan failed' }
+          $global:LASTEXITCODE = 0
+          Write-Host 'Individual editor plugin read-only selection PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

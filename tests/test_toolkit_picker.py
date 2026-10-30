@@ -192,6 +192,53 @@ class PickerTests(unittest.TestCase):
         self.assertNotIn("shell=True", script)
         self.assertNotIn(".apply(", script)
 
+    def test_keyboard_toggle_preserves_deterministic_membership(self):
+        self.model.add(["jq", "ripgrep"])
+        self.assertEqual(self.model.toggle(["jq", "duckdb-cli", "jq"]),
+                         ["ripgrep", "duckdb-cli"])
+        self.assertEqual(self.model.toggle(["duckdb-cli", "jq"]),
+                         ["ripgrep", "jq"])
+        self.assertEqual(self.model.toggle([]), ["ripgrep", "jq"])
+
+    def test_invalid_multi_add_is_atomic(self):
+        self.model.add(["jq"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.add(["ripgrep", "nonexistent-tool"])
+        self.assertEqual(self.model.selected, ["jq"])
+
+    def test_invalid_keyboard_toggle_is_atomic(self):
+        self.model.add(["jq", "duckdb-cli"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.toggle(["jq", "bogus"])
+        self.assertEqual(self.model.selected, ["jq", "duckdb-cli"])
+        with self.assertRaisesRegex(picker.kit.KitError, "Selections must be"):
+            self.model.toggle(None)
+        self.assertEqual(self.model.selected, ["jq", "duckdb-cli"])
+
+    def test_keyboard_toggle_host_removes_dependent_plugin_choice(self):
+        self.model.add(["notepad++", "jq"])
+        self.model.add_plugin("compareplus")
+        self.assertIn("compareplus", self.model.selected_plugins)
+        self.model.toggle(["notepad++"])
+        self.assertNotIn("notepad++", self.model.selected)
+        self.assertNotIn("compareplus", self.model.selected_plugins)
+        self.model.toggle(["notepad++"])
+        self.assertIn("notepad++", self.model.selected)
+        self.assertNotIn("compareplus", self.model.selected_plugins)
+
+    def test_keyboard_bindings_and_no_ui_install_path(self):
+        script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
+        for binding in ('table.bind("<space>"', 'table.bind("<Return>"',
+                        'table.bind("<Control-a>"', 'table.bind("<Delete>"',
+                        'table.bind("<Escape>"', 'root.bind("<Control-f>"',
+                        'root.bind("<Control-s>"', 'root.bind("<Control-o>"'):
+            self.assertIn(binding, script)
+        self.assertIn("root.after_idle(search_entry.focus_set)", script)
+        self.assertIn("table.selection_set(*kept)", script)
+        self.assertIn("shown_ids", script)
+        self.assertNotIn("subprocess.run(", script)
+        self.assertNotIn(".apply(", script)
+
 
 if __name__ == "__main__":
     unittest.main()

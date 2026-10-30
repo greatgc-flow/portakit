@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — GUI local overview (source/footprint)
+
+- Selection-only Tk picker adds an **explicit read-only overview** dialog; a pure reusable `scripts/kit_overview.py` merges existing SHA/installed-source readiness with existing managed-file logical size measurements, no duplicate installer. Current unsaved selections, optional managed root/original archive folder/budget, manual click only; size UNKNOWN for uninstalled or pending items, and safe explicit approved-subset handling. Ten headless tests, Windows 3.11/3.14 parser/CI. No download, install, network scan, vendor bundling, new runtime dependency or public release.
+- **Still open:** human actual Tk DPI/keyboard/IME/screen-reader acceptance and enterprise/EDR/legal/vendor transfer evidence; the new window cannot certify full kit storage requirement before tools are installed. Next optional enhancement: measured archived-source byte count (read-only), and operator-guided off-line source transfer only after legal permissions.
+
+
 ## 2026-10-30 — simpler offline personal-kit readiness
 
 - New one-command **read-only** `scripts/OfflineCheck.cmd` + `scripts/offline_ready.py`: validate saved personal kit locks, reuse `my_toolkit.create_plan`, existing 7zr prerequisite and per-artifact SHA verifier; report exact missing original filenames, local installation status, pending/editor plugin exclusions and blockers. No network/binaries/install/registry/driver/service actions. `--skip-pending` allows readiness for pinned-only subset; `--out` creates a new local JSON+verbatim console log. Default no-write, error exit 2 for incomplete.

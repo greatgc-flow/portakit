@@ -234,8 +234,8 @@ def readiness_lines(report):
     if report["archiveDirectory"] is not None:
         lines.append("ARCHIVE DIRECTORY: " + report["archiveDirectory"])
         lines.append("REQUIRED ARCHIVES SHA: " +
-                     ("PASS" if report["offlineArchivesVerified"] else
-                      "NOT_VERIFIED" if report["missingApproved"] == 0 else "FAIL"))
+                     ("NOT_REQUIRED" if report["missingApproved"] == 0 else
+                      "PASS" if report["offlineArchivesVerified"] else "FAIL"))
     for reason in report["blockedState"]:
         lines.append("BLOCKED: " + reason)
     if report["archiveError"] is not None:

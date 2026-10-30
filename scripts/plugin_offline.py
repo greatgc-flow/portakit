@@ -11,6 +11,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import stat
 import sys
 import uuid
 
@@ -22,6 +24,12 @@ import offline_assets as source_assets  # noqa: E402
 
 STATE_NAME = ".portakit-plugin-state.json"
 MAX_PINNED = 8
+MAX_PLUGIN_FILES = 4096
+MAX_PLUGIN_LEVELS = 32
+MAX_PLUGIN_BYTES = 512 * 1024 * 1024
+MAX_RECEIPT_BYTES = 2 * 1024 * 1024
+BASE_RECEIPT_FIELDS = frozenset(
+    ("hostSha256", "sha256", "version", "dest", "requiredFile"))
 
 
 class PluginDeployError(Exception):
@@ -32,12 +40,32 @@ def receipt_path(root):
     return Path(root) / STATE_NAME
 
 
+def validate_hashes(hashes):
+    """Do not trust persisted file paths or digests read from local receipts."""
+    if not isinstance(hashes, dict) or not hashes or len(hashes) > MAX_PLUGIN_FILES:
+        raise PluginDeployError("Invalid plugin file hash inventory")
+    seen = set()
+    for name, digest in hashes.items():
+        try:
+            segments = kit.core.path_parts(name, "receipt relative file", "state")
+        except kit.core.PortakitError as exc:
+            raise PluginDeployError("Invalid plugin receipt file path") from exc
+        if ("/".join(segments) != name or
+                name.casefold() in seen or
+                not isinstance(digest, str) or
+                re.fullmatch(r"[a-f0-9]{64}", digest) is None):
+            raise PluginDeployError("Unsafe/duplicate plugin file digest")
+        seen.add(name.casefold())
+
+
 def read_receipts(root):
     path = receipt_path(root)
     kit.core.check_links(path)
     if not path.exists():
         return {}
     try:
+        if path.stat().st_size > MAX_RECEIPT_BYTES:
+            raise PluginDeployError("Plugin receipt state too large")
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, UnicodeError) as exc:
         raise PluginDeployError("Cannot read plugin receipt state: " + str(exc)) from exc
@@ -45,11 +73,77 @@ def read_receipts(root):
         raise PluginDeployError("Plugin receipts must be a JSON object")
     for ident, record in value.items():
         if (not isinstance(ident, str) or ":" not in ident
-                or not isinstance(record, dict)
-                or set(record) != {"hostSha256", "sha256", "version", "dest", "requiredFile"}
-                or any(not isinstance(v, str) for v in record.values())):
+                or not isinstance(record, dict) or
+                set(record) not in (BASE_RECEIPT_FIELDS,
+                                   BASE_RECEIPT_FIELDS | {"fileHashes"}) or
+                any(not isinstance(record.get(k), str)
+                    for k in BASE_RECEIPT_FIELDS)):
             raise PluginDeployError("Invalid saved plugin receipt: " + str(ident))
+        # Historical receipts are accepted for diagnosis, but NOT trusted
+        # as proof of currently installed DLL integrity.
+        if "fileHashes" in record:
+            validate_hashes(record["fileHashes"])
     return value
+
+
+def installed_file_hashes(directory):
+    """Hash *all* deployed files with bounded, no-reparse, read-only traversal.
+
+    This is a best-effort snapshot. A privileged concurrent process can still
+    alter files after verification; do not describe it as a signature or EDR gate.
+    """
+    root = Path(directory)
+    kit.core.check_links(root)
+    if not root.is_dir():
+        raise PluginDeployError("Plugin folder does not exist")
+    stack = [(root, "", 0)]
+    found = {}
+    names_lower = set()
+    total = 0
+    entries = 0
+    while stack:
+        current, prefix, depth = stack.pop()
+        if depth > MAX_PLUGIN_LEVELS:
+            raise PluginDeployError("Installed plugin depth limit exceeded")
+        kit.core.check_links(current)
+        with os.scandir(current) as directory_entries:
+            for entry in directory_entries:
+                entries += 1
+                if entries > MAX_PLUGIN_FILES:
+                    raise PluginDeployError("Installed plugin member count exceeded")
+                path = Path(entry.path)
+                kit.core.check_links(path)
+                info = entry.stat(follow_symlinks=False)
+                name = prefix + entry.name
+                if stat.S_ISDIR(info.st_mode):
+                    stack.append((path, name + "/", depth + 1))
+                    continue
+                if not stat.S_ISREG(info.st_mode):
+                    raise PluginDeployError("Installed plugin contains special file")
+                if name.casefold() in names_lower:
+                    raise PluginDeployError("Installed plugin duplicate file case")
+                if info.st_size > MAX_PLUGIN_BYTES - total:
+                    raise PluginDeployError("Installed plugin logical size limit exceeded")
+                digest = hashlib.sha256()
+                counted = 0
+                with path.open("rb") as stream:
+                    while True:
+                        chunk = stream.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        counted += len(chunk)
+                        if counted > info.st_size or counted > MAX_PLUGIN_BYTES - total:
+                            raise PluginDeployError("Installed plugin size changed during scan")
+                        digest.update(chunk)
+                if counted != info.st_size:
+                    raise PluginDeployError("Installed plugin size changed during scan")
+                total += counted
+                found[name] = digest.hexdigest()
+                names_lower.add(name.casefold())
+    if not found:
+        raise PluginDeployError("Installed plugin directory has no files")
+    validate_hashes(found)
+    return found
 
 
 def write_receipts(root, receipts):
@@ -78,10 +172,14 @@ def vendor_pin(plugin, host):
     raise PluginDeployError("No approved SHA-pinned vendor metadata for " + plugin["id"])
 
 
-def receipt_record(host, pin):
-    return {"hostSha256": host["sha256"], "sha256": pin["sha256"],
+def receipt_record(host, pin, file_hashes=None):
+    info = {"hostSha256": host["sha256"], "sha256": pin["sha256"],
             "version": pin["version"], "dest": pin["dest"],
             "requiredFile": pin["requiredFile"]}
+    if file_hashes is not None:
+        validate_hashes(file_hashes)
+        info["fileHashes"] = file_hashes
+    return info
 
 
 def select_plugins(saved, pins):
@@ -123,13 +221,19 @@ def make_plan(saved, pins, root):
         status = "install"
         if host_status != "already-installed":
             status = "blocked-host-" + host_status
-        elif record is not None and record != receipt_record(host, pin):
+        elif record is not None and {
+                key: record.get(key) for key in BASE_RECEIPT_FIELDS
+                } != receipt_record(host, pin):
             status = "blocked-plugin-pin"
         elif os.path.lexists(dest):
             if record is None:
                 status = "blocked-unmanaged"
             elif not dest.is_dir() or not needed.is_file():
                 status = "blocked-missing"
+            elif "fileHashes" not in record:
+                status = "blocked-legacy-unverified"
+            elif installed_file_hashes(dest) != record["fileHashes"]:
+                status = "blocked-content-drift"
             else:
                 status = "already-installed"
         elif record is not None:
@@ -238,15 +342,16 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
                                          "required plugin DLL", "archive")
                 if not dll.is_file():
                     raise PluginDeployError("Required plugin DLL missing: " + item["id"])
+                deployed_hashes = installed_file_hashes(staging)
                 kit.core.check_links(destination)
                 if os.path.lexists(destination):
                     raise PluginDeployError("Plugin destination exists, refusing overwrite")
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 os.rename(staging, destination)
                 moved = True
-                write_receipts(root, dict(receipts, **{
-                    key: receipt_record(host, pin)}))
-                receipts[key] = receipt_record(host, pin)
+                receipt = receipt_record(host, pin, deployed_hashes)
+                write_receipts(root, dict(receipts, **{key: receipt}))
+                receipts[key] = receipt
                 evidence.emit("INSTALLED: " + item["id"] + " version=" + pin["version"] +
                               " SHA256=" + pin["sha256"] + " (host restart may be needed)")
             except BaseException:

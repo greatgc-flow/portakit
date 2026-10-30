@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — installed editor plugin integrity follow-up
+
+- **Candidate reviewed PR:** extend SHA-pinned offline plugin receipts with per-file SHA-256 (required DLL **and** nested dependencies), inspect all managed files on read-only `plan` and re-application, fail closed on content drift or legacy receipts without digests; bounded path traversal and malformed receipt denial. Preserve user data and avoid automatic overwrite/cleanup. Regression includes tampered main DLL, altered nested lib, extra/deleted file, symlink, metadata tamper and idempotent clean state. Require Windows 3.11/3.14 PASS, then post-merge CI.
+- **Still human/legal gated:** real Windows host plugin behavior, vendor dependency compliance, corporate OSS/security approval, licensed source transfer. Hash integrity cannot prove the full enterprise security state.
+
 ## 2026-10-30 — individually approved offline editor plugin capability
 
 - **Candidate PR / Windows CI gate:** new opt-in, source-only `scripts/plugin_offline.py`: plan, verify and separately consented policy-approved apply of existing pinned ComparePlus/JsonTools original offline ZIPs into an existing managed Notepad++ host. Host/version/SHA, all-source preflight, second SHA snapshot, bounded ZIP extraction, no overwrite, per-plugin receipt and rollback; Windows synthetic tests and console-mirrored evidence. No unapproved vendor archive in GitHub, no default auto-install or elevated changes.

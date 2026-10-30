@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — personal-kit GUI operator acceptance workflow
+
+- Optional `scripts/PickerAcceptance.cmd` / `scripts/picker_acceptance.py`: safe static preflight (Python/Tk availability, source hash and syntax) reports `NOT_VERIFIED` without files/desktop. Explicit `--review --out` asks 14 independent operator PASS/FAIL/SKIP checks for DPI 100/150/200, IME, keyboard, filters, plugin status, save/import, readiness, size, a11y and no OS actions. New-only private JSON plus exactly program-mirrored local console log; interrupted sessions cannot silently produce PASS. No vendor executables, GUI automation, screenshot capture or new runtime dependency.
+- **Still open**: actual company-approved workstation review/evidence for the 14 cases, independent screenshots where permissible, real screen-reader use, enterprise EULA/EDR/legal transfer verification. An operator's self-attestation is not independent acceptance or a public Release approval. Keep GUI Issue #27 open.
+
+
 ## 2026-10-30 — avoiding duplicate GUI overview implementations
 
 - PR #46 delivered the user-triggered readiness/size GUI. PR #47 covered overlapping implementation and was closed unmerged to preserve a **single SSOT**, avoiding a second `kit_overview.py` and duplicate Tk dialog.

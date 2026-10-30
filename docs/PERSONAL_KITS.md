@@ -1,5 +1,10 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Optional GUI acceptance evidence (2026-10-30)
+
+`scripts\PickerAcceptance.cmd` performs a **static read-only prerequisite check** (no GUI launched; no files) and still reports GUI `NOT_VERIFIED`. On an approved Windows desktop, open `scripts\MyToolkitGUI.cmd` yourself, then run `scripts\PickerAcceptance.cmd --review --out D:\LocalEvidence\PickerReview.json` to answer guided `P/F/S` observations. It saves a **new-only private** JSON report and exactly mirrored program-produced console `.log` (no screenshots or private machine details collected). Skipped items remain unverified. This is human **self-attestation**, not an automated accessibility or corporate security pass. [Full procedure](GUI_PICKER_ACCEPTANCE_20261030.md).
+
+
 ## Readiness GUI per-tool measured bytes (2026-10-30 refinement)
 
 In the existing **Inspect readiness / size…** window, each pinned tool now displays its original vendor filename, installed/source status and **measured installed logical bytes**; missing/uninstalled pinned tools explicitly show **`size=UNKNOWN`**, not zero or a forecast. An inconsistent status-to-footprint mapping fails closed. Overall installed logical bytes are not the total eventual toolkit size, and `READY` still does not grant licensing, redistribution or EDR approval.

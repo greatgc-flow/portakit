@@ -48,6 +48,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Picker headless tests syntax failed' }
           Write-Host 'Personal toolkit GUI source checks PASS (visual acceptance still manual)'
 
+      - name: Check optional picker acceptance prerequisites without desktop or files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $lines = @(python -I scripts/picker_acceptance.py)
+          if ($LASTEXITCODE -ne 0 -or -not ($lines -match 'RESULT: NOT_VERIFIED') -or
+              -not ($lines -match 'NO GUI LAUNCHED / NO FILES WRITTEN')) {
+            throw 'Picker acceptance static check incorrectly claims live GUI proof'
+          }
+          Write-Host 'Picker acceptance static-only gate PASS (human review remains required)'
+          exit 0
+
       - name: Verify personal toolkit isolated CLI (no downloads or installs)
         shell: pwsh
         run: |

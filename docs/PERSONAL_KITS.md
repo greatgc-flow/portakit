@@ -1,5 +1,9 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Optional approved-host offline plugin application
+
+For plugin-containing v2 kits, host-only `MyToolkit.cmd build --skip-pending --yes` still never installs plugin DLLs. A separate controlled `python -I scripts/plugin_offline.py plan|verify|apply` is available **only** for individually selected ComparePlus/JsonTools pinned metadata, only when operator-supplied original ZIP hashes match, a managed pinned Notepad++ host is present, and separate `--yes --policy-approved` are supplied. All other plugins remain unapproved. The GUI remains selection-only. See [complete security, rollback and enterprise permission procedure](PLUGIN_OFFLINE_APPLY.md).
+
 ## Individually selected editor add-ons (metadata-only)
 
 Use `scripts\MyToolkit.cmd plugins` for 6 separately named choices; during create, add `--plugin compareplus` and select its `--tool notepad++` host. The GUI now has a separate editor-plugin dropdown and Add/Remove controls. New plugin-containing files are schema v2 (version/SHA locked if vendor pinned as recommended, research-only otherwise); old no-plugin schema v1 remains unchanged. **No selected plugin is deployed by v2**: use `--skip-pending --yes` only to install pinned host tools, and do not combine v2 with `--recommended`. [Details](INDIVIDUAL_EDITOR_PLUGINS.md).

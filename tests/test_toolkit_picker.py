@@ -239,6 +239,65 @@ class PickerTests(unittest.TestCase):
         self.assertNotIn("subprocess.run(", script)
         self.assertNotIn(".apply(", script)
 
+    def test_plugin_catalog_labels_and_individual_selection_visibility(self):
+        rows = self.model.plugin_rows()
+        self.assertEqual(len(rows), 6)
+        self.assertEqual({row["id"] for row in rows if row["status"] ==
+                          "PINNED_METADATA_ONLY"}, {"compareplus", "jsontools-npp"})
+        self.assertEqual(sum(row["selected"] for row in rows), 0)
+        self.assertFalse(any(row["hostSelected"] for row in rows))
+        self.model.add(["notepad++", "winmerge"])
+        self.model.add_plugin("compareplus")
+        self.model.add_plugin("xdocdiff")
+        selected = self.model.plugin_rows(selected_only=True)
+        self.assertEqual([row["id"] for row in selected],
+                         ["compareplus", "xdocdiff"])
+        self.assertEqual([row["status"] for row in selected],
+                         ["PINNED_METADATA_ONLY", "RESEARCH_ONLY"])
+        self.assertTrue(all(row["hostSelected"] for row in selected))
+        self.assertEqual([row["id"] for row in self.model.plugin_rows(host="winmerge")],
+                         ["xdocdiff", "merge7z"])
+
+    def test_plugin_rows_fail_closed_without_selection_mutation(self):
+        self.model.add(["notepad++"])
+        self.model.add_plugin("compareplus")
+        snapshot = self.model.draft("unchanged")
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown plugin host"):
+            self.model.plugin_rows(host="../unexpected")
+        with self.assertRaisesRegex(picker.kit.KitError, "selected_only must"):
+            self.model.plugin_rows(selected_only=None)
+        self.assertEqual(self.model.draft("unchanged"), snapshot)
+        self.assertEqual(self.model.plugin_rows(host="winmerge",
+                                                 selected_only=True), [])
+        self.assertFalse(self.saved.exists())
+
+    def test_pinned_plugin_can_remain_frozen_research_for_old_kit(self):
+        self.model.add(["notepad++"])
+        self.model.add_plugin("compareplus")
+        self.model.frozen_plugin_choices["compareplus"] = {
+            "id": "compareplus", "host": "notepad++", "status": "RESEARCH_ONLY",
+            "lockedPin": None,
+        }
+        only = self.model.plugin_rows(selected_only=True)
+        self.assertEqual(len(only), 1)
+        self.assertEqual(only[0]["status"], "RESEARCH_ONLY")
+        self.assertEqual(self.model.draft("frozen")["pluginSelections"][0]["status"],
+                         "RESEARCH_ONLY")
+        self.model.remove_plugin("compareplus")
+        self.model.add_plugin("compareplus")
+        self.assertEqual(self.model.plugin_rows(selected_only=True)[0]["status"],
+                         "PINNED_METADATA_ONLY")
+
+    def test_plugin_status_ui_has_no_install_action(self):
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
+        self.assertIn("def refresh_plugin_details(", source)
+        self.assertIn("plugin_choice.trace_add", source)
+        self.assertIn("plugin_selected_text.set(", source)
+        self.assertIn("plugin_choice_text.set(", source)
+        self.assertIn("model.plugin_rows(selected_only=True)", source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn(".apply(", source)
+
 
 if __name__ == "__main__":
     unittest.main()

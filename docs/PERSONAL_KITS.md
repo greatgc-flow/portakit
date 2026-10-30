@@ -1,5 +1,8 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+> **Updated 2026-10-30:** 151 selectable IDs = 19 currently SHA-pinned + 27 OS built-ins + 105 research-only; installable *software choices* are only the current pinned subset. This does not certify corporate approval or vendor binary redistribution. For current authority use `catalog.json` and the research ledgers, not older historical handoffs.
+
+
 ## Metadata-only offline source checklist
 
 For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.json` displays the selected pinned original asset filename, URL and hash; `export --kit MyKit.json --out MyKit.assets.json` writes the new JSON metadata + mirrored log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks separately acquired, approved original files and logs the result before an explicit separate `build --yes`. Never confuse metadata/checksum validation with vendor redistribution permission. See [offline guide](OFFLINE_ASSETS.md).

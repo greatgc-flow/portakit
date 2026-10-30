@@ -1,5 +1,12 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## GUI readiness / missing-source / size dialog — human acceptance needed
+
+The picker has a **read-only** `Inspect readiness / size…` button. Verify on authorized nonproduction Windows desktop only: selection before save, empty selection error, already-installed managed tools, missing vendor original, wrong SHA, no vendor source directory, pending research/plugin host consent, 7zip/7zr prerequisite, and same selected kit after inspection (no mutation). Confirm optional budget values 0, a positive integer, negative/decimal/bool input. Visually verify that unknown future tool sizes are **never displayed as 0-byte final kit size or PASS**, and that `READY` does not appear as corporate EULA/EDR acceptance. The text area must scroll for the full 151-tool selection, and the window should remain usable at 850 px wide, 100/150/200% DPI and Korean UI input.
+
+No live Tk GUI acceptance or source/EDR/legal evidence has been executed by automated CI; status remains **HUMAN_NOT_VERIFIED**. Headless unit tests exercise safe model state/formatting and no-op/missing/verified synthetic source checks only.
+
+
 ## Individual editor plugin display — manual acceptance still required
 
 The picker now displays both the chosen plugin's host and verification stage and a separate visible **selected editor plugins** summary. Check all six plugin families (2 pinned-source metadata, 4 research-only). The summary must update immediately when a plugin is added, removed, a host application is de-selected, or an existing personal kit is imported. A previously research-only choice must not quietly become pinned after import. Resize to 850px and use 100/150/200% Windows DPI; confirm wrapping, contrast, Korean IME and keyboard navigation without clipping. These are **manual acceptance gates**, not proven by headless CI tests. All plugin installation remains a separate explicit offline workflow, never a GUI action.

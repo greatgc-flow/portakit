@@ -1,5 +1,9 @@
 # Individually selected editor plugins — offline apply (2026-10-30)
 
+## Optional read-only health report
+
+Use `python -I scripts/plugin_health.py --kit Editor.json --root D:\PortableApps` to classify each selected editor plugin's existing managed state and keep explicit optional local JSON+console evidence with `--out Editor.health.json`. This does **not** install, alter or launch plugins. See [field procedure](PLUGIN_HEALTH.md). `LOCAL_HASH_PASS` proves only matching local per-file receipt hashes at the time inspected; do not confuse it with independent publisher/EDR/legal checks.
+
 ## Installed-file integrity audit (2026-10-30)
 
 New installs record a bounded SHA-256 inventory for **every extracted file**, including the required DLL and nested libraries, in the plugin receipt state. The no-write `plan` rehashes the installed plugin directory before saying `already-installed`; changed, added or missing files return `blocked-content-drift`. A pre-existing **older receipt without file hashes is accepted for inspection but is blocked as `blocked-legacy-unverified`**, never silently elevated to trusted. Do not delete, replace or regenerate these receipts automatically: reconcile manually with backups, original source archives and separately approved remediation. An unauthorized plugin change is not silently overwritten; the evidence remains available for investigation.
@@ -43,7 +47,7 @@ All three subcommands require a validated personal **schema-v2** JSON kit. `--ye
 - Host must already be in a managed, exact catalog pinned state, with no backup lock or link. No app execution, full installation, silent host update or admin rights.
 - All selected pinned original archives are SHA-256 checked before any change, then snapshotted locally with a **second SHA** before extraction; ZIP contents use the existing path traversal, reparse, maximum members and expanded-bytes guards.
 - Extraction occurs in a new temporary stage on the same volume. The plugin is moved to its intended Notepad++ `plugins/PluginName` directory without overwriting an existing destination. A required DLL must exist. No editor user configuration is rewritten.
-- Managed receipts live in `ROOT/.portakit-plugin-state.json` with plugin+host pin metadata; an unmanaged folder, stale receipt, absent host, modified pinned version, missing source or corrupt manifest **fails closed**. Previously managed plugin is skipped rather than replaced; this is **not** a binary integrity rescanner of an already installed plugin.
+- Managed receipts live in `ROOT/.portakit-plugin-state.json` with plugin+host pin metadata; an unmanaged folder, stale receipt, absent host, modified pinned version, missing source or corrupt manifest **fails closed**. Previously managed plugins are reused **only when all local extracted-file hashes still match the managed receipt**; otherwise the operation is blocked without replacing the files. This is not a publisher-signature or anti-malware verdict.
 - Each plugin is transactional: stage or receipt write failure removes that plugin's new folder and leaves previous user files untouched. **Whole batch is not atomic**: earlier successful plugin installs remain if a later plugin fails. Do not delete managed plugin folders manually; reconcile independently. Close Notepad++ before installing so it can reload plugins on next launch.
 - `apply` mirrors console evidence into an operator-local new-only `.portakit-evidence/editor-plugins-*.log` (or explicit `--log-file`). `plan` and `verify` are read-only console commands. Never publish enterprise evidence or any vendor archive.
 

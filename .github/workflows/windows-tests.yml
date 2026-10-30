@@ -149,6 +149,34 @@ jobs:
           $global:LASTEXITCODE = 0
           Write-Host 'Offline editor plugin planning and policy gate PASS'
 
+      - name: Verify read-only plugin health, blocked state and exact evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-v2-editor.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-no-plugin-health-root'
+          $output = @(python -I scripts/plugin_health.py --kit $kit --root $root)
+          if ($LASTEXITCODE -ne 2 -or -not ($output -match 'RESULT: BLOCKED')) {
+            throw 'Missing managed host must not be reported as healthy'
+          }
+          if (Test-Path -LiteralPath $root) {
+            throw 'Read-only plugin health unexpectedly created a tool root'
+          }
+          $report = Join-Path $env:RUNNER_TEMP 'portakit-ci-health.json'
+          $output = @(python -I scripts/plugin_health.py --kit $kit --root $root --out $report)
+          if ($LASTEXITCODE -ne 2 -or -not (Test-Path -LiteralPath $report)) {
+            throw 'Plugin health JSON report or exit status incorrect'
+          }
+          $obj = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          $log = [IO.Path]::ChangeExtension($report, '.log')
+          if ($obj.outcome -ne 'BLOCKED' -or
+              -not (Test-Path -LiteralPath $log) -or
+              -not ((Get-Content -LiteralPath $log -Raw) -match 'RESULT: BLOCKED')) {
+            throw 'Plugin health mirrored local evidence incorrect'
+          }
+          $global:LASTEXITCODE = 0
+          Write-Host 'Read-only plugin health / blocked-state gate PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

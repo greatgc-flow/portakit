@@ -1,5 +1,8 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Faster approved-offline readiness (2026-10-30)
+
+Use `scripts\KitOffline.cmd check --kit MyKit.json --root D:\PortableApps --archive-dir D:\ApprovedVendorArchives` to combine the personal install plan and SHA verification of only **missing** approved archives. This command never installs or downloads software. Add `--skip-pending` only to explicitly inspect the approved subset when the kit contains research-only choices or editor plugin selections; `--out MyKit.check.json` creates a new local JSON + exact console evidence `.log`. After checking licensing, EDR and transfer rights independently, real installation remains a separate `scripts\MyToolkit.cmd build --kit ... --offline-dir ... --yes`. [Readiness behavior and exit codes](OFFLINE_ASSETS.md).
 
 ## Keyboard-first visual selection (2026-10-30 enhancement)
 

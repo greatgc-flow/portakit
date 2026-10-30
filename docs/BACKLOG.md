@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — field plugin-health evidence
+
+- **Candidate PR/CI gate:** optional read-only `scripts/plugin_health.py` for 3-way operator triage `LOCAL_HASH_PASS`/`INCOMPLETE`/`BLOCKED`, explicit error exit, UTC observation, optional new-only local JSON and exactly mirrored console evidence. Reuses existing managed per-file SHA validation, keeps vendor binaries and receipt state untouched; 12 unit regressions and Windows 3.11/3.14 isolated CI. [Health guide](PLUGIN_HEALTH.md).
+- **Still open:** real approved Windows desktop plugin GUI/menu and Office-related human acceptance; enterprise license/EDR/source-transfer evidence and legacy receipt remediation. SHA snapshot cannot certify a trusted publisher or source.
+
 ## 2026-10-30 — installed editor plugin integrity follow-up
 
 - **Candidate reviewed PR:** extend SHA-pinned offline plugin receipts with per-file SHA-256 (required DLL **and** nested dependencies), inspect all managed files on read-only `plan` and re-application, fail closed on content drift or legacy receipts without digests; bounded path traversal and malformed receipt denial. Preserve user data and avoid automatic overwrite/cleanup. Regression includes tampered main DLL, altered nested lib, extra/deleted file, symlink, metadata tamper and idempotent clean state. Require Windows 3.11/3.14 PASS, then post-merge CI.

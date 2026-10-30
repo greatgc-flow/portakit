@@ -12,6 +12,8 @@ HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
+import offline_ready as readiness  # noqa: E402
+import kit_footprint as footprint  # noqa: E402
 
 
 STATES = {
@@ -208,11 +210,92 @@ class PickerModel:
                 "pending": len(temp["researchOnly"]),
                 "os": len(temp["osBuiltins"])}
 
+    def inspect_readiness(self, root, archive_dir=None, *, skip_pending=False,
+                          budget_mib=None):
+        """Inspect the CURRENT unsaved selection with existing read-only engines.
+
+        No save, download, vendor execution or installation. The footprint
+        report measures only already-installed managed pinned tool directories,
+        never inferred compressed sizes for missing tools or plugins.
+        """
+        if not isinstance(root, (str, Path)) or not str(root).strip():
+            raise kit.KitError("Provide an install root to inspect")
+        if archive_dir is not None and (
+                not isinstance(archive_dir, (str, Path)) or
+                not str(archive_dir).strip()):
+            raise kit.KitError("Archive directory must be a path or omitted")
+        if type(skip_pending) is not bool:
+            raise kit.KitError("skip_pending must be boolean")
+        if budget_mib is not None and (type(budget_mib) is not int or budget_mib < 0):
+            raise kit.KitError("Budget must be a nonnegative integer MiB")
+        saved = self.draft("preview")
+        checked = readiness.assess(saved, self.pins, root, archive_dir, skip_pending)
+        measured = footprint.audit(saved, root, budget_mib=budget_mib)
+        return checked, measured
+
     def save(self, name, path):
         # Create-only and mirrored evidence delegated to the source of truth.
         data = self.draft(name)
         kit.save_new(data, path)
         return data
+
+
+def overview_lines(checked, measured):
+    """Explain readiness and *known* installed bytes without guessing sizes."""
+    selected = (checked["pinnedTotal"] +
+                len(checked["researchOnlyExcluded"]) +
+                len(checked["osBuiltinsInformational"]))
+    lines = [
+        "PERSONAL TOOLKIT: " + checked["kitName"],
+        "SELECTED TOOLS: " + str(selected),
+        "PINNED / INSTALLED / NEED INSTALL: {} / {} / {}".format(
+            checked["pinnedTotal"], checked["alreadyInstalled"],
+            checked["needInstall"]),
+        "RESEARCH ONLY: {}  |  OS BUILT-INS: {}  |  PLUGINS: {}".format(
+            len(checked["researchOnlyExcluded"]),
+            len(checked["osBuiltinsInformational"]),
+            len(checked["editorPluginsExcluded"])),
+        "",
+        "OFFLINE READINESS: " + checked["outcome"],
+        "APPROVED SUBSET ONLY: " + ("YES" if checked["skipPendingConsent"] else "NO"),
+        "SOURCE DIRECTORY: " + (checked["archiveDirectory"] or "NOT PROVIDED"),
+        "",
+        "INSTALLED LOGICAL BYTES (MEASURED ONLY): {:,}".format(
+            measured["totalMeasuredLogicalBytes"]),
+        "MEASURED PINNED: {}/{}".format(measured["measuredPinned"],
+                                       measured["selectedPinned"]),
+        "COMPLETE KIT FOOTPRINT: " + ("YES" if measured["complete"] else "NO / UNKNOWN"),
+        "BUDGET: " + measured["budgetResult"],
+        "NOTICE: This is NOT the total future kit size or NTFS allocated bytes.",
+        "",
+        "TOOL STATUS / ORIGINAL SOURCE FILE:",
+    ]
+    for item in checked["tools"]:
+        lines.append("  {}  |  {}  |  {}  |  {}".format(
+            item["id"], item["installStatus"], item["sourceStatus"],
+            item["originalFilename"]))
+    if checked["researchOnlyExcluded"]:
+        lines.append("RESEARCH (NOT INSTALLED): " +
+                     ", ".join(checked["researchOnlyExcluded"]))
+    if checked["editorPluginsExcluded"]:
+        lines.append("EDITOR PLUGINS (NOT INSTALLED HERE): " +
+                     ", ".join(checked["editorPluginsExcluded"]))
+    if checked["osBuiltinsInformational"]:
+        lines.append("OS BUILT-INS (INFORMATION ONLY): " +
+                     ", ".join(checked["osBuiltinsInformational"]))
+    lines.append("")
+    lines.append("BLOCKERS:")
+    lines.extend(("  - " + msg) for msg in checked["blockers"])
+    if not checked["blockers"]:
+        lines.append("  None detected by this local preflight")
+    lines.extend([
+        "",
+        "READINESS IS NOT COMPANY/EDR/LICENSE/REDISTRIBUTION APPROVAL.",
+        "READINESS DOES NOT INSTALL OR CERTIFY VENDOR BINARIES.",
+        "No downloads, installation, Windows configuration or files written.",
+        "Actual installation remains separate: MyToolkit.cmd build --yes.",
+    ])
+    return lines
 
 
 def launch():
@@ -501,6 +584,80 @@ def launch():
         side="left", padx=(0, 9))
     ttk.Button(foot, text="Save personal kit + evidence",
                command=save_kit).pack(side="left")
+    def open_readiness():
+        """User-triggered, read-only dialog; NEVER call any apply or installer."""
+        dialog = tk.Toplevel(root)
+        dialog.title("PortaKit  •  Readiness / Missing / Size")
+        dialog.geometry("900x590")
+        dialog.minsize(700, 440)
+        dialog.configure(bg="#121e2b")
+        panel = tk.Frame(dialog, bg="#121e2b", padx=14, pady=12)
+        panel.pack(fill="both", expand=True)
+        inspect_root = tk.StringVar(value=str(Path.cwd() / "portable"))
+        inspect_archive = tk.StringVar(value="")
+        inspect_budget = tk.StringVar(value="")
+        inspect_skip = tk.BooleanVar(value=False)
+        line = tk.Frame(panel, bg="#121e2b")
+        line.pack(fill="x", pady=(0, 6))
+        tk.Label(line, text="Install root", bg="#121e2b",
+                 fg="#e9f3fa", width=14, anchor="w").pack(side="left")
+        ttk.Entry(line, textvariable=inspect_root).pack(side="left", fill="x", expand=True)
+        line = tk.Frame(panel, bg="#121e2b")
+        line.pack(fill="x", pady=(0, 6))
+        tk.Label(line, text="Original archives", bg="#121e2b",
+                 fg="#e9f3fa", width=14, anchor="w").pack(side="left")
+        ttk.Entry(line, textvariable=inspect_archive).pack(
+            side="left", fill="x", expand=True)
+        ttk.Button(line, text="Browse…",
+                   command=lambda: inspect_archive.set(
+                       filedialog.askdirectory(parent=dialog) or inspect_archive.get())).pack(
+                           side="left", padx=(5, 0))
+        line = tk.Frame(panel, bg="#121e2b")
+        line.pack(fill="x", pady=(0, 7))
+        tk.Label(line, text="Budget MiB", bg="#121e2b",
+                 fg="#e9f3fa", width=14, anchor="w").pack(side="left")
+        ttk.Entry(line, textvariable=inspect_budget, width=9).pack(
+            side="left", padx=(0, 12))
+        ttk.Checkbutton(line, text="Inspect pinned subset (exclude pending)",
+                        variable=inspect_skip).pack(side="left")
+        content = tk.Frame(panel, bg="#121e2b")
+        content.pack(fill="both", expand=True)
+        viewer = tk.Text(content, wrap="word", relief="flat",
+                         bg="#1b2937", fg="#edf3f8",
+                         font=("Consolas", 10), padx=10, pady=10)
+        scroll = ttk.Scrollbar(content, orient="vertical", command=viewer.yview)
+        viewer.configure(yscrollcommand=scroll.set, state="disabled")
+        viewer.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+
+        def inspect_now():
+            try:
+                budget = inspect_budget.get().strip()
+                if budget and (not budget.isdecimal()):
+                    raise kit.KitError("Budget MiB must be a nonnegative whole number")
+                checked, measured = model.inspect_readiness(
+                    inspect_root.get(),
+                    inspect_archive.get().strip() or None,
+                    skip_pending=bool(inspect_skip.get()),
+                    budget_mib=int(budget) if budget else None)
+                lines = overview_lines(checked, measured)
+                viewer.configure(state="normal")
+                viewer.delete("1.0", "end")
+                viewer.insert("1.0", "\n".join(lines) + "\n")
+                viewer.configure(state="disabled")
+            except (kit.KitError, kit.sets.ToolsetError,
+                    kit.core.PortakitError, readiness.ReadinessError,
+                    readiness.assets.AssetError, footprint.FootprintError,
+                    OSError, ValueError) as exc:
+                messagebox.showerror("Read-only inspection", str(exc), parent=dialog)
+
+        ttk.Button(panel, text="Inspect current selection (read-only)",
+                   command=inspect_now).pack(anchor="w", pady=(8, 4))
+        tk.Label(panel, text=("No write / download / install. Source SHA and size "
+                              "are point-in-time checks; pending items not deployable."),
+                 fg="#aec5d2", bg="#121e2b", anchor="w").pack(fill="x")
+    ttk.Button(foot, text="Inspect readiness / size…",
+               command=open_readiness).pack(side="left", padx=(9, 0))
     tk.Label(foot, text="No install, download or registry edits",
              bg="#121e2b", fg="#b2c1cc").pack(side="right")
     def focus_search(_event=None):

@@ -137,10 +137,149 @@ def verify_archives(data, archive_dir, evidence_path):
             return False
 
 
+
+def make_readiness(saved, catalog, root, archive_dir=None, skip_pending=False):
+    """Read-only cross-check of kit pins, managed-state and ONLY missing archives.
+
+    Source facts are delegated to the personal kit planner and the original
+    offline SHA preflight. This routine does not create directories, install
+    software, run downloads or change the saved user selection.
+    """
+    plan = kit.create_plan(saved, root)
+    metadata = make_manifest(saved, catalog)
+    by_id = {item["id"]: item for item in metadata["assets"]}
+    missing = [row for row in plan["tools"] if row["status"] == "install"]
+    blocked = [row["id"] + "=" + row["status"] for row in plan["tools"]
+               if row["status"].startswith("blocked-")]
+    # 7-Zip full archive requires a user-chosen verified 7zr prerequisite.
+    try:
+        kit.check_prerequisite(saved, plan)
+    except kit.KitError as exc:
+        blocked.append("PREREQUISITE: " + str(exc))
+    pending = list(saved["researchOnly"])
+    plugins = [item["id"] for item in saved.get("pluginSelections", [])]
+    pending_blocked = bool((pending or saved["schemaVersion"] == 2)
+                           and not skip_pending)
+
+    required = [by_id[row["id"]] for row in missing]
+    error = None
+    verified = False
+    if archive_dir is not None and missing and not blocked:
+        try:
+            result = kit.sets.verify_offline_assets(missing, archive_dir)
+            if set(result) != {row["id"] for row in missing}:
+                raise AssetError("Incomplete offline source preflight")
+            verified = True
+        except (kit.sets.ToolsetError, kit.core.PortakitError,
+                AssetError, OSError, ValueError) as exc:
+            error = str(exc)
+
+    if blocked:
+        outcome = "BLOCKED_STATE"
+    elif pending_blocked:
+        outcome = "BLOCKED_PENDING"
+    elif error is not None:
+        outcome = "BLOCKED_ARCHIVES"
+    elif missing and archive_dir is None:
+        outcome = "NEEDS_ARCHIVES"
+    elif not plan["tools"]:
+        outcome = "NO_OP"
+    else:
+        outcome = "READY"
+
+    return {
+        "schemaVersion": 1,
+        "kitName": saved["name"],
+        "root": plan["root"],
+        "archiveDirectory": (str(Path(archive_dir).absolute())
+                             if archive_dir is not None else None),
+        "status": outcome,
+        "skipPending": bool(skip_pending),
+        "selectedApproved": len(plan["tools"]),
+        "alreadyInstalled": sum(row["status"] == "already-installed"
+                                for row in plan["tools"]),
+        "missingApproved": len(missing),
+        "offlineArchivesVerified": verified,
+        "blockedState": blocked,
+        "archiveError": error,
+        "installPlan": [{"id": row["id"], "status": row["status"]}
+                        for row in plan["tools"]],
+        "requiredAssets": required,
+        "researchOnlyExcluded": pending,
+        "editorPluginsExcluded": plugins,
+        "osBuiltinsInformational": list(saved["osBuiltins"]),
+        "policy": "METADATA_ONLY_NOT_LICENSED_FOR_REDISTRIBUTION",
+        "notice": DISCLAIMER,
+    }
+
+
+def readiness_lines(report):
+    """Stable, human-readable text suitable for byte-identical local evidence."""
+    lines = ["KIT: " + report["kitName"],
+             "ROOT: " + report["root"],
+             "INSTALL PLAN:"]
+    for item in report["installPlan"]:
+        lines.append("  " + item["id"] + " / " + item["status"])
+    for item in report["requiredAssets"]:
+        lines.append("REQUIRED ORIGINAL: " + item["id"] + " / " +
+                     item["originalFilename"] + " / SHA256=" + item["sha256"])
+        lines.append("  OFFICIAL URL (manual acquisition only): " + item["url"])
+    lines.append("SELECTED APPROVED: " + str(report["selectedApproved"]) +
+                 " / ALREADY INSTALLED: " + str(report["alreadyInstalled"]) +
+                 " / ARCHIVES NEEDED: " + str(report["missingApproved"]))
+    lines.append("RESEARCH EXCLUDED: " + str(len(report["researchOnlyExcluded"])) +
+                 " / PLUGINS EXCLUDED: " + str(len(report["editorPluginsExcluded"])) +
+                 " / OS ONLY: " + str(len(report["osBuiltinsInformational"])))
+    lines.append("SKIP PENDING: " + ("YES" if report["skipPending"] else "NO"))
+    if report["archiveDirectory"] is not None:
+        lines.append("ARCHIVE DIRECTORY: " + report["archiveDirectory"])
+        lines.append("REQUIRED ARCHIVES SHA: " +
+                     ("PASS" if report["offlineArchivesVerified"] else
+                      "NOT_VERIFIED" if report["missingApproved"] == 0 else "FAIL"))
+    for reason in report["blockedState"]:
+        lines.append("BLOCKED: " + reason)
+    if report["archiveError"] is not None:
+        lines.append("SOURCE ERROR: " + report["archiveError"])
+    lines.extend(["RESULT: " + report["status"],
+                  "NO INSTALL / NO DOWNLOAD / NO CHANGES TO MANAGED TOOLS",
+                  DISCLAIMER,
+                  "NEXT: review licenses/EDR/transfer authorization; then use "
+                  "scripts\\MyToolkit.cmd build --kit ... "
+                  "--offline-dir ... --yes (and --skip-pending if selected)"])
+    return lines
+
+
+def output_readiness(report, output=None):
+    """No output path = read-only console; --out = new JSON + exact console log."""
+    lines = readiness_lines(report)
+    if output is None:
+        for line in lines:
+            print(line)
+        return
+    target = Path(output).absolute()
+    evidence_path = target.with_suffix(".log")
+    kit.core.check_links(target)
+    kit.core.check_links(evidence_path)
+    if (target == evidence_path or os.path.lexists(target)
+            or os.path.lexists(evidence_path)):
+        raise AssetError("Readiness JSON/log already exists; refuse overwrite")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with kit.sets.Evidence(evidence_path) as ev:
+        try:
+            with target.open("x", encoding="utf-8", newline="\n") as stream:
+                json.dump(report, stream, indent=2, ensure_ascii=False)
+                stream.write("\n")
+        except BaseException:
+            if target.exists():
+                target.unlink()
+            raise
+        for line in lines:
+            ev.emit(line)
+
 def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     subs = parser.add_subparsers(dest="command", required=True)
-    for command in ("list", "export", "verify"):
+    for command in ("list", "export", "verify", "check"):
         p = subs.add_parser(command)
         p.add_argument("--kit", required=True, help="existing validated personal JSON kit")
         if command == "export":
@@ -150,10 +289,24 @@ def run(argv=None):
             p.add_argument("--archive-dir", required=True,
                            help="user-acquired original official vendor filenames")
             p.add_argument("--log-file", help="new evidence log (default under cwd)")
+        if command == "check":
+            p.add_argument("--root", default="portable",
+                           help="existing managed install destination")
+            p.add_argument("--archive-dir",
+                           help="optional local originals; verify only missing pins")
+            p.add_argument("--skip-pending", action="store_true",
+                           help="explicitly accept only approved subset; never plugins")
+            p.add_argument("--out", help="optional new JSON + byte-mirrored .log")
     args = parser.parse_args(argv)
     try:
         catalog, _, _, known = kit.inventory()
         saved = kit.read_kit(args.kit, catalog, known)
+        if args.command == "check":
+            report = make_readiness(saved, catalog, args.root,
+                                    archive_dir=args.archive_dir,
+                                    skip_pending=args.skip_pending)
+            output_readiness(report, args.out)
+            return 0 if report["status"] in ("READY", "NO_OP") else 2
         data = make_manifest(saved, catalog)
         if args.command == "list":
             show_assets(data)

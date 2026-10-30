@@ -90,6 +90,36 @@ jobs:
           }
           Write-Host 'Personal offline source-only checklist PASS'
 
+      - name: Verify unified offline readiness without vendor files or installation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-not-created'
+          $blocked = @(python -I scripts/offline_assets.py check --kit $kit --root $root)
+          if ($LASTEXITCODE -ne 2 -or -not ($blocked -match 'RESULT: BLOCKED_PENDING')) {
+            throw 'Offline check failed to block unapproved candidate by default'
+          }
+          $report = Join-Path $env:RUNNER_TEMP 'portakit-ci-readiness.json'
+          $pending = @(python -I scripts/offline_assets.py check --kit $kit --root $root --skip-pending --out $report)
+          if ($LASTEXITCODE -ne 2 -or -not ($pending -match 'RESULT: NEEDS_ARCHIVES')) {
+            throw 'Offline check did not report missing approved original'
+          }
+          if (-not (Test-Path -LiteralPath $report)) {
+            throw 'Offline readiness report not created'
+          }
+          $data = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($data.status -ne 'NEEDS_ARCHIVES' -or
+              $data.requiredAssets.Count -ne 1 -or
+              $data.requiredAssets[0].id -ne 'jq' -or
+              $data.researchOnlyExcluded.Count -ne 1) {
+            throw 'Offline readiness included unapproved research or wrong source'
+          }
+          if (Test-Path -LiteralPath $root) {
+            throw 'Read-only readiness created managed installation root'
+          }
+          Write-Host 'Unified offline readiness and fail-closed research gate PASS'
+
       - name: Verify read-only footprint and incomplete budget states
         shell: pwsh
         run: |

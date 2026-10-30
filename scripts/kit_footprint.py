@@ -42,27 +42,26 @@ def tree_usage(directory):
         if depth > MAX_DEPTH:
             raise FootprintError("Directory depth limit exceeded")
         kit.core.check_links(current)
-        with os.scandir(current) as stream:
-            entries = list(stream)
-        for entry in entries:
-            visited += 1
-            if visited > MAX_ENTRIES:
-                raise FootprintError("Entry count limit exceeded")
-            path = Path(entry.path)
-            # Reparse-points can include non-symlink junctions on Windows.
-            if kit.core.is_reparse(path):
-                raise FootprintError("Reparse path encountered: " + str(path))
-            details = entry.stat(follow_symlinks=False)
-            if stat.S_ISLNK(details.st_mode):
-                raise FootprintError("Link encountered: " + str(path))
-            if stat.S_ISDIR(details.st_mode):
-                folders += 1
-                stack.append((path, depth + 1))
-            elif stat.S_ISREG(details.st_mode):
-                files += 1
-                total += details.st_size
-            else:
-                raise FootprintError("Unexpected special file: " + str(path))
+        with os.scandir(current) as entries:
+            for entry in entries:
+                visited += 1
+                if visited > MAX_ENTRIES:
+                    raise FootprintError("Entry count limit exceeded")
+                path = Path(entry.path)
+                # Reparse-points can include non-symlink junctions on Windows.
+                if kit.core.is_reparse(path):
+                    raise FootprintError("Reparse path encountered: " + str(path))
+                details = entry.stat(follow_symlinks=False)
+                if stat.S_ISLNK(details.st_mode):
+                    raise FootprintError("Link encountered: " + str(path))
+                if stat.S_ISDIR(details.st_mode):
+                    folders += 1
+                    stack.append((path, depth + 1))
+                elif stat.S_ISREG(details.st_mode):
+                    files += 1
+                    total += details.st_size
+                else:
+                    raise FootprintError("Unexpected special file: " + str(path))
     return {"logicalBytes": total, "files": files, "directories": folders}
 
 

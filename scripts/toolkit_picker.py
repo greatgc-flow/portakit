@@ -270,10 +270,16 @@ def overview_lines(checked, measured):
         "",
         "TOOL STATUS / ORIGINAL SOURCE FILE:",
     ]
+    measured_by_id = {row["id"]: row for row in measured["tools"]}
     for item in checked["tools"]:
-        lines.append("  {}  |  {}  |  {}  |  {}".format(
+        # A partial or mismatched measurement must not be shown as zero bytes.
+        if item["id"] not in measured_by_id:
+            raise kit.KitError("Missing footprint row for selected pin: " + item["id"])
+        count = measured_by_id[item["id"]]["logicalBytes"]
+        size = "UNKNOWN" if count is None else "{:,} logical bytes".format(count)
+        lines.append("  {}  |  {}  |  {}  |  {}  |  size={}".format(
             item["id"], item["installStatus"], item["sourceStatus"],
-            item["originalFilename"]))
+            item["originalFilename"], size))
     if checked["researchOnlyExcluded"]:
         lines.append("RESEARCH (NOT INSTALLED): " +
                      ", ".join(checked["researchOnlyExcluded"]))

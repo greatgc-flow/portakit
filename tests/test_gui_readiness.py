@@ -158,6 +158,43 @@ class GuiReadinessTests(unittest.TestCase):
         import ast
         ast.parse(script)
 
+    def test_each_uninstalled_tool_size_is_unknown_not_zero(self):
+        self.model.add(["jq", "ripgrep"])
+        checked, measured = self.inspect(budget=10)
+        lines = picker.overview_lines(checked, measured)
+        pin_lines = [line for line in lines if line.startswith("  jq  |") or
+                     line.startswith("  ripgrep  |")]
+        self.assertEqual(len(pin_lines), 2)
+        self.assertTrue(all("size=UNKNOWN" in line for line in pin_lines))
+        self.assertEqual(measured["budgetResult"], "UNKNOWN_INCOMPLETE")
+
+    def test_real_managed_size_is_reported_per_tool(self):
+        self.model.add(["jq"])
+        pin = self.model.pins["jq"]
+        self.root.mkdir()
+        folder = self.root / pin["dest"]
+        folder.mkdir()
+        (folder / "sample.txt").write_bytes(b"12345")
+        (self.root / ".portakit-state.json").write_text(
+            json.dumps({"jq": {"version": pin["version"],
+                               "sha256": pin["sha256"], "dest": pin["dest"]}}),
+            encoding="utf-8")
+        checked, measured = self.inspect(budget=1)
+        self.assertEqual(checked["outcome"], "NO_OP")
+        line = next(x for x in picker.overview_lines(checked, measured)
+                    if x.startswith("  jq  |"))
+        self.assertIn("size=5 logical bytes", line)
+        self.assertIn("already-installed", line)
+        self.assertIn("NOT_REQUIRED", line)
+
+    def test_mismatched_size_report_fails_instead_of_claiming_zero(self):
+        self.model.add(["jq"])
+        checked, measured = self.inspect()
+        measured["tools"] = []
+        with self.assertRaisesRegex(picker.kit.KitError, "Missing footprint row"):
+            picker.overview_lines(checked, measured)
+
+
 
 if __name__ == "__main__":
     unittest.main()

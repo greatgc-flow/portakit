@@ -1,5 +1,12 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## Per-tool size display (manual checks still outstanding)
+
+- [ ] Select an uninstalled pinned item; inspect and verify its row says `size=UNKNOWN`, not `0`. With a valid managed installed pinned item, verify that row reports its **actual logical bytes**, rather than compressed archive size or NTFS allocation.
+- [ ] A missing footprint row must produce an error, never a silent default of zero. Test scroll/horizontal layout under 850px and Windows 100/150/200% DPI in a live approved Tk desktop. Unit CI is not visual acceptance.
+- [ ] Do not treat pending, OS built-ins or plugins as zero-size or fully installed; no total future footprint claim.
+
+
 ## GUI readiness / missing-source / size dialog — human acceptance needed
 
 The picker has a **read-only** `Inspect readiness / size…` button. Verify on authorized nonproduction Windows desktop only: selection before save, empty selection error, already-installed managed tools, missing vendor original, wrong SHA, no vendor source directory, pending research/plugin host consent, 7zip/7zr prerequisite, and same selected kit after inspection (no mutation). Confirm optional budget values 0, a positive integer, negative/decimal/bool input. Visually verify that unknown future tool sizes are **never displayed as 0-byte final kit size or PASS**, and that `READY` does not appear as corporate EULA/EDR acceptance. The text area must scroll for the full 151-tool selection, and the window should remain usable at 850 px wide, 100/150/200% DPI and Korean UI input.

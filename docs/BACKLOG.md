@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — avoiding duplicate GUI overview implementations
+
+- PR #46 delivered the user-triggered readiness/size GUI. PR #47 covered overlapping implementation and was closed unmerged to preserve a **single SSOT**, avoiding a second `kit_overview.py` and duplicate Tk dialog.
+- This follow-up adds **per-pinned-tool** installed logical byte display or explicit `UNKNOWN`; a mismatch between source and footprint rows must fail closed. Existing install and SHA preflight engines untouched. Real desktop/DPI, operator file approval and full future size measurement remain outstanding.
+
+
 ## 2026-10-30 — GUI offline readiness and installed-size overview
 
 - **Code feature:** optional GUI read-only `Inspect readiness / size…` dialog from the current selected user kit (without forcing save), showing present pinned installs, missing/wrong original sources, research/plugin exclusions, OS-only informational items, explicit pinned-subset consent, SHA verification via existing offline engine, blockers and logical bytes of already installed managed pins. No guessed future kit total, no downloads or install/apply code.

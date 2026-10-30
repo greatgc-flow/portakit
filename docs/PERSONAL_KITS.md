@@ -1,5 +1,9 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## One-command preflight before closed-network installation (2026-10-30)
+
+`scripts\OfflineCheck.cmd --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedArchives --skip-pending` checks current managed install status plus original vendor file readiness, without downloading or installing anything. Omit `--archive-dir` for a source checklist of what still needs approval/acquisition; omit `--skip-pending` to **block the entire build** when research-only tools or editor plugins are selected. Add `--out MyKit.readiness.json` only if you want a new report and exactly matching local console log. Re-run the full existing `build --yes --offline-dir` after checking enterprise vendor transfer and security policies. [Detailed procedure](OFFLINE_ASSETS.md).
+
 
 ## Keyboard-first visual selection (2026-10-30 enhancement)
 

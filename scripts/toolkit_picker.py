@@ -112,6 +112,33 @@ class PickerModel:
         self.selected_plugins = []
         self.frozen_plugin_choices.clear()
 
+    def plugin_rows(self, host="all", selected_only=False):
+        """Pure UI metadata; never equate a pinned plugin with permission to install.
+
+        Existing imported RESEARCH_ONLY plugin intent remains inert even after
+        a newer catalog pins that plugin. This is a display of user selections,
+        not an installation plan or enterprise licensing verdict.
+        """
+        if host != "all" and host not in ("notepad++", "winmerge"):
+            raise kit.KitError("Unknown plugin host: " + str(host))
+        if not isinstance(selected_only, bool):
+            raise kit.KitError("selected_only must be a boolean")
+        rows = []
+        for ident, info in self.plugin_catalog.items():
+            if host != "all" and info["host"] != host:
+                continue
+            selected = ident in self.selected_plugins
+            if selected_only and not selected:
+                continue
+            status = ("RESEARCH_ONLY" if ident in self.frozen_plugin_choices
+                      else info["status"])
+            rows.append({
+                "id": ident, "name": info["name"], "host": info["host"],
+                "status": status, "selected": selected,
+                "hostSelected": info["host"] in self.selected,
+            })
+        return rows
+
     def add_plugin(self, ident):
         if ident not in self.plugin_catalog:
             raise kit.KitError("Unknown editor plugin: " + str(ident))
@@ -228,6 +255,8 @@ def launch():
     output = tk.StringVar(value=str(Path.cwd() / "MyPortableKit.json"))
     summary_text = tk.StringVar()
     plugin_choice = tk.StringVar(value="compareplus")
+    plugin_selected_text = tk.StringVar(value="")
+    plugin_choice_text = tk.StringVar(value="")
 
     frame = tk.Frame(root, bg="#121e2b", padx=22, pady=16)
     frame.pack(fill="both", expand=True)
@@ -281,6 +310,32 @@ def launch():
     tk.Label(frame, textvariable=results_text, fg="#c8d6e2", bg="#121e2b",
              anchor="w", font=("Segoe UI", 9)).pack(fill="x", pady=(5, 0))
 
+    def refresh_plugin_details(*_):
+        current = next((row for row in model.plugin_rows()
+                        if row["id"] == plugin_choice.get()), None)
+        if current:
+            state = ("Pinned source metadata only" if current["status"] ==
+                     "PINNED_METADATA_ONLY" else "Research only - not approved")
+            host = ("host selected" if current["hostSelected"] else
+                    "select host first")
+            plugin_choice_text.set(
+                "{} | {} | {} | {} | no automatic plugin install".format(
+                    current["name"], current["host"], state, host))
+        else:
+            plugin_choice_text.set("Choose an editor plugin. No plugin is installed by this window.")
+
+        chosen = model.plugin_rows(selected_only=True)
+        if not chosen:
+            plugin_selected_text.set("Selected editor plugins (0): none")
+            return
+        labels = []
+        for row in chosen:
+            state = ("PINNED METADATA" if row["status"] ==
+                     "PINNED_METADATA_ONLY" else "RESEARCH ONLY")
+            labels.append("{} [{}; {}]".format(row["name"], row["host"], state))
+        plugin_selected_text.set(
+            "Selected editor plugins ({}): {}".format(len(chosen), "  |  ".join(labels)))
+
     def refresh(*_):
         # Preserve keyboard highlight and focus after selecting tools.
         highlighted = set(table.selection())
@@ -310,6 +365,7 @@ def launch():
                           "Research {pending}  •  OS {os}  •  Plugins {plugins} "
                           "(selection only)").format(
                               **dict(counts, plugins=len(model.selected_plugins))))
+        refresh_plugin_details()
 
     def action(fn):
         try:
@@ -353,6 +409,7 @@ def launch():
     table.bind("<Escape>", clear_highlight)
     for var in (search, domain, status):
         var.trace_add("write", refresh)
+    plugin_choice.trace_add("write", refresh_plugin_details)
 
     buttons = tk.Frame(frame, bg="#121e2b")
     buttons.pack(fill="x", pady=(12, 7))
@@ -382,8 +439,16 @@ def launch():
         lambda: model.add_plugin(plugin_choice.get()))).pack(side="left", padx=(0, 7))
     ttk.Button(plugin_bar, text="Remove plugin", command=lambda: action(
         lambda: model.remove_plugin(plugin_choice.get()))).pack(side="left", padx=(0, 8))
-    tk.Label(plugin_bar, text="Host must be selected • plugin assets never installed",
+    tk.Label(plugin_bar, text="Host required; no GUI plugin install",
              fg="#c6aa77", bg="#121e2b").pack(side="left")
+    plugin_details = tk.Frame(frame, bg="#121e2b")
+    plugin_details.pack(fill="x", pady=(0, 7))
+    tk.Label(plugin_details, textvariable=plugin_choice_text,
+             fg="#c4d8e8", bg="#121e2b", font=("Segoe UI", 9),
+             anchor="w", justify="left").pack(fill="x")
+    tk.Label(plugin_details, textvariable=plugin_selected_text,
+             fg="#a8dfcd", bg="#121e2b", font=("Segoe UI", 9),
+             anchor="w", justify="left", wraplength=1000).pack(fill="x")
 
     status_label = tk.Label(frame, textvariable=summary_text, bg="#121e2b",
                             fg="#a8dfcd", font=("Segoe UI Semibold", 11))

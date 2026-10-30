@@ -1,0 +1,46 @@
+# Individually selected editor plugins — offline apply (2026-10-30)
+
+This feature is **opt-in** and uses only the two existing SHA-pinned Notepad++ plugins (ComparePlus and JsonTools). It never downloads vendor ZIPs, bundles them into PortaKit, executes a DLL, or adjusts registry/services/driver/Windows PATH. No WinMerge add-on or research-only editor plugin is installable. **The operator must independently verify company-use, transfer, OSS notices and EDR policy before using --policy-approved.** A repository license permits certain uses subject to license terms; it does not prove that your organization has approved this deployment.
+
+Official project sources: [ComparePlus](https://github.com/pnedev/comparePlus) (GPL-3.0; Notepad++ >=8.4.2, use correct architecture, includes required libs) and [JsonTools](https://github.com/molsonkiko/JsonToolsNppPlugin) (Apache-2.0; check release and plugin-host architecture). Catalog locks currently target Notepad++ 8.7.5 x64, ComparePlus 3.0.0 and JsonTools 8.5. Check **exact catalog pin**; not a claim that latest versions are always safe.
+
+## Safe workflow (nonproduction, controlled offline Windows)
+
+First create a v2 kit and install the **Notepad++ host only**, without automatic recommended plugins:
+
+```cmd
+scripts\MyToolkit.cmd create --name editor --tool notepad++ --plugin compareplus --plugin jsontools-npp --out Editor.json
+scripts\MyToolkit.cmd plan --kit Editor.json --root D:\PortableApps
+scripts\MyToolkit.cmd build --kit Editor.json --root D:\PortableApps --skip-pending --yes
+```
+
+Manually and separately obtain permissioned, **unmodified original vendor archives** named exactly as their pinned GitHub release files. Use `scripts\MyToolkit.cmd plugins` and `catalog.json` to verify source URLs, versions and SHA-256. Transfer files into your approved **local** archive directory. **Do not upload third-party ZIPs or internal host paths to this public GitHub repository.**
+
+```cmd
+:: No changes: host/plugin state, dependencies and destination plan
+python -I scripts/plugin_offline.py plan --kit Editor.json --root D:\PortableApps
+
+:: No changes: verify every pinned original archive SHA-256
+python -I scripts/plugin_offline.py verify --kit Editor.json --root D:\PortableApps --offline-dir D:\ApprovedVendorArchives
+
+:: Only after corporate license/EDR/source-transfer authorization and closure of Notepad++:
+python -I scripts/plugin_offline.py apply --kit Editor.json --root D:\PortableApps --offline-dir D:\ApprovedVendorArchives --yes --policy-approved
+
+:: If a v2 kit also contains research-only plugin choices:
+python -I scripts/plugin_offline.py apply --kit Editor.json --root D:\PortableApps --offline-dir D:\ApprovedVendorArchives --yes --policy-approved --skip-pending
+```
+
+All three subcommands require a validated personal **schema-v2** JSON kit. `--yes` and `--policy-approved` must be supplied together for apply. Neither flag supplies legal authorization on its own. `--skip-pending` explicitly suppresses only unapproved research plugins; missing pinned vendor archives or failed host validation always block. Existing old **schema-v1** kits and their legacy `--recommended` behavior are untouched.
+
+## Strict scope and recovery
+
+- Host must already be in a managed, exact catalog pinned state, with no backup lock or link. No app execution, full installation, silent host update or admin rights.
+- All selected pinned original archives are SHA-256 checked before any change, then snapshotted locally with a **second SHA** before extraction; ZIP contents use the existing path traversal, reparse, maximum members and expanded-bytes guards.
+- Extraction occurs in a new temporary stage on the same volume. The plugin is moved to its intended Notepad++ `plugins/PluginName` directory without overwriting an existing destination. A required DLL must exist. No editor user configuration is rewritten.
+- Managed receipts live in `ROOT/.portakit-plugin-state.json` with plugin+host pin metadata; an unmanaged folder, stale receipt, absent host, modified pinned version, missing source or corrupt manifest **fails closed**. Previously managed plugin is skipped rather than replaced; this is **not** a binary integrity rescanner of an already installed plugin.
+- Each plugin is transactional: stage or receipt write failure removes that plugin's new folder and leaves previous user files untouched. **Whole batch is not atomic**: earlier successful plugin installs remain if a later plugin fails. Do not delete managed plugin folders manually; reconcile independently. Close Notepad++ before installing so it can reload plugins on next launch.
+- `apply` mirrors console evidence into an operator-local new-only `.portakit-evidence/editor-plugins-*.log` (or explicit `--log-file`). `plan` and `verify` are read-only console commands. Never publish enterprise evidence or any vendor archive.
+
+## Incomplete gates
+
+The actual plugin UI (loaded correctly in Notepad++ and functioning with Office documents) remains **HUMAN_NOT_VERIFIED** until executed on an approved Windows workstation. Real vendor archive hash/SHA verification and corporate license/transfer approvals are **OPERATOR_NOT_VERIFIED** here. This code is a controlled, permission-gated capability, not an automatic company-wide deployment or redistributable plugin pack. No public Release.

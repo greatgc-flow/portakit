@@ -247,8 +247,13 @@ class OfflinePluginTests(unittest.TestCase):
         host = self.make_host()
         self.evidence_apply()
         with mock.patch.object(plugins, "MAX_PLUGIN_FILES", 1):
-            with self.assertRaisesRegex(plugins.PluginDeployError, "member count"):
+            # Stored receipt preflight is separately bounded before traversal.
+            with self.assertRaisesRegex(plugins.PluginDeployError,
+                                        "Invalid plugin file hash inventory"):
                 plugins.make_plan(self.saved, self.pins, self.root)
+            # The actual filesystem traversal has its own independent gate.
+            with self.assertRaisesRegex(plugins.PluginDeployError, "member count"):
+                plugins.installed_file_hashes(host / "plugins/ComparePlus")
 
     def test_wrong_hash_fails_before_writes(self):
         host = self.make_host()

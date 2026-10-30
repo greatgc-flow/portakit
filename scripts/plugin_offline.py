@@ -98,6 +98,7 @@ def installed_file_hashes(directory):
         raise PluginDeployError("Plugin folder does not exist")
     stack = [(root, "", 0)]
     found = {}
+    names_lower = set()
     total = 0
     entries = 0
     while stack:
@@ -119,7 +120,7 @@ def installed_file_hashes(directory):
                     continue
                 if not stat.S_ISREG(info.st_mode):
                     raise PluginDeployError("Installed plugin contains special file")
-                if name.casefold() in (k.casefold() for k in found):
+                if name.casefold() in names_lower:
                     raise PluginDeployError("Installed plugin duplicate file case")
                 if info.st_size > MAX_PLUGIN_BYTES - total:
                     raise PluginDeployError("Installed plugin logical size limit exceeded")
@@ -138,6 +139,7 @@ def installed_file_hashes(directory):
                     raise PluginDeployError("Installed plugin size changed during scan")
                 total += counted
                 found[name] = digest.hexdigest()
+                names_lower.add(name.casefold())
     if not found:
         raise PluginDeployError("Installed plugin directory has no files")
     validate_hashes(found)

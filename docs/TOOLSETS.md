@@ -98,6 +98,11 @@ For 30 historically assessed desktop-oriented tools see [corporate closed-networ
 
 During the genuine Windows x64 CI run, the official GitHub **sd v1.1.0 ZIP** (pinned archive SHA-256 `59837c2e...`) executed successfully, but `sd.exe --version` printed **sd 1.0.0**. This is **not** evidence that the binary belongs to a different download—the archive digest matched the recorded vendor release—but it does mean self-reported version parity is unproven. The Windows CI explicitly checks `1.0.0` for this particular pinned artifact and warns on the mismatch; all 7 other new tools must match their released version. Investigate vendor packaging before calling the embedded version verified or upgrading this pin.
 
+**Status review 2026-10-30 (docs only, no pin change):**
+- **Fact (repo):** `catalog.json` pins `v1.1.0` `sd-v1.1.0-x86_64-pc-windows-msvc.zip` with SHA-256 `59837c2e…71007c`; `live-windows-smoke.yml` expects `1.0.0` and emits a warning, not a pass.
+- **Fact (verified 2026-10-30 via `gh release view v1.1.0 -R chmln/sd`):** the upstream asset digest equals the pinned SHA-256. Still unverified: the `Cargo.toml` version at tag `v1.1.0`.
+- **Inference (not established):** the 1.0.0 string may come from an unbumped version in upstream source/packaging. Confirm the tag's `Cargo.toml`, then either file an upstream issue or keep the documented exception.
+
 ## Phase 2 — 2026-10-21 small verified pins and true disconnected installation
 
 **Five fixed-version packages** appended without changing the original 11 pins. At that phase directly installable IDs = **16**. Current after full 7-Zip admission: **17 pinned**. Research register = **108 unique entries (17 pinned / 27 Windows built-ins / 64 research-only)**.

@@ -1,5 +1,8 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## Individual editor plugin display — manual acceptance still required
+
+The picker now displays both the chosen plugin's host and verification stage and a separate visible **selected editor plugins** summary. Check all six plugin families (2 pinned-source metadata, 4 research-only). The summary must update immediately when a plugin is added, removed, a host application is de-selected, or an existing personal kit is imported. A previously research-only choice must not quietly become pinned after import. Resize to 850px and use 100/150/200% Windows DPI; confirm wrapping, contrast, Korean IME and keyboard navigation without clipping. These are **manual acceptance gates**, not proven by headless CI tests. All plugin installation remains a separate explicit offline workflow, never a GUI action.
 
 ## Keyboard UX follow-up (2026-10-30)
 

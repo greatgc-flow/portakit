@@ -1,5 +1,9 @@
 # portakit
 
+## Managed editor-plugin integrity check (2026-10-30)
+
+`python -I scripts/plugin_offline.py plan --kit Editor.json --root D:\\PortableApps` is read-only and rechecks SHA-256 for each file of an already-managed individual Notepad++ plugin. A changed, missing or additional DLL/library is `blocked-content-drift` rather than silently skipped; old receipts without per-file hashes are `blocked-legacy-unverified` until reviewed outside the installer. No automatic overwrite, upgrade or deletion. Per-file hashes do not replace EDR, publisher signatures or corporate licensing. [Operator guide](docs/PLUGIN_OFFLINE_APPLY.md).
+
 ## Offline-only individually selected editor plugin application (2026-10-30)
 
 New optional `python -I scripts/plugin_offline.py plan|verify|apply` provides separate **original vendor archive SHA preflight and opt-in Notepad++ plugin deployment** for the two existing nested catalog pins, ComparePlus and JsonTools. `apply` requires a schema-v2 personal kit, an already-managed exact-pinned host, all original local plugin ZIPs, `--yes --policy-approved`, dual stage+snapshot SHA validation, no existing unmanaged plugin folder, and new-only local evidence. No third-party assets are downloaded/bundled; research-only plugins remain inert. Corporate OSS/EDR and source-transfer permission plus live GUI acceptance are **separate unverified gates**. See [offline plugin procedure](docs/PLUGIN_OFFLINE_APPLY.md).

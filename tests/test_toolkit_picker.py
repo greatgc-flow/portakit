@@ -148,6 +148,42 @@ class PickerTests(unittest.TestCase):
             self.model.draft("safe")
             self.model.rows(status="READY")
 
+    def test_batch_add_fails_without_partial_mutation(self):
+        self.model.add(["jq"])
+        before = list(self.model.selected)
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.add(["ripgrep", "not-existing"])
+        self.assertEqual(self.model.selected, before)
+
+    def test_batch_toggle_preserves_unique_selection(self):
+        self.model.add(["jq", "cmd"])
+        self.assertEqual(self.model.toggle(["jq", "ripgrep", "ripgrep"]),
+                         ["cmd", "ripgrep"])
+        self.assertEqual(self.model.toggle(["cmd", "jq"]), ["ripgrep", "jq"])
+
+    def test_batch_toggle_rejects_invalid_ids_atomically(self):
+        self.model.add(["jq", "cmd"])
+        original = self.model.draft("untouched")
+        with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+            self.model.toggle(["jq", "not-an-id"])
+        self.assertEqual(self.model.draft("untouched"), original)
+        with self.assertRaisesRegex(picker.kit.KitError, "Selections must be a list"):
+            self.model.toggle(None)
+
+    def test_keyboard_shortcuts_are_ui_only_and_table_local(self):
+        script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")
+        import ast
+        ast.parse(script)
+        for key in ("<Control-f>", "<Control-s>", "<Control-o>",
+                    "<Control-a>", "<space>", "<Return>", "<Delete>", "<Escape>"):
+            self.assertIn(key, script)
+        self.assertIn('table.bind("<Control-a>"', script)
+        self.assertIn('table.bind("<Delete>"', script)
+        self.assertIn('root.bind("<Control-f>"', script)
+        self.assertIn("focused = table.focus()", script)
+        self.assertIn("table.selection_set(*kept)", script)
+        self.assertNotIn(".apply(", script)
+
     def test_wizard_source_has_no_executable_install_branch(self):
         import ast
         script = (REPO / "scripts" / "toolkit_picker.py").read_text(encoding="utf-8")

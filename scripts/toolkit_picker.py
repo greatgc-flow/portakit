@@ -32,6 +32,9 @@ class PickerModel:
         # Previously pending items that later gained a pin must remain inert
         # until a person explicitly deselects and reselects them.
         self.frozen_pending = set()
+        self.plugin_catalog = kit.plugin_inventory(self.pins)
+        self.selected_plugins = []
+        self.frozen_plugin_choices = {}
 
     def rows(self, search="", category="all", status="all"):
         if not isinstance(search, str):
@@ -80,11 +83,35 @@ class PickerModel:
         removed = set(ids)
         self.selected = [x for x in self.selected if x not in removed]
         self.frozen_pending.difference_update(removed)
+        self.selected_plugins = [
+            p for p in self.selected_plugins
+            if self.plugin_catalog[p]["host"] not in removed]
+        self.frozen_plugin_choices = {
+            k: v for k, v in self.frozen_plugin_choices.items()
+            if k in self.selected_plugins}
         return list(self.selected)
 
     def clear(self):
         self.selected = []
         self.frozen_pending.clear()
+        self.selected_plugins = []
+        self.frozen_plugin_choices.clear()
+
+    def add_plugin(self, ident):
+        if ident not in self.plugin_catalog:
+            raise kit.KitError("Unknown editor plugin: " + str(ident))
+        host = self.plugin_catalog[ident]["host"]
+        if host not in self.selected or host not in self.pins:
+            raise kit.KitError("Select pinned plugin host first: " + host)
+        if ident not in self.selected_plugins:
+            self.selected_plugins.append(ident)
+        self.frozen_plugin_choices.pop(ident, None)
+
+    def remove_plugin(self, ident):
+        if ident not in self.plugin_catalog:
+            raise kit.KitError("Unknown editor plugin: " + str(ident))
+        self.selected_plugins = [x for x in self.selected_plugins if x != ident]
+        self.frozen_plugin_choices.pop(ident, None)
 
     def set_approved_only(self):
         self.clear()
@@ -104,12 +131,22 @@ class PickerModel:
         self.selected = list(data["tools"])
         self.frozen_pending = {x for x in data["researchOnly"]
                                if x in self.pins}
+        self.selected_plugins = [
+            x["id"] for x in data.get("pluginSelections", [])]
+        self.frozen_plugin_choices = {
+            x["id"]: dict(x) for x in data.get("pluginSelections", [])
+            if x["status"] == "RESEARCH_ONLY"}
         return data
 
     def draft(self, name):
         if not self.selected:
             raise kit.KitError("Select at least one tool before saving")
-        output = kit.make_kit(name, list(self.selected), self.pins, self.known)
+        output = kit.make_kit(name, list(self.selected), self.pins, self.known,
+                              plugins=self.selected_plugins)
+        for i, item in enumerate(output.get("pluginSelections", [])):
+            previous = self.frozen_plugin_choices.get(item["id"])
+            if previous is not None:
+                output["pluginSelections"][i] = dict(previous)
         for ident in self.frozen_pending:
             if ident in output["lockedPins"]:
                 del output["lockedPins"][ident]
@@ -174,6 +211,7 @@ def launch():
     name = tk.StringVar(value="my-portable-kit")
     output = tk.StringVar(value=str(Path.cwd() / "MyPortableKit.json"))
     summary_text = tk.StringVar()
+    plugin_choice = tk.StringVar(value="compareplus")
 
     frame = tk.Frame(root, bg="#121e2b", padx=22, pady=16)
     frame.pack(fill="both", expand=True)
@@ -231,9 +269,10 @@ def launch():
                          values=(chosen, row["id"], row["name"], row["primary"], st),
                          tags=(tag,))
         counts = model.summary()
-        summary_text.set("Selected {selected}   •   Ready {approved}   •   "
-                         "Unverified {pending}   •   Windows built-in {os}"
-                         .format(**counts))
+        summary_text.set(("Selected {selected}  •  Pinned {approved}  •  "
+                          "Research {pending}  •  OS {os}  •  Plugins {plugins} "
+                          "(selection only)").format(
+                              **dict(counts, plugins=len(model.selected_plugins))))
 
     def action(fn):
         try:
@@ -277,6 +316,20 @@ def launch():
                  values=[k for k, v in model.profiles.items()
                          if not v.get("legacy")]).pack(side="left", padx=(8, 7))
     command("Add preset", lambda: action(lambda: model.add_preset(preset.get())))
+
+    plugin_bar = tk.Frame(frame, bg="#121e2b")
+    plugin_bar.pack(fill="x", pady=(4, 8))
+    tk.Label(plugin_bar, text="Optional editor plugins (not installed):",
+             fg="#d2e1ee", bg="#121e2b").pack(side="left", padx=(0, 8))
+    plugin_ids = list(model.plugin_catalog)
+    ttk.Combobox(plugin_bar, textvariable=plugin_choice, values=plugin_ids,
+                 state="readonly", width=21).pack(side="left", padx=(0, 8))
+    ttk.Button(plugin_bar, text="Add plugin", command=lambda: action(
+        lambda: model.add_plugin(plugin_choice.get()))).pack(side="left", padx=(0, 7))
+    ttk.Button(plugin_bar, text="Remove plugin", command=lambda: action(
+        lambda: model.remove_plugin(plugin_choice.get()))).pack(side="left", padx=(0, 8))
+    tk.Label(plugin_bar, text="Host must be selected • plugin assets never installed",
+             fg="#c6aa77", bg="#121e2b").pack(side="left")
 
     status_label = tk.Label(frame, textvariable=summary_text, bg="#121e2b",
                             fg="#a8dfcd", font=("Segoe UI Semibold", 11))

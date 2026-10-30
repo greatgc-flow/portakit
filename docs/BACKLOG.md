@@ -1,5 +1,15 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+
+## 2026-10-30 picker keyboard follow-up
+
+- [x] Implement keyboard-only search/import/save, Treeview visible-list highlight/toggle/remove and clear; persist focus/highlights across row refresh; describe selected/visible counts.
+- [x] Validate group addition before any mutation; unit-test malformed/duplicate batches and source shortcut bindings.
+- [ ] Windows Python 3.11/3.14 CI and post-merge main verification must be checked for this commit.
+- [ ] Human Tk desktop assessment: keyboard traversal, contrast, scaling, Korean accessibility and screen readers. Until signed off leave Issue #27 open and **HUMAN_NOT_VERIFIED**.
+
+
+
 ## 2026-10-30 — field plugin-health evidence
 
 - **Candidate PR/CI gate:** optional read-only `scripts/plugin_health.py` for 3-way operator triage `LOCAL_HASH_PASS`/`INCOMPLETE`/`BLOCKED`, explicit error exit, UTC observation, optional new-only local JSON and exactly mirrored console evidence. Reuses existing managed per-file SHA validation, keeps vendor binaries and receipt state untouched; 12 unit regressions and Windows 3.11/3.14 isolated CI. [Health guide](PLUGIN_HEALTH.md).

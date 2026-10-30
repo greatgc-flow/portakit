@@ -1,5 +1,8 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — GUI plugin choice visibility
+
+- Add a selected-plugin summary with host and pinned-metadata/research-only labels, source-approved host precondition, retained historical research-only status, dynamic window width wrapping and four new headless regressions. Keep old CLI and plugin offline installation untouched. Human approved Windows GUI 850px/100-200% DPI, Korean IME and keyboard reading remain pending. This is selection-only display, not vendor binary or company-license approval.
 
 ## 2026-10-30 picker keyboard follow-up
 

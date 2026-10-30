@@ -168,6 +168,30 @@ def verify_all(selected, archive_dir):
     return assets
 
 
+def verified_local_snapshot(original, target, expected_sha):
+    """Copy locally and hash the exact bytes that will be extracted.
+
+    Guards against a swapped or mutated source after the preflight hash.
+    Source bytes are never uploaded or executed.
+    """
+    kit.core.check_links(original)
+    kit.core.check_links(target)
+    digest = hashlib.sha256()
+    amount = 0
+    with original.open("rb") as stream, target.open("xb") as out:
+        while True:
+            block = stream.read(1024 * 1024)
+            if not block:
+                break
+            amount += len(block)
+            if amount > kit.core.MAX_DOWNLOAD_BYTES:
+                raise PluginDeployError("Original plugin archive exceeds safe bound")
+            out.write(block)
+            digest.update(block)
+    if digest.hexdigest() != expected_sha.lower():
+        raise PluginDeployError("Source changed after preflight: " + str(original))
+
+
 def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
     """Install only approved-pinned subset. Per-plugin rollback, not batch atomic."""
     selected, pending = select_plugins(saved, pins)
@@ -196,14 +220,19 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
             if row["status"] == "already-installed":
                 evidence.emit("SKIP: " + item["id"] + " already managed")
                 continue
-            staging = root / (".portakit-plugin-stage-" + uuid.uuid4().hex)
+            nonce = uuid.uuid4().hex
+            staging = root / (".portakit-plugin-stage-" + nonce)
+            local_archive = root / (".portakit-plugin-archive-" + nonce + ".tmp")
             kit.core.check_links(staging)
+            kit.core.check_links(local_archive)
             destination = kit.core.safe_path(root, host["dest"] + "/" + pin["dest"],
                                              "plugin dest", "state")
             key = item["host"] + ":" + item["id"]
             moved = False
             try:
-                kit.core.extract(archives[item["id"]],
+                verified_local_snapshot(archives[item["id"]], local_archive,
+                                        pin["sha256"])
+                kit.core.extract(local_archive,
                                  {"id": item["id"], "artifact": "zip"}, staging)
                 dll = kit.core.safe_path(staging, pin["requiredFile"],
                                          "required plugin DLL", "archive")
@@ -225,8 +254,9 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
                     kit.core.remove_tree(destination)
                 raise
             finally:
-                if os.path.lexists(staging):
-                    kit.core.remove_tree(staging)
+                for temporary in (staging, local_archive):
+                    if os.path.lexists(temporary):
+                        kit.core.remove_tree(temporary)
 
 
 def run(argv=None):

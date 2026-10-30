@@ -48,7 +48,10 @@
       "id": "network",
       "label": "Network / 네트워크",
       "description": "연결, 레이턴시, 프로토콜 및 패킷",
-      "tools": []
+      "tools": [
+        "tcpview",
+        "psping"
+      ]
     },
     {
       "id": "security",

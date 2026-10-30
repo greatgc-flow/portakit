@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "asOf": "2026-10-21",
   "scope": "corporate restricted-network Windows",
-  "policy": "METADATA_ONLY_NOT_INSTALLABLE_NOT_REDISTRIBUTABLE",
+  "policy": "OFFICIAL_DIRECT_DOWNLOAD_SHA_PINNED_NO_REDISTRIBUTION",
   "licensing": {
     "companyUse": "Microsoft Sysinternals FAQ: no numeric limit for install/use on company-owned or supported devices, provided EULA followed",
     "redistribution": "Microsoft explicitly declines third-party redistribution licenses, including free bundle/share/web distribution; use internal link-only metadata; legal review required for copying packages into closed network",
     "licenseUrl": "https://learn.microsoft.com/en-us/sysinternals/license-terms",
     "faqUrl": "https://learn.microsoft.com/en-us/sysinternals/license-faq",
     "historicalInternalShareCaution": "https://learn.microsoft.com/en-us/sysinternals/resources/archive/v02n05",
-    "companyApproval": "NOT_GRANTED_BY_THIS_RESEARCH"
+    "companyApproval": "NOT_RECORDED_USER_STATED_DIRECT_INSTALL_PERMITTED_2026-10-30"
   },
   "tools": [
     {
@@ -18,11 +18,11 @@
       "officialUrl": "https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview",
       "officialVersionObserved": "4.19",
       "bundle": "TCPView ZIP including Tcpvcon",
-      "publishedApproxBytes": "1.5 MB",
-      "directAssetUrl": null,
-      "sha256": null,
+      "publishedApproxBytes": "1604604",
+      "directAssetUrl": "https://download.sysinternals.com/files/TCPView.zip",
+      "sha256": "4fc5ceba3e1b27ad95a24df35d094b454ec5f9478e12a8ca2b1b222705b9683b",
       "extractedBytes": null,
-      "status": "RESEARCH_ONLY",
+      "status": "PINNED_CATALOG",
       "primary": "network",
       "use": "List local TCP/UDP sockets, remote addresses and process owners. Tcpvcon -a -c -n can export local CSV without name resolution.",
       "risks": [
@@ -43,12 +43,12 @@
       "name": "PsPing",
       "officialUrl": "https://learn.microsoft.com/en-us/sysinternals/downloads/psping",
       "officialVersionObserved": "2.13",
-      "bundle": "PsTools ZIP, includes PsExec/PsKill/PsShutdown and other privileged tools",
-      "publishedApproxBytes": "4.9 to 5 MB bundle",
-      "directAssetUrl": null,
-      "sha256": null,
+      "bundle": "single signed psping64.exe (Microsoft Corporation Authenticode valid), not PsTools",
+      "publishedApproxBytes": "352536",
+      "directAssetUrl": "https://live.sysinternals.com/psping64.exe",
+      "sha256": "356448f935bac37b1c71bf4289b3e74345842202523dd50140fc75c6b3338751",
       "extractedBytes": null,
-      "status": "RESEARCH_ONLY",
+      "status": "PINNED_CATALOG",
       "primary": "network",
       "use": "Explicit TCP connect/latency measurement for authorized MES interface endpoint. ICMP baseline only if approved.",
       "risks": [

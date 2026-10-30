@@ -4,9 +4,9 @@
   "classification": "one primary domain for each unique tool; profiles remain cross-domain",
   "counts": {
     "total": 108,
-    "pinned": 17,
+    "pinned": 19,
     "builtIn": 27,
-    "research": 64
+    "research": 62
   },
   "footprintContract": "verifiedCompressedBytes is present only for the original eight ZIP files tested in PR#14; additional vendor release size evidence is tracked separately; null is NOT a claim of tiny size.",
   "licensingContract": "No automatic downloading or packaging of research tools. Free use, internal redistribution and corporate OSS/EDR approval are separate per-vendor gates.",
@@ -723,13 +723,13 @@
       "source": "https://learn.microsoft.com/en-us/sysinternals/downloads/psping",
       "license": "Microsoft Sysinternals EULA",
       "workflow": "TCP latency/connection timing",
-      "form": "vendor-active-test",
+      "form": "official-direct-download-pinned",
       "priority": "P0",
-      "admission": "RESEARCH_ONLY",
-      "verifiedCompressedBytes": null,
-      "sizeMethod": "NOT_MEASURED",
+      "admission": "PINNED_CATALOG",
+      "verifiedCompressedBytes": 352536,
+      "sizeMethod": "official_download_measured",
       "corporateApproval": "REQUIRED",
-      "caveat": "Microsoft third-party redistribution restricted"
+      "caveat": "Official Microsoft URL only; no redistribution or bundling; SHA mismatch fails closed; user-stated decision 2026-10-30, not a company legal approval"
     },
     {
       "id": "tcpview",
@@ -738,13 +738,13 @@
       "source": "https://learn.microsoft.com/en-us/sysinternals/downloads/tcpview",
       "license": "Microsoft Sysinternals EULA",
       "workflow": "TCP UDP connection PID states",
-      "form": "vendor-no-redistribution",
+      "form": "official-direct-download-pinned",
       "priority": "P0",
-      "admission": "RESEARCH_ONLY",
-      "verifiedCompressedBytes": null,
-      "sizeMethod": "NOT_MEASURED",
+      "admission": "PINNED_CATALOG",
+      "verifiedCompressedBytes": 1604604,
+      "sizeMethod": "official_download_measured",
       "corporateApproval": "REQUIRED",
-      "caveat": "Microsoft third-party redistribution restricted"
+      "caveat": "Official Microsoft URL only; no redistribution or bundling; SHA mismatch fails closed; user-stated decision 2026-10-30, not a company legal approval"
     },
     {
       "id": "tracert",

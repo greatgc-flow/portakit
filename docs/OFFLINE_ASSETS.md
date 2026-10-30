@@ -1,5 +1,30 @@
 # Offline toolkit asset handoff (2026-10-30)
 
+## One-step readiness check — missing files only (2026-10-30)
+
+Use the new optional `check` subcommand when preparing an individual kit for an approved offline workstation. It **combines** the personal install plan with original filename/SHA source metadata and checks only archives for tools that are **not already installed**. This fixes the former need to manually compare `list`, `plan` and `verify` output. The older commands remain backward compatible.
+
+```cmd
+:: From a permitted Windows console, Python 3.11+ required.
+scripts\KitOffline.cmd check --kit MyKit.json --root D:\MyPortableApps
+
+:: After separately obtaining the legally-authorized original archives:
+scripts\KitOffline.cmd check --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedVendorArchives
+
+:: For a kit with research-only software/editor plugin selections,
+:: explicitly preflight ONLY the 19-or-fewer approved software subset:
+scripts\KitOffline.cmd check --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedVendorArchives --skip-pending --out MyKit.check.json
+
+:: Separate install consent — never performed by check:
+scripts\MyToolkit.cmd build --kit MyKit.json --root D:\MyPortableApps --offline-dir D:\ApprovedVendorArchives --skip-pending --yes
+```
+
+`check` is **read-only by default**; it never creates `D:\MyPortableApps`, starts installers, executes or downloads vendor software, or changes Windows settings. `--out` explicitly creates a **new** `MyKit.check.json` and same-basename `MyKit.check.log` with console text mirrored exactly, refusing overwrite. The source originals are not included.
+
+Outcomes: `READY` (0, required missing archives verified if supplied, or all approved tools already installed); `NO_OP` (0, no approved software to install); `NEEDS_ARCHIVES` (2, missing original vendor archives have not been supplied); `BLOCKED_PENDING` (2, research-only or schema-v2 editor plugins need explicit `--skip-pending` to check approved subset); `BLOCKED_ARCHIVES` (2, missing/mismatched/unsafe archive); `BLOCKED_STATE` (2, unmanaged destination, backup, changed managed pin, missing prerequisite); `ERROR` (1, malformed/tampered kit, inaccessible state/paths, unexpected read/argument errors). **READY is not legal or corporate permission approval.** The user must still separately approve original source rights, EDR/OS/runtime effects and execute `MyToolkit.cmd build ... --yes`, which *revalidates* hashes immediately before installation.
+
+If **all approved tools are already installed**, the check does not require or hash their original vendor archives. A tool that needs installation still requires the correct original filename and exact catalog SHA. The six editor plugins are excluded from the application readiness list: their independent opt-in offline apply/health checks remain under `plugin_offline.py` and `plugin_health.py`. `--skip-pending` never installs plugins or unapproved software.
+
 This is a **metadata-only** workflow for collecting separately authorized, original vendor files for a chosen personal kit. It intentionally never downloads, bundles, redistributes, runs vendor software or changes an OS installation. A SHA-pinned tool's use on a corporate machine and its redistribution/transfer rights are independent decisions; obtain EULA, OSS, EDR and import approvals before transferring any vendor archive.
 
 ## Three commands

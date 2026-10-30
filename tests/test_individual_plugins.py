@@ -157,7 +157,7 @@ class PluginKitTests(unittest.TestCase):
 
     def test_gui_plugin_host_remove_and_import(self):
         model = gui.PickerModel()
-        with self.assertRaisesRegex(kit.KitError, "host"):
+        with self.assertRaisesRegex(gui.kit.KitError, "host"):
             model.add_plugin("compareplus")
         model.add(["notepad++"])
         model.add_plugin("compareplus")
@@ -187,7 +187,7 @@ class PluginKitTests(unittest.TestCase):
         current["pin"] = {"version": "1", "sha256": "f" * 64,
                           "dest": "plugins/CSVLint"}
         later.plugin_catalog["csvlint-npp"] = current
-        with mock.patch.object(kit, "plugin_inventory",
+        with mock.patch.object(gui.kit, "plugin_inventory",
                                return_value=later.plugin_catalog):
             saved = later.draft("still-unapproved")
             self.assertEqual(saved["pluginSelections"][0]["status"],

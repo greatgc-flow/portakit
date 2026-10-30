@@ -238,11 +238,17 @@ def launch():
         frame, text="Pinned does not mean corporate approval. "
                     "Research remains inert; this window never installs.",
         fg="#abc1cf", bg="#121e2b", font=("Segoe UI", 10))
-    subtitle.pack(anchor="w", pady=(3, 16))
+    subtitle.pack(anchor="w", pady=(3, 8))
+    tk.Label(frame, text=("Keyboard: Ctrl+F search | arrows navigate | "
+                          "Space/Enter toggle | Ctrl+A highlight visible | "
+                          "Delete remove | Ctrl+O import | Ctrl+S save"),
+             fg="#d5dfe9", bg="#121e2b", font=("Segoe UI", 9),
+             anchor="w").pack(fill="x", pady=(0, 12))
 
     filters = tk.Frame(frame, bg="#121e2b")
     filters.pack(fill="x", pady=(0, 10))
-    ttk.Entry(filters, textvariable=search, width=38).pack(side="left", padx=(0, 9))
+    search_entry = ttk.Entry(filters, textvariable=search, width=38)
+    search_entry.pack(side="left", padx=(0, 9))
     ttk.Combobox(filters, textvariable=domain, width=18, state="readonly",
                  values=["all"] + list(model.categories)).pack(side="left", padx=(0, 9))
     ttk.Combobox(filters, textvariable=status, width=17, state="readonly",
@@ -271,12 +277,19 @@ def launch():
     table.configure(yscrollcommand=bar.set)
     table.pack(fill="both", expand=True, side="left")
     bar.pack(fill="y", side="right")
+    results_text = tk.StringVar(value="")
+    tk.Label(frame, textvariable=results_text, fg="#c8d6e2", bg="#121e2b",
+             anchor="w", font=("Segoe UI", 9)).pack(fill="x", pady=(5, 0))
 
     def refresh(*_):
+        # Preserve keyboard highlight and focus after selecting tools.
+        highlighted = set(table.selection())
+        focused = table.focus()
         old_rows = table.get_children()
         if old_rows:
             table.delete(*old_rows)
-        for row in model.rows(search.get(), domain.get(), status.get()):
+        visible = model.rows(search.get(), domain.get(), status.get())
+        for row in visible:
             chosen = "●" if row["selected"] else ""
             st = "PENDING (locked)" if row["locked_pending"] else row["status"]
             tag = ("ready" if row["status"] == "READY" else
@@ -284,6 +297,14 @@ def launch():
             table.insert("", "end", iid=row["id"],
                          values=(chosen, row["id"], row["name"], row["primary"], st),
                          tags=(tag,))
+        shown = {row["id"] for row in visible}
+        kept = [ident for ident in highlighted if ident in shown]
+        if kept:
+            table.selection_set(*kept)
+        if focused in shown:
+            table.focus(focused)
+        results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.".format(
+            len(visible), len(model.known), len(kept)))
         counts = model.summary()
         summary_text.set(("Selected {selected}  •  Pinned {approved}  •  "
                           "Research {pending}  •  OS {os}  •  Plugins {plugins} "

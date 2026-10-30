@@ -197,6 +197,20 @@ class PluginKitTests(unittest.TestCase):
             self.assertEqual(later.draft("new-choice")["pluginSelections"][0]["status"],
                              "PINNED_METADATA_ONLY")
 
+    def test_duplicate_plugin_add_does_not_unlock_imported_pending(self):
+        model = gui.PickerModel()
+        model.add(["notepad++"])
+        model.add_plugin("csvlint-npp")
+        with contextlib.redirect_stdout(io.StringIO()):
+            model.save("x", self.path)
+        later = gui.PickerModel()
+        later.load_existing(self.path)
+        self.assertIn("csvlint-npp", later.frozen_plugin_choices)
+        later.add_plugin("csvlint-npp")
+        self.assertIn("csvlint-npp", later.frozen_plugin_choices)
+        self.assertEqual(later.draft("x")["pluginSelections"][0]["status"],
+                         "RESEARCH_ONLY")
+
     def test_readonly_ancillary_workflows_ignore_plugin_binaries(self):
         data = kit.make_kit("x", ["notepad++"], self.pins, self.tools,
                             plugins=["compareplus"])

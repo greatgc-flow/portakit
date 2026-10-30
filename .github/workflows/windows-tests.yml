@@ -108,6 +108,9 @@ jobs:
             throw 'Offline readiness created an install directory'
           }
           Write-Host 'Read-only offline readiness missing-source and research gates PASS'
+          # Expected Python exit 2 was handled above; do not propagate it as
+          # the final PowerShell native-command exit status to Actions.
+          exit 0
 
       - name: Verify read-only footprint and incomplete budget states
         shell: pwsh

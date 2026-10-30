@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — personal kit offline readiness workflow
+
+- Add `scripts\KitOffline.cmd check`: read-only, single-command combined installed-state/pending/prerequisite + missing-only approved vendor archive SHA preflight, no downloader, vendor ZIP bundling or install. New-only optional JSON + byte-mirrored console log, failure/blocked outcomes. Preserve `offline_assets.py list/export/verify` and the separate explicit `MyToolkit.cmd build --yes`. Existing plugin v2 selections remain excluded; the user's `--skip-pending` never grants plugin deployment. Windows 3.11/3.14 unit and isolated CLI must pass before merge.
+- **Not authorized by checks alone:** enterprise import/redistribution, legal/EDR/GUI acceptance, actual field PC effects or automatic packaging. Any downloader/bundler would need a new separate reviewed issue.
+
 ## 2026-10-30 — GUI plugin choice visibility
 
 - Add a selected-plugin summary with host and pinned-metadata/research-only labels, source-approved host precondition, retained historical research-only status, dynamic window width wrapping and four new headless regressions. Keep old CLI and plugin offline installation untouched. Human approved Windows GUI 850px/100-200% DPI, Korean IME and keyboard reading remain pending. This is selection-only display, not vendor binary or company-license approval.

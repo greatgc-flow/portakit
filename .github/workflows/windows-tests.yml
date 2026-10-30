@@ -128,6 +128,27 @@ jobs:
           $global:LASTEXITCODE = 0
           Write-Host 'Individual editor plugin read-only selection PASS'
 
+      - name: Verify no-write individual offline plugin plan and explicit consent
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $file = Join-Path $env:RUNNER_TEMP 'portakit-ci-v2-editor.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-no-plugin-install'
+          $readOnly = @(python -I scripts/plugin_offline.py plan --kit $file --root $root)
+          if ($LASTEXITCODE -ne 0 -or -not ($readOnly -match 'blocked-host-install')) {
+            throw 'Offline plugin plan must require an existing managed host'
+          }
+          if (Test-Path -LiteralPath $root) {
+            throw 'Offline plugin plan unexpectedly created a host folder'
+          }
+          $sources = Join-Path $env:RUNNER_TEMP 'portakit-ci-no-original-archives'
+          $consent = @(python -I scripts/plugin_offline.py apply --kit $file --root $root --offline-dir $sources --yes 2>&1)
+          if ($LASTEXITCODE -ne 1 -or -not ($consent -match '--policy-approved')) {
+            throw 'Unapproved plugin apply was not blocked'
+          }
+          $global:LASTEXITCODE = 0
+          Write-Host 'Offline editor plugin planning and policy gate PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

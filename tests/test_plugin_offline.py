@@ -154,14 +154,101 @@ class OfflinePluginTests(unittest.TestCase):
         self.assertEqual(list(self.root.glob(".portakit-plugin-*.tmp")), [])
         self.assertEqual(list(self.root.glob(".portakit-plugin-stage-*")), [])
 
-    def test_idempotent_receipt_skips_without_replacing_plugin(self):
+    def test_idempotent_receipt_skips_only_intact_plugin(self):
         host = self.make_host()
         self.evidence_apply()
         target = host / "plugins/ComparePlus/ComparePlus.dll"
-        target.write_bytes(b"user-modification")
+        original = target.read_bytes()
         out = self.evidence_apply()
         self.assertIn("SKIP: compareplus", out)
-        self.assertEqual(target.read_bytes(), b"user-modification")
+        self.assertEqual(target.read_bytes(), original)
+        record = plugins.read_receipts(self.root)["notepad++:compareplus"]
+        self.assertEqual(set(record["fileHashes"]),
+                         {"ComparePlus.dll", "libs/sqlite.dll"})
+        self.assertEqual(record["fileHashes"]["ComparePlus.dll"],
+                         hashlib.sha256(original).hexdigest())
+
+    def test_modified_plugin_main_DLL_is_blocked_without_replacement(self):
+        host = self.make_host()
+        self.evidence_apply()
+        target = host / "plugins/ComparePlus/ComparePlus.dll"
+        target.write_bytes(b"unknown mutation")
+        row = plugins.make_plan(self.saved, self.pins, self.root)[0][0]
+        self.assertEqual(row["status"], "blocked-content-drift")
+        with self.assertRaisesRegex(plugins.PluginDeployError, "blocked"):
+            self.evidence_apply()
+        self.assertEqual(target.read_bytes(), b"unknown mutation")
+
+    def test_modified_nested_dependency_blocks_readonly_plan(self):
+        host = self.make_host()
+        self.evidence_apply()
+        library = host / "plugins/ComparePlus/libs/sqlite.dll"
+        library.write_bytes(b"modified nested dependency")
+        row = plugins.make_plan(self.saved, self.pins, self.root)[0][0]
+        self.assertEqual(row["status"], "blocked-content-drift")
+
+    def test_extra_or_missing_plugin_file_is_blocked(self):
+        host = self.make_host()
+        self.evidence_apply()
+        dest = host / "plugins/ComparePlus"
+        added = dest / "surprise.dat"
+        added.write_bytes(b"unexpected")
+        self.assertEqual(plugins.make_plan(self.saved, self.pins, self.root)[0][0]["status"],
+                         "blocked-content-drift")
+        added.unlink()
+        (dest / "libs/sqlite.dll").unlink()
+        self.assertEqual(plugins.make_plan(self.saved, self.pins, self.root)[0][0]["status"],
+                         "blocked-content-drift")
+
+    def test_legacy_receipts_are_not_trusted_or_autoreplaced(self):
+        host = self.make_host()
+        self.evidence_apply()
+        data = plugins.read_receipts(self.root)
+        del data["notepad++:compareplus"]["fileHashes"]
+        plugins.write_receipts(self.root, data)
+        result = plugins.make_plan(self.saved, self.pins, self.root)[0][0]
+        self.assertEqual(result["status"], "blocked-legacy-unverified")
+        with self.assertRaisesRegex(plugins.PluginDeployError, "blocked"):
+            self.evidence_apply()
+        self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").exists())
+
+    def test_unsafe_or_malformed_receipt_hash_inventory_fails_closed(self):
+        self.make_host()
+        self.evidence_apply()
+        for bad in ({}, {"../unsafe": "a" * 64}, {"A.dll": "WRONG"},
+                    {"valid.dll": None}, {"X.dll": "a" * 64, "x.dll": "b" * 64}):
+            with self.subTest(bad=bad):
+                record = plugins.read_receipts(self.root)
+                record["notepad++:compareplus"]["fileHashes"] = bad
+                self.receipt.write_text(json.dumps(record), "utf-8")
+                with self.assertRaises(plugins.PluginDeployError):
+                    plugins.make_plan(self.saved, self.pins, self.root)
+                fresh = plugins.receipt_record(self.pins["notepad++"],
+                                               self.pin, {"ComparePlus.dll": "a" * 64})
+                fresh["fileHashes"]["libs/sqlite.dll"] = "b" * 64
+                plugins.write_receipts(self.root, {
+                    "notepad++:compareplus": fresh})
+
+    def test_installed_plugin_symlink_refused(self):
+        host = self.make_host()
+        self.evidence_apply()
+        link = host / "plugins/ComparePlus/extra.link"
+        target = self.tmp / "outside.txt"
+        target.write_text("external", "utf-8")
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlink not permitted on Windows runner")
+        with self.assertRaises(plugins.kit.core.PortakitError):
+            plugins.make_plan(self.saved, self.pins, self.root)
+        self.assertEqual(target.read_text("utf-8"), "external")
+
+    def test_hash_inventory_member_limit_is_enforced(self):
+        host = self.make_host()
+        self.evidence_apply()
+        with mock.patch.object(plugins, "MAX_PLUGIN_FILES", 1):
+            with self.assertRaisesRegex(plugins.PluginDeployError, "member count"):
+                plugins.make_plan(self.saved, self.pins, self.root)
 
     def test_wrong_hash_fails_before_writes(self):
         host = self.make_host()

@@ -1,5 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — footprint diagnostics
+
+- **Candidate PR / CI gate:** read-only logical-byte and file-count measurement for installed, matching pinned personal-kit tools (`scripts/kit_footprint.py`, independent tests, [guide](FOOTPRINT_AUDIT.md)); symlink/junction and excessive size-tree denial; optional explicit local JSON + exact console evidence; do not infer uninstalled size or licensing from installed bytes.
+- **Still deferred:** true allocated NTFS disk bytes, official compressed/archive footprint for non-installed candidates, temporary installation headroom, automatic licensed distribution bundles, individual plugin controls, full desktop GUI/operator evidence.
+
 > **Verified milestones (2026-10-30):** personal-kit CLI PR #26, optional selection-only GUI PR #31, and source-only offline manifest PR #32 are merged and Windows post-merge matrix CI is green. Actual desktop GUI/Office4 acceptance, vendor transfer rights, and full ZIP bundling are still open. [Current handoff](handoff/START_NEW_CHAT_PORTAKIT_20261030_CURRENT.md) records exact scope and remaining gates. Dated older work items remain as history below.
 
 

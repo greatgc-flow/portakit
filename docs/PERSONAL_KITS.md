@@ -1,5 +1,9 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Read-only footprint and size budget
+
+After installing explicitly authorized pinned tools, run `python -I scripts/kit_footprint.py --kit MyKit.json --root D:\\MyPortableApps --max-mib 100`; add `--out MyKit.footprint.json` for a new-only JSON + exact console evidence log. This is **logical bytes measured only for existing managed pinned directories**, not a promise that pending/OS-only tools occupy zero space, nor physical NTFS allocation. [Full guide](FOOTPRINT_AUDIT.md). Unknown selections are not treated as a passing size budget.
+
 > **Updated 2026-10-30:** 151 selectable IDs = 19 currently SHA-pinned + 27 OS built-ins + 105 research-only; installable *software choices* are only the current pinned subset. This does not certify corporate approval or vendor binary redistribution. For current authority use `catalog.json` and the research ledgers, not older historical handoffs.
 
 

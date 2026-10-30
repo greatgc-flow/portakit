@@ -90,6 +90,19 @@ jobs:
           }
           Write-Host 'Personal offline source-only checklist PASS'
 
+      - name: Verify read-only footprint and incomplete budget states
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-empty-footprint-root'
+          $output = @(python -I scripts/kit_footprint.py --kit $kit --root $root --max-mib 100)
+          if ($LASTEXITCODE -ne 0 -or -not ($output -match 'BUDGET RESULT: UNKNOWN_INCOMPLETE')) {
+            throw 'Read-only footprint must fail closed on missing/pending tools'
+          }
+          if (Test-Path -LiteralPath $root) { throw 'Footprint scan unexpectedly created root' }
+          Write-Host 'Read-only personal toolkit footprint gate PASS'
+
       - name: Verify CLI and catalog envelope (no downloads)
         shell: pwsh
         run: |

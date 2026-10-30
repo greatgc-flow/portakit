@@ -1,5 +1,10 @@
 # portakit
 
+## One-command personal kit doctor (2026-10-31)
+
+Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).
+
+
 ## Read-only plugin health evidence (2026-10-30)
 
 Run `python -I scripts/plugin_health.py --kit Editor.json --root D:\PortableApps` to compare **already installed, managed** plugin DLL and nested-file SHA-256 against a local per-file receipt without changing tools or executing vendor binaries. Result is `LOCAL_HASH_PASS`, `INCOMPLETE`, or `BLOCKED`; invalid state is an error. Optional `--out Editor.health.json` writes a new-only JSON plus byte-identical local console evidence log. Results **do not certify** publisher authenticity, corporate license/EDR or real GUI operation. See [operator health guide](docs/PLUGIN_HEALTH.md).

@@ -183,7 +183,13 @@ def run(argv=None):
         else:
             for line in lines(data):
                 print(line)
-        return 1 if data["budgetResult"] == "OVER_BUDGET" else 0
+        # For automation: UNKNOWN cannot be interpreted as passing a budget.
+        # 0 = fully measured PASS or no budget; 2 = incomplete; 3 = over budget.
+        if data["budgetResult"] == "UNKNOWN_INCOMPLETE":
+            return 2
+        if data["budgetResult"] == "OVER_BUDGET":
+            return 3
+        return 0
     except (FootprintError, kit.KitError, kit.core.PortakitError,
             kit.sets.ToolsetError, OSError, ValueError) as exc:
         print("ERROR: " + str(exc), file=sys.stderr)

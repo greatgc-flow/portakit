@@ -57,6 +57,8 @@ class PickerModel:
     def add(self, ids):
         if not isinstance(ids, (list, tuple)):
             raise kit.KitError("Selections must be a list")
+        if not ids:
+            return list(self.selected)
         for ident in ids:
             if not isinstance(ident, str) or ident not in self.known:
                 raise kit.KitError("Unknown tool: " + str(ident))

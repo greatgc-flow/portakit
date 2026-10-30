@@ -95,6 +95,52 @@ class OfflinePluginTests(unittest.TestCase):
         self.assertEqual(found["compareplus"], self.source_path)
         self.assertFalse(self.root.exists())
 
+    def add_jsontools(self, *, complete=True):
+        pin = self.pins["notepad++"]["recommended"]["plugins"][1]
+        data = synthetic_zip([
+            (("JsonTools.dll" if complete else "Different.dll"),
+             b"synthetic plugin for local tests")])
+        pin["sha256"] = hashlib.sha256(data).hexdigest()
+        path = self.originals / plugins.source_assets.original_filename(pin["url"])
+        path.write_bytes(data)
+        self.saved = plugins.kit.make_kit(
+            "two", ["notepad++"], self.pins, self.known,
+            plugins=["compareplus", "jsontools-npp"])
+        return path
+
+    def test_both_pinned_plugins_apply_independently(self):
+        host = self.make_host()
+        self.add_jsontools()
+        text = self.evidence_apply()
+        self.assertIn("INSTALLED: compareplus", text)
+        self.assertIn("INSTALLED: jsontools-npp", text)
+        self.assertTrue((host / "plugins/JsonTools/JsonTools.dll").is_file())
+        self.assertEqual(set(plugins.read_receipts(self.root)),
+                         {"notepad++:compareplus", "notepad++:jsontools-npp"})
+
+    def test_all_source_hashes_preflight_before_any_install(self):
+        host = self.make_host()
+        second = self.add_jsontools()
+        second.write_bytes(b"changed second original")
+        with self.assertRaisesRegex(plugins.PluginDeployError, "SHA-256"):
+            with plugins.kit.sets.Evidence(self.tmp / "preflight.log") as ev:
+                plugins.apply(self.saved, self.pins, self.root,
+                              self.originals, evidence=ev)
+        self.assertFalse((host / "plugins/ComparePlus").exists())
+        self.assertFalse((host / "plugins/JsonTools").exists())
+
+    def test_second_plugin_failure_retains_first_success_receipt(self):
+        host = self.make_host()
+        self.add_jsontools(complete=False)
+        with self.assertRaisesRegex(plugins.PluginDeployError, "Required plugin DLL"):
+            with plugins.kit.sets.Evidence(self.tmp / "batch.log") as ev:
+                plugins.apply(self.saved, self.pins, self.root,
+                              self.originals, evidence=ev)
+        self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").is_file())
+        self.assertFalse((host / "plugins/JsonTools").exists())
+        self.assertEqual(set(plugins.read_receipts(self.root)),
+                         {"notepad++:compareplus"})
+
     def test_normal_installs_only_selected_plugin_in_existing_host(self):
         host = self.make_host()
         out = self.evidence_apply()

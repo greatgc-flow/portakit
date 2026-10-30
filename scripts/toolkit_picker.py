@@ -217,6 +217,7 @@ class PickerModel:
 
 def launch():
     """Import Tk lazily: the CLI/tested model works on headless Windows too."""
+    import kit_overview as overview
     try:
         import tkinter as tk
         from tkinter import filedialog, messagebox, ttk
@@ -548,7 +549,6 @@ def launch():
 
         def inspect_current():
             try:
-                import kit_overview as overview
                 # A draft is valid in-memory kit data. No save or installation.
                 selected = model.draft(name.get().strip())
                 raw_budget = size_budget.get().strip()

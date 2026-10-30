@@ -2,21 +2,21 @@
 
 ## 2026-10-30 — offline handoff refinement
 
-- **Candidate PR (accept only after CI and merge):** metadata-only personal asset inventory/export/verify (`scripts/offline_assets.py`) backed by source catalog SHA pins and existing `toolsets.verify_offline_assets` before tool installation; `docs/OFFLINE_ASSETS.md`. New-only JSON+mirrored log, missing/wrong/duplicate filename and hash guards, no download or vendor bundling; Windows 3.11/3.14 tests.
+- **MERGED #32 (post-merge CI PASS):** metadata-only personal asset inventory/export/verify (`scripts/offline_assets.py`) backed by source catalog SHA pins and existing `toolsets.verify_offline_assets` before tool installation; `docs/OFFLINE_ASSETS.md`. New-only JSON+mirrored log, missing/wrong/duplicate filename and hash guards, no download or vendor bundling; Windows 3.11/3.14 tests.
 - **Still NOT implemented:** universal vendor-binary redistributable ZIP builder, license/EDR approval workflow, automated safe runtime launcher for every unverified tool, installed disk footprint measurement and GUI vendor acceptance. Keep these separate: legal authorization cannot be inferred from official download URLs or SHA.
 
 
 ## 2026-10-30 — personal-toolkit picker follow-up
 
-- **Implemented in candidate PR; verify/merge first:** optional Python standard-library Tkinter **mouse-based, zero-install selection-only GUI** `scripts/toolkit_picker.py` and `scripts/MyToolkitGUI.cmd`. Dynamic 151-ID browse/search/category and approval filters, multi-select, pin-only presets, imported saved kits, new schema-v1 JSON and mirrored log, research-only consent preservation. Independent headless tests, Windows CI parser gate. No code path installs binaries or changes OS settings.
+- **MERGED #31 (post-merge CI PASS):** optional Python standard-library Tkinter **mouse-based, zero-install selection-only GUI** `scripts/toolkit_picker.py` and `scripts/MyToolkitGUI.cmd`. Dynamic 151-ID browse/search/category and approval filters, multi-select, pin-only presets, imported saved kits, new schema-v1 JSON and mirrored log, research-only consent preservation. Independent headless tests, Windows CI parser gate. No code path installs binaries or changes OS settings.
 - **Still unverified:** real human GUI acceptance on approved Windows desktop (Tk availability, scaling at 100/150/200%, Korean text, keyboard-only operation, screen-reader behavior, window responsiveness with larger inventories, screenshot evidence). CLI remains authoritative fallback.
 - **Still deferred:** individually-selectable optional editor plugins beyond existing approved recommended plugins, vendor-rights-compliant offline redistribution/package build, measured size budgets, full single-tool CLI read-only/error evidence mirroring, real Office4/Everything/grepWin/7-Zip GUI acceptance. Keep #25 legal/protocol gates independent; no new service, driver, live network scan or release.
 
 
 ## Personal portable toolkit composition (2026-10-25)
 
-- **Implemented candidate PR (CI/merge gate)**: `scripts/my_toolkit.py`, `scripts/MyToolkit.cmd`, and [guide](PERSONAL_KITS.md) allow selecting any of the current 151 tool IDs into a personal JSON toolkit, with immutable approved-version SHA locks, category/preset composition, research-only and OS built-in partitions, zero-write planning, explicit safe install and offline SHA preflight via existing `toolsets.apply`. No changes to catalog or canonical taxonomy. Confirm Windows Python 3.11/3.14 tests and post-merge CI before labeling as released.
-- **P1 next**: optional tiny interactive wizard/catalog search and configuration export/import that preserve all trust boundaries, if human UX acceptance shows CLI friction. No mandatory GUI runtime or auto-download of research-only tools.
+- **MERGED #26 (post-merge CI PASS)**: `scripts/my_toolkit.py`, `scripts/MyToolkit.cmd`, and [guide](PERSONAL_KITS.md) allow selecting any of the current 151 tool IDs into a personal JSON toolkit, with immutable approved-version SHA locks, category/preset composition, research-only and OS built-in partitions, zero-write planning, explicit safe install and offline SHA preflight via existing `toolsets.apply`. No changes to catalog or canonical taxonomy. Confirm Windows Python 3.11/3.14 tests and post-merge CI before labeling as released.
+- **P1 human acceptance**: optional Tk picker/search/import/export is now implemented (#31); real GUI display, keyboard/accessibility, scaling and corporate permission checks remain HUMAN_NOT_VERIFIED. No mandatory GUI runtime or auto-download of research-only tools.
 - **P1 intake**: 43 additional research-only software families from [2026-10-25 report](../research/INTAKE_ENTERPRISE_PORTABLE_20261025.json) remain *selectable but non-installable* until independently approved. Safe partial build requires explicit `--skip-pending`.
 - **P2**: license-compliant optional offline media packaging and installed-footprint budgeting, reversible portable launcher session (never system PATH), and metadata-only tool discovery/filter by role. Must revalidate redistribution rights; do not bundle closed vendor binaries by default.
 

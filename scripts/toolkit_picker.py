@@ -60,11 +60,13 @@ class PickerModel:
     def add(self, ids):
         if not isinstance(ids, (list, tuple)):
             raise kit.KitError("Selections must be a list")
-        if not ids:
-            return list(self.selected)
+        # Validate all IDs before modifying the selected set.
         for ident in ids:
             if not isinstance(ident, str) or ident not in self.known:
                 raise kit.KitError("Unknown tool: " + str(ident))
+        if not ids:
+            return list(self.selected)
+        for ident in ids:
             if ident not in self.selected:
                 self.selected.append(ident)
         # 7zr is the manually selected prerequisite for 7zip. Existing
@@ -89,6 +91,18 @@ class PickerModel:
         self.frozen_plugin_choices = {
             k: v for k, v in self.frozen_plugin_choices.items()
             if k in self.selected_plugins}
+        return list(self.selected)
+
+    def toggle(self, ids):
+        """Toggle one fully validated group, without installer side effects."""
+        if not isinstance(ids, (list, tuple)):
+            raise kit.KitError("Selections must be a list")
+        if any(not isinstance(x, str) or x not in self.known for x in ids):
+            raise kit.KitError("Unknown tool in toggle selection")
+        unique = list(dict.fromkeys(ids))
+        previous = set(self.selected)
+        self.remove([x for x in unique if x in previous])
+        self.add([x for x in unique if x not in previous])
         return list(self.selected)
 
     def clear(self):

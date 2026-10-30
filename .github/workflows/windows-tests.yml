@@ -90,6 +90,25 @@ jobs:
           }
           Write-Host 'Personal offline source-only checklist PASS'
 
+      - name: Verify one-command offline readiness fail-closed (no install)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'
+          $root = Join-Path $env:RUNNER_TEMP 'portakit-ci-no-offline-install'
+          $output = @(python -I scripts/offline_ready.py --kit $kit --root $root --skip-pending)
+          if ($LASTEXITCODE -ne 2 -or -not ($output -match 'RESULT: BLOCKED')) {
+            throw 'Missing vendor-original sources must block offline readiness'
+          }
+          if (-not ($output -match 'SOURCE_NOT_PROVIDED') -or
+              -not ($output -match 'EXCLUDED RESEARCH: 1')) {
+            throw 'Offline checklist failed to explain missing source/exclusion'
+          }
+          if (Test-Path -LiteralPath $root) {
+            throw 'Offline readiness created an install directory'
+          }
+          Write-Host 'Read-only offline readiness missing-source and research gates PASS'
+
       - name: Verify read-only footprint and incomplete budget states
         shell: pwsh
         run: |

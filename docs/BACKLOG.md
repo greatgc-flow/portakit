@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-30 — GUI offline readiness and installed-size overview
+
+- **Code feature:** optional GUI read-only `Inspect readiness / size…` dialog from the current selected user kit (without forcing save), showing present pinned installs, missing/wrong original sources, research/plugin exclusions, OS-only informational items, explicit pinned-subset consent, SHA verification via existing offline engine, blockers and logical bytes of already installed managed pins. No guessed future kit total, no downloads or install/apply code.
+- **Verification:** new isolated headless Tk-independent tests; full Windows Python 3.11/3.14 regression and post-merge CI required. Manual DPI, GUI text layout, scroll performance for 151 items, accessibility, Korean IME, and real approved nonproduction vendor archives remain **HUMAN_NOT_VERIFIED**.
+
+
 ## 2026-10-30 — simpler offline personal-kit readiness
 
 - New one-command **read-only** `scripts/OfflineCheck.cmd` + `scripts/offline_ready.py`: validate saved personal kit locks, reuse `my_toolkit.create_plan`, existing 7zr prerequisite and per-artifact SHA verifier; report exact missing original filenames, local installation status, pending/editor plugin exclusions and blockers. No network/binaries/install/registry/driver/service actions. `--skip-pending` allows readiness for pinned-only subset; `--out` creates a new local JSON+verbatim console log. Default no-write, error exit 2 for incomplete.

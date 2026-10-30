@@ -1,5 +1,14 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+## Optional GUI readiness and measured-size overview (2026-10-30)
+
+Launch `scripts\MyToolkitGUI.cmd`, choose any known tool IDs, and click **Read-only overview…** to open a separate inspection window. This is intentionally **not** an install control; choose an existing managed root, optionally enter an approved original-vendor archive folder and a nonnegative budget in MiB. Click **Inspect only** to run the local scan. The dropdown/selection GUI never automatically reads every vendor file on each keystroke.
+
+The overview calls the existing `offline_ready.assess` + `kit_footprint.audit` in-process on the **current unsaved draft**, showing installed/pending pins, vendor-original file names and SHA readiness, research/plugin exclusions, blockers and measured size. `--skip-pending` semantics are surfaced as an **explicit opt-in checkbox**, not an automatic permission to deploy research tools or editor plugins. Source outcome `READY` means only local source-file readiness. **Size comes from logical bytes of installed, managed pinned tool directories; uninstalled, built-in, research and plugin sizes remain UNKNOWN.** A size budget is `UNKNOWN_INCOMPLETE` unless all choices have measured size. A successful source check is not corporate license, security approval, or proof of vendor authenticity.
+
+The GUI inspection creates **no report, log, installation or registry changes**. Use `scripts\OfflineCheck.cmd ... --out Report.json` and `python -I scripts/kit_footprint.py ... --out Size.json` separately when local audited JSON and byte-for-byte console evidence are required. Live Tk and Windows 100/150/200% DPI, focus and keyboard usability remain **HUMAN_NOT_VERIFIED**; see [acceptance guide](GUI_PICKER_ACCEPTANCE_20261030.md).
+
+
 ## One-command preflight before closed-network installation (2026-10-30)
 
 `scripts\OfflineCheck.cmd --kit MyKit.json --root D:\MyPortableApps --archive-dir D:\ApprovedArchives --skip-pending` checks current managed install status plus original vendor file readiness, without downloading or installing anything. Omit `--archive-dir` for a source checklist of what still needs approval/acquisition; omit `--skip-pending` to **block the entire build** when research-only tools or editor plugins are selected. Add `--out MyKit.readiness.json` only if you want a new report and exactly matching local console log. Re-run the full existing `build --yes --offline-dir` after checking enterprise vendor transfer and security policies. [Detailed procedure](OFFLINE_ASSETS.md).

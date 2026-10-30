@@ -1,5 +1,28 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## One-command local operator evidence — optional helper (2026-10-30)
+
+Run the recorder from an **approved, nonproduction interactive Windows workstation**. This is separate from vendor-app GUI acceptance (`GuiAcceptance.cmd`) and tests only the **personal-kit picker**.
+
+```cmd
+:: Read-only check: Python, Tk module presence, GUI source SHA/syntax.
+:: No desktop launched, no files written, always NOT_VERIFIED for GUI itself.
+scripts\PickerAcceptance.cmd
+
+:: Operator manually starts the picker in a separate window:
+scripts\MyToolkitGUI.cmd
+
+:: Then, in the original command window, interactively record observations:
+scripts\PickerAcceptance.cmd --review --out D:\LocalEvidence\PickerReview.json
+```
+
+The guided run records 14 independent cases: basic launch/no elevation; Windows 100/150/200% scaling; Korean IME; keyboard/focus; filtering; editor plugin host and status; new-only save and protected import; read-only offline source check; installed-size UNKNOWN vs actual managed logical bytes; screen reader; and no unintended OS/network effects. Answer `P` (observed pass), `F` (observed fail), or `S` (skip or cannot verify) for **each**. There is no default PASS. The recorder **does not open Tk or any vendor program**; the operator performs actions in the already-open picker and reports outcomes.
+
+`--review --out` creates *only* a new local JSON report and exactly mirrored **program-generated console transcript** `.log`. Existing JSON/log paths are never overwritten; if interrupted, a partial log remains and **no final pass report** is generated. Exit **0** means only that the operator reported all cases PASS; **1** means failure/input error; **2** means one or more cases SKIP/NOT_VERIFIED. A PASS is a **human self-report**, not automatically verified UI behavior. Neither CLI nor the operator answers establish EULA/EDR, source-transfer permission, vendor authenticity, or independent accessibility certification.
+
+Do not enter enterprise identities, credentials, internal production paths, system inventory, network traffic or real equipment data in public issues. Screenshots are **not captured automatically**; if needed, keep sanitized screenshots and local report in organization-approved private storage. For issue escalation, share only sanitized reproduction steps and statuses; never publish the evidence folder from a company workstation in this PUBLIC repository. This automation cannot itself certify 100/150/200% DPI or screen-reader operation without the operator testing it.
+
+
 ## Per-tool size display (manual checks still outstanding)
 
 - [ ] Select an uninstalled pinned item; inspect and verify its row says `size=UNKNOWN`, not `0`. With a valid managed installed pinned item, verify that row reports its **actual logical bytes**, rather than compressed archive size or NTFS allocation.

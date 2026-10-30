@@ -41,7 +41,7 @@ class ReadinessTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             assets.kit.save_new(obj, self.saved_path)
 
-    def run(self, *args):
+    def invoke(self, *args):
         stdout, stderr = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             rc = assets.run(["check", "--kit", str(self.saved_path),
@@ -160,18 +160,18 @@ class ReadinessTests(unittest.TestCase):
 
     def test_cli_status_exit_and_optional_evidence(self):
         self.save(self.personal("jq", "duckdb-cli"))
-        code, printed, errors = self.run()
+        code, printed, errors = self.invoke()
         self.assertEqual((code, errors), (2, ""))
         self.assertIn("RESULT: BLOCKED_PENDING", printed)
         self.assertFalse(self.out.exists())
-        code, printed, errors = self.run("--skip-pending", "--out", str(self.out))
+        code, printed, errors = self.invoke("--skip-pending", "--out", str(self.out))
         self.assertEqual((code, errors), (2, ""))
         self.assertIn("RESULT: NEEDS_ARCHIVES", printed)
         self.assertEqual(printed, self.out.with_suffix(".log").read_text("utf-8"))
         self.assertFalse(self.root.exists())
         with mock.patch.object(assets.kit.sets, "verify_offline_assets",
                                return_value={"jq": self.sources / "jq.zip"}):
-            code, printed, errors = self.run("--skip-pending",
+            code, printed, errors = self.invoke("--skip-pending",
                                              "--archive-dir", str(self.sources))
         self.assertEqual((code, errors), (0, ""))
         self.assertIn("RESULT: READY", printed)
@@ -182,7 +182,7 @@ class ReadinessTests(unittest.TestCase):
         data["lockedPins"]["jq"]["sha256"] = "0" * 64
         self.saved_path.write_text(json.dumps(data), encoding="utf-8")
         with mock.patch.object(assets.kit.sets, "verify_offline_assets") as verify:
-            code, out, err = self.run("--archive-dir", str(self.sources))
+            code, out, err = self.invoke("--archive-dir", str(self.sources))
             verify.assert_not_called()
         self.assertEqual(code, 1)
         self.assertIn("PIN_CHANGED", err)

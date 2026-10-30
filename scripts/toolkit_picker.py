@@ -297,11 +297,11 @@ def launch():
             table.insert("", "end", iid=row["id"],
                          values=(chosen, row["id"], row["name"], row["primary"], st),
                          tags=(tag,))
-        shown = {row["id"] for row in visible}
-        kept = [ident for ident in highlighted if ident in shown]
+        shown_ids = {row["id"] for row in visible}
+        kept = [ident for ident in highlighted if ident in shown_ids]
         if kept:
             table.selection_set(*kept)
-        if focused in shown:
+        if focused in shown_ids:
             table.focus(focused)
         results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.".format(
             len(visible), len(model.known), len(kept)))

@@ -1,5 +1,11 @@
 # Independent editor plugin selection — safe personal kit v2
 
+## GUI visibility and intent (2026-10-30)
+
+The optional `MyToolkitGUI.cmd` selector shows the **currently chosen editor plugins** (up to six from this research report) with their required `notepad++` or `winmerge` host and a state that is not equivalent to corporate approval. The chosen dropdown also states whether its host is selected. `PINNED METADATA` means a vendor plugin has a known pin in the recommended profile, **not** that GUI automatically installs or has approved business use/redistribution. `RESEARCH ONLY` means no approved standalone plugin apply option exists.
+
+An imported kit that recorded a plugin as research-only retains that pending state until explicitly removed and re-selected, even if newer source metadata becomes pinned. Removing its host from the personal kit removes associated selections; none of these UI operations writes plugin files or changes Windows configuration. Headless tests validate displayed mapping, host selection and frozen intent, but real Tk GUI/DPI and keyboard acceptance remain **HUMAN_NOT_VERIFIED**.
+
 User-supplied 31-page research source lists 6 plugin families: ComparePlus, JsonTools, CSV Lint, NppExec (Notepad++), xdocdiff, Merge7z (WinMerge). Two currently have SHA/version pins nested under the Notepad++ **recommended** profile; the other four remain research-only. The source intake remains authoritative for all six IDs. **SHA-pinned metadata is not corporate license or redistribution approval**, and none of the six is independently installable through personal kit v2.
 
 ## CLI (no download/install)

@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-31 — one-command personal-kit doctor (candidate PR)
+
+- [x] Implement independent source-only `kit_doctor.py` + Windows CMD: compose the **existing** offline readiness, managed logical size, and optional editor-plugin health engines without modifying them or adding vendor binaries. No automatic install, live GUI, registry or network calls.
+- [x] Reject input errors and mismatched per-pin assessment IDs. Separate `BLOCKED`, `INCOMPLETE`, `LOCAL_CHECKS_PASS` and documented exit 2/1; pending research, OS-only or editor selections never imply whole-kit PASS. Optional new-only JSON plus stdout-mirrored evidence.
+- [ ] Require GitHub PR Windows Python 3.11 and 3.14 regression PASS, reviewed diff and post-merge main CI before considering source code integrated.
+- [ ] **Human/legal still open:** company EULA/OSS/EDR and source transfer approvals, GUI DPI/IME/accessibility, WinMerge Office4, on-site vendor executables and final Release authorization. Local checksum status is not enterprise release acceptance.
+
+
 ## 2026-10-30 — personal-kit GUI operator acceptance workflow
 
 - Optional `scripts/PickerAcceptance.cmd` / `scripts/picker_acceptance.py`: safe static preflight (Python/Tk availability, source hash and syntax) reports `NOT_VERIFIED` without files/desktop. Explicit `--review --out` asks 14 independent operator PASS/FAIL/SKIP checks for DPI 100/150/200, IME, keyboard, filters, plugin status, save/import, readiness, size, a11y and no OS actions. New-only private JSON plus exactly program-mirrored local console log; interrupted sessions cannot silently produce PASS. No vendor executables, GUI automation, screenshot capture or new runtime dependency.

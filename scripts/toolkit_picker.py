@@ -497,8 +497,91 @@ def launch():
                 name.set(data["name"])
             action(op)
 
+    def open_readonly_overview():
+        """Never install; explicit opt-in local scanning in a separate window."""
+        dialog = tk.Toplevel(root)
+        dialog.title("PortaKit | Read-only readiness and footprint")
+        dialog.geometry("920x620")
+        dialog.minsize(640, 420)
+        dialog.configure(bg="#121e2b")
+        panel = tk.Frame(dialog, bg="#121e2b", padx=16, pady=12)
+        panel.pack(fill="both", expand=True)
+        tk.Label(panel, text="Personal kit | local readiness and size",
+                 font=("Segoe UI Semibold", 16), fg="#e9f3fa",
+                 bg="#121e2b").pack(anchor="w")
+        tk.Label(panel, text="No files are written. Checks run only when you click Inspect.",
+                 fg="#a9c5d6", bg="#121e2b").pack(anchor="w", pady=(2, 10))
+        managed_root = tk.StringVar(value=str(Path.cwd() / "portable"))
+        vendor_dir = tk.StringVar(value="")
+        size_budget = tk.StringVar(value="")
+        partial = tk.BooleanVar(value=False)
+
+        def field(caption, var):
+            line = tk.Frame(panel, bg="#121e2b")
+            line.pack(fill="x", pady=3)
+            tk.Label(line, text=caption, width=20, anchor="w",
+                     fg="#e9f3fa", bg="#121e2b").pack(side="left")
+            ttk.Entry(line, textvariable=var).pack(side="left", fill="x", expand=True)
+
+        field("Managed root", managed_root)
+        field("Original archive folder", vendor_dir)
+        field("Budget MiB (optional)", size_budget)
+        ttk.Checkbutton(
+            panel, variable=partial,
+            text="Check approved subset only (research / plugins remain excluded)"
+        ).pack(anchor="w", pady=(5, 6))
+
+        indicator = tk.StringVar(value="NOT CHECKED | source and size status unknown")
+        tk.Label(panel, textvariable=indicator, fg="#a8dfcd", bg="#121e2b",
+                 anchor="w").pack(fill="x", pady=6)
+        holder = tk.Frame(panel, bg="#121e2b")
+        holder.pack(fill="both", expand=True, pady=6)
+        output_text = tk.Text(holder, wrap="word", font=("Consolas", 10),
+                              bg="#1b2937", fg="#eef6fd", insertbackground="#ffffff")
+        scrollbar = ttk.Scrollbar(holder, command=output_text.yview)
+        output_text.configure(yscrollcommand=scrollbar.set)
+        output_text.pack(side="left", expand=True, fill="both")
+        scrollbar.pack(side="right", fill="y")
+        output_text.insert("end", "Select tools in the main window, then Inspect here.\n"
+                           "Installed size and vendor-archive availability are UNKNOWN until checked.\n")
+        output_text.configure(state="disabled")
+
+        def inspect_current():
+            try:
+                import kit_overview as overview
+                # A draft is valid in-memory kit data. No save or installation.
+                selected = model.draft(name.get().strip())
+                raw_budget = size_budget.get().strip()
+                budget = None if not raw_budget else int(raw_budget)
+                report = overview.inspect(
+                    selected, model.pins, managed_root.get(),
+                    vendor_dir.get().strip() or None,
+                    skip_pending=partial.get(), budget_mib=budget)
+                output_text.configure(state="normal")
+                output_text.delete("1.0", "end")
+                output_text.insert("end", "\n".join(overview.format_lines(report)))
+                output_text.configure(state="disabled")
+                indicator.set("SOURCE: {} | SIZE: {} (installed logical bytes only)".format(
+                    report["outcome"], report["budgetResult"]))
+            except (kit.KitError, kit.sets.ToolsetError, kit.core.PortakitError,
+                    OSError, ValueError, OverflowError) as exc:
+                indicator.set("CHECK FAILED - no installation performed")
+                messagebox.showerror("Read-only overview", str(exc), parent=dialog)
+            except (overview.OverviewError, overview.ready.ReadinessError,
+                    overview.ready.assets.AssetError,
+                    overview.footprint.FootprintError) as exc:
+                indicator.set("CHECK FAILED - no installation performed")
+                messagebox.showerror("Read-only overview", str(exc), parent=dialog)
+
+        ttk.Button(panel, text="Inspect only (no download/install)",
+                   command=inspect_current).pack(anchor="w", pady=(4, 0))
+        dialog.transient(root)
+        dialog.lift()
+
     ttk.Button(foot, text="Import existing kit…", command=import_kit).pack(
         side="left", padx=(0, 9))
+    ttk.Button(foot, text="Read-only overview…",
+               command=open_readonly_overview).pack(side="left", padx=(0, 9))
     ttk.Button(foot, text="Save personal kit + evidence",
                command=save_kit).pack(side="left")
     tk.Label(foot, text="No install, download or registry edits",

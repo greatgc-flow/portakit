@@ -1,10 +1,10 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — one-command personal-kit doctor (candidate PR)
+## 2026-10-31 — one-command personal-kit doctor (merged PR #50)
 
 - [x] Implement independent source-only `kit_doctor.py` + Windows CMD: compose the **existing** offline readiness, managed logical size, and optional editor-plugin health engines without modifying them or adding vendor binaries. No automatic install, live GUI, registry or network calls.
 - [x] Reject input errors and mismatched per-pin assessment IDs. Separate `BLOCKED`, `INCOMPLETE`, `LOCAL_CHECKS_PASS` and documented exit 2/1; pending research, OS-only or editor selections never imply whole-kit PASS. Optional new-only JSON plus stdout-mirrored evidence.
-- [ ] Require GitHub PR Windows Python 3.11 and 3.14 regression PASS, reviewed diff and post-merge main CI before considering source code integrated.
+- [x] [PR #50](https://github.com/greatgc-flow/portakit/pull/50) merged as `3d486ea`; full Windows Python 3.11 and 3.14 matrices **461/461 tests each PASS**, including [post-merge main CI](https://github.com/greatgc-flow/portakit/actions/runs/41083220122). Remaining enterprise/legal/human gates stay open.
 - [ ] **Human/legal still open:** company EULA/OSS/EDR and source transfer approvals, GUI DPI/IME/accessibility, WinMerge Office4, on-site vendor executables and final Release authorization. Local checksum status is not enterprise release acceptance.
 
 

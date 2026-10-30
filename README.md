@@ -2,7 +2,7 @@
 
 ## Build your own portable toolkit (2026-10-25)
 
-Every known tool is now *selectable* into your own reusable JSON toolkit, but only the **17 verified SHA-pinned** tools are installable. Use [Personal Kits guide](docs/PERSONAL_KITS.md), `scripts/MyToolkit.cmd` or `python -I scripts/my_toolkit.py`. The separate inventory union has **151 IDs = 17 pinned + 27 Windows native + 107 unverified research items**. Unverified items can be saved and planned, never silently installed.
+Every known tool is now *selectable* into your own reusable JSON toolkit, but only the **19 verified SHA-pinned** tools are installable. Use [Personal Kits guide](docs/PERSONAL_KITS.md), `scripts/MyToolkit.cmd` or `python -I scripts/my_toolkit.py`. The separate inventory union has **151 IDs = 19 pinned + 27 Windows native + 105 unverified research items**. Unverified items can be saved and planned, never silently installed.
 
 ```cmd
 scripts\MyToolkit.cmd list --all

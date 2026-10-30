@@ -46,7 +46,7 @@ class ToolsetTests(unittest.TestCase):
         ids = [item for group in categories.values() for item in group["tools"]]
         self.assertEqual(set(ids), set(catalog))
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(len(ids), 17)
+        self.assertEqual(len(ids), 19)
 
     def test_v2_legacy_names_remain_frozen_without_unintended_additions(self):
         expected = {"common": ["notepad++", "winmerge"],

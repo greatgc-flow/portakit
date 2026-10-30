@@ -47,11 +47,11 @@ class TaxonomyEvidenceTests(unittest.TestCase):
                 self.assertEqual(r["sizeMethod"], "NOT_MEASURED")
             else:
                 self.assertIn(r["id"], pinned)
-                self.assertEqual(r["sizeMethod"], "github_release_asset_metadata")
+                self.assertIn(r["sizeMethod"], ("github_release_asset_metadata", "official_download_measured"))
                 self.assertGreater(r["verifiedCompressedBytes"], 0)
                 self.assertLess(r["verifiedCompressedBytes"], 10 * 1024 * 1024)
         self.assertEqual(sum(r["verifiedCompressedBytes"] or 0
-                             for r in self.research["tools"]), 20282483)
+                             for r in self.research["tools"]), 22239623)
 
 
 if __name__ == "__main__":

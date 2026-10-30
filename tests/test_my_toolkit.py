@@ -43,9 +43,9 @@ class KitTests(unittest.TestCase):
     def test_all_tools_available_for_selection_but_not_for_install(self):
         self.assertEqual(len(self.known), 151)
         statuses = [x["admission"] for x in self.known.values()]
-        self.assertEqual(statuses.count("PINNED_CATALOG"), 17)
+        self.assertEqual(statuses.count("PINNED_CATALOG"), 19)
         self.assertEqual(statuses.count("OS_BUILTIN"), 27)
-        self.assertEqual(statuses.count("RESEARCH_ONLY"), 107)
+        self.assertEqual(statuses.count("RESEARCH_ONLY"), 105)
         self.assertIn("secs4net", self.known)
         self.assertIn("duckdb-cli", self.known)
         self.assertIn("nats-server", self.known)
@@ -63,7 +63,7 @@ class KitTests(unittest.TestCase):
     def test_category_selects_only_pinned_tools(self):
         ids = kit.requested_ids([], [], ["network", "text"], [],
                                 self.pins, self.categories, self.profiles, self.known)
-        self.assertEqual(ids, ["notepad++", "ripgrep", "bat", "sd", "grepwin"])
+        self.assertEqual(ids, ["tcpview", "psping", "notepad++", "ripgrep", "bat", "sd", "grepwin"])
         self.assertNotIn("tcping", ids)
 
     def test_7zip_prerequisite_order_corrected_when_both_selected(self):
@@ -172,7 +172,7 @@ class KitTests(unittest.TestCase):
     def test_create_cli_and_inventory_default_filter(self):
         code, output, error = self.run_command(["list"])
         self.assertEqual((code, error), (0, ""))
-        self.assertIn("TOTAL: 17", output)
+        self.assertIn("TOTAL: 19", output)
         code, output, error = self.run_command(["list", "--all", "--category", "network"])
         self.assertEqual((code, error), (0, ""))
         self.assertIn("tcping\tRESEARCH_ONLY", output)

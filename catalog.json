@@ -200,6 +200,24 @@
       "artifact": "sfx7z",
       "dest": "7zip",
       "preserveOnUpdate": []
+    },
+    {
+      "id": "tcpview",
+      "version": "4.19",
+      "url": "https://download.sysinternals.com/files/TCPView.zip",
+      "sha256": "4fc5ceba3e1b27ad95a24df35d094b454ec5f9478e12a8ca2b1b222705b9683b",
+      "artifact": "zip",
+      "dest": "tcpview",
+      "preserveOnUpdate": []
+    },
+    {
+      "id": "psping",
+      "version": "2.13",
+      "url": "https://live.sysinternals.com/psping64.exe",
+      "sha256": "356448f935bac37b1c71bf4289b3e74345842202523dd50140fc75c6b3338751",
+      "artifact": "exe",
+      "dest": "psping",
+      "preserveOnUpdate": []
     }
   ]
 }

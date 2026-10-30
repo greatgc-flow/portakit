@@ -72,7 +72,7 @@ jobs:
           python -I portakit.py --help | Out-Null
           if ($LASTEXITCODE -ne 0) { throw "portakit help failed (exit $LASTEXITCODE)" }
 
-      - name: Verify GUI acceptance and Sysinternals intake contracts (no launch)
+      - name: Verify GUI acceptance and Sysinternals pin contracts (no launch)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -80,15 +80,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'GUI acceptance parser failed' }
           $meta = Get-Content -LiteralPath 'research/SYSINTERNALS_NETWORK_REVIEW_20261021.json' -Raw | ConvertFrom-Json
           $cat = Get-Content -LiteralPath 'catalog.json' -Raw | ConvertFrom-Json
-          if ($meta.policy -ne 'METADATA_ONLY_NOT_INSTALLABLE_NOT_REDISTRIBUTABLE') {
-            throw 'Sysinternals metadata-only policy must remain explicit'
+          if ($meta.policy -ne 'OFFICIAL_DIRECT_DOWNLOAD_SHA_PINNED_NO_REDISTRIBUTION') {
+            throw 'Sysinternals official-direct-download policy must remain explicit'
           }
-          $names = @($cat.tools | ForEach-Object { $_.id })
-          foreach ($tool in @('tcpview', 'psping')) {
-            if ($names -contains $tool) { throw "Unapproved Sysinternals catalog pin: $tool" }
+          foreach ($m in $meta.tools) {
+            $pin = @($cat.tools | Where-Object { $_.id -eq $m.id })
+            if ($pin.Count -ne 1) { throw "Missing Sysinternals catalog pin: $($m.id)" }
+            if ($pin[0].sha256 -ne $m.sha256 -or $pin[0].url -ne $m.directAssetUrl) { throw "Sysinternals pin differs from research: $($m.id)" }
+            if (([uri]$pin[0].url).Host -notin @('download.sysinternals.com', 'live.sysinternals.com')) { throw "Non-official Sysinternals host: $($m.id)" }
+            if ($pin[0].url -match 'PSTools') { throw 'PsTools suite must not be pinned' }
           }
           if ($meta.tools.Count -ne 2) { throw 'Network vendor metadata count mismatch' }
-          Write-Host 'GUI acceptance parser and no-Sysinternals-binary catalog gates PASS'
+          Write-Host 'GUI acceptance parser and Sysinternals official-pin gates PASS'
 
       - name: Parse Windows PowerShell acceptance scripts
         shell: pwsh

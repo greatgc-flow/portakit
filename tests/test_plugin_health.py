@@ -70,6 +70,27 @@ class PluginHealthTests(unittest.TestCase):
         self.assertEqual(result["blocked"], 1)
         self.assertFalse(self.root.exists())
 
+    def test_managed_host_without_selected_plugin_is_incomplete(self):
+        self.create_host()
+        result = health.inspect(self.saved, self.pins, self.root)
+        self.assertEqual(result["outcome"], "INCOMPLETE")
+        self.assertEqual(result["plugins"][0]["sourceState"], "install")
+        self.assertEqual(result["unverifiedOrUninstalled"], 1)
+
+    def test_cli_clean_synthetic_install_exits_zero_without_changes(self):
+        self.apply_fixture()
+        with contextlib.redirect_stdout(io.StringIO()):
+            health.kit.save_new(self.saved, self.kit_file)
+        before = health.offline.receipt_path(self.root).read_bytes()
+        with mock.patch.object(health.kit, "inventory",
+                               return_value=(self.pins, {}, {}, self.known)):
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                result = health.run(["--kit", str(self.kit_file),
+                                     "--root", str(self.root)])
+        self.assertEqual(result, 0)
+        self.assertIn("RESULT: LOCAL_HASH_PASS", stdout.getvalue())
+        self.assertEqual(health.offline.receipt_path(self.root).read_bytes(), before)
+
     def test_valid_synthetic_files_pass_only_local_hash_check(self):
         self.apply_fixture()
         result = health.inspect(self.saved, self.pins, self.root)

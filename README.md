@@ -1,5 +1,9 @@
 # portakit
 
+## Approved-offline preparation, one check
+
+Select and save a personal kit with `scripts\MyToolkitGUI.cmd` (GUI selection only) or `scripts\MyToolkit.cmd create`. Then run **`scripts\KitOffline.cmd check --kit MyKit.json --root D:\PortableApps --archive-dir D:\ApprovedVendorArchives`** to see what still needs installing and verify only the missing original vendor SHA-pinned sources. `--skip-pending` explicitly allows evaluating an approved subset; `--out MyKit.check.json` writes only a local readiness report and exact log. No vendor files are downloaded, bundled, executed or installed by `check`. Install separately only after corporate/legal approval with `scripts\MyToolkit.cmd build ... --offline-dir ... --yes`. See [Offline guide](docs/OFFLINE_ASSETS.md).
+
 ## Read-only plugin health evidence (2026-10-30)
 
 Run `python -I scripts/plugin_health.py --kit Editor.json --root D:\PortableApps` to compare **already installed, managed** plugin DLL and nested-file SHA-256 against a local per-file receipt without changing tools or executing vendor binaries. Result is `LOCAL_HASH_PASS`, `INCOMPLETE`, or `BLOCKED`; invalid state is an error. Optional `--out Editor.health.json` writes a new-only JSON plus byte-identical local console evidence log. Results **do not certify** publisher authenticity, corporate license/EDR or real GUI operation. See [operator health guide](docs/PLUGIN_HEALTH.md).

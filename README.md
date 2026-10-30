@@ -1,5 +1,9 @@
 # portakit
 
+## Read-only plugin health evidence (2026-10-30)
+
+Run `python -I scripts/plugin_health.py --kit Editor.json --root D:\PortableApps` to compare **already installed, managed** plugin DLL and nested-file SHA-256 against a local per-file receipt without changing tools or executing vendor binaries. Result is `LOCAL_HASH_PASS`, `INCOMPLETE`, or `BLOCKED`; invalid state is an error. Optional `--out Editor.health.json` writes a new-only JSON plus byte-identical local console evidence log. Results **do not certify** publisher authenticity, corporate license/EDR or real GUI operation. See [operator health guide](docs/PLUGIN_HEALTH.md).
+
 ## Managed editor-plugin integrity check (2026-10-30)
 
 `python -I scripts/plugin_offline.py plan --kit Editor.json --root D:\\PortableApps` is read-only and rechecks SHA-256 for each file of an already-managed individual Notepad++ plugin. A changed, missing or additional DLL/library is `blocked-content-drift` rather than silently skipped; old receipts without per-file hashes are `blocked-legacy-unverified` until reviewed outside the installer. No automatic overwrite, upgrade or deletion. Per-file hashes do not replace EDR, publisher signatures or corporate licensing. [Operator guide](docs/PLUGIN_OFFLINE_APPLY.md).

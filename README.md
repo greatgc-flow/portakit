@@ -1,5 +1,9 @@
 # portakit
 
+## Read-only installed-size audit (2026-10-30)
+
+For a saved personal toolkit, `python -I scripts/kit_footprint.py --kit MyKit.json --root D:\\MyPortableApps` reports logical file bytes of **currently managed and matching** pinned folders. `--max-mib 100` optionally checks a logical-byte budget; any missing/research/OS selections produce UNKNOWN rather than fake PASS. `--out MyKit.footprint.json` creates a new-only local JSON and matching console-evidence log. No vendor binaries, network, OS changes or downloads. See [footprint guide](docs/FOOTPRINT_AUDIT.md). Real NTFS disk allocation and compressed package sizes are separate measurements.
+
 > **Current SSOT (2026-10-30):** Catalog 19 SHA-pinned, 108 canonical research (19/27/62), plus 43 additional research candidates; 151 selectable IDs (19 pinned / 27 built-in / 105 unverified). Historical counts in dated sections below explain past phases, not today's installation status. Start continuation at [2026-10-30 current handoff](docs/handoff/START_NEW_CHAT_PORTAKIT_20261030_CURRENT.md). Actual current source files always override snapshots.
 
 

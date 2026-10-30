@@ -120,6 +120,8 @@ def audit(saved, root, *, budget_mib=None):
         "budgetMiB": budget_mib, "budgetResult": budget_state,
         "researchOnlyNotMeasured": list(saved["researchOnly"]),
         "osBuiltinsNotMeasured": list(saved["osBuiltins"]),
+        "editorPluginsNotMeasured": [
+            x["id"] for x in saved.get("pluginSelections", [])],
         "notice": "Read-only, no software launched. A concurrent write can change these values.",
     }
 

@@ -81,7 +81,9 @@ def audit(saved, root, *, budget_mib=None):
     state = kit.core.read_state(root)
     rows = []
     total = 0
-    complete = True
+    # Budget cannot certify a complete toolkit when OS-only or research
+    # selections have no measured managed files.
+    complete = not (saved["researchOnly"] or saved["osBuiltins"])
     for ident in saved["tools"]:
         if ident not in saved["lockedPins"]:
             continue

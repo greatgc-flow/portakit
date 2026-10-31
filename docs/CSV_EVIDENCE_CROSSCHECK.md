@@ -60,6 +60,13 @@ The first command prints a compact result only. The second fails rather than rep
 - Console verification checks exact expected LF bytes, not `splitlines()` equivalence; Windows CRLF conversion is flagged as a changed file. The original log emitter writes LF on both Windows and Linux.
 - Cross-check outcome **does not authenticate** a local JSON+log pair. A coordinated rewrite can still be self-consistent; independent source provenance, corporate signoff, approved host and real vendor testing remain distinct gates.
 
+## Schema-v1 field closure and independently checkable stream claims
+
+- The existing producer's **schemaVersion 1** source and smoke JSON records now require their exact known field sets (root, nested ZIP structure/source EXE link, smoke hashes and evaluated process records). Extra keys such as `companyApproved: true`, even when JSON and .log are edited together, fail closed rather than being silently ignored. To add legitimate fields, explicitly version and update both producer and verifier contracts; do not present schema-v1 extensions as reviewed approvals.
+- Captured stdout/stderr bytes are **not** retained in the smoke JSON, so arbitrary nonempty stream digest claims remain unauthenticated. When recorded bytes are exactly zero, however, the verifier independently requires the SHA-256 of the empty byte string; malformed claims fail instead of being accepted as a merely well-formed digest.
+- Blocked unexpected-workspace entries must retain the original producer's sorted, unique order. `UNKNOWN_SCAN_ERROR` is a single-entry scan-failure sentinel, not an entry to combine with file names.
+- These are synthetic/source-only internal-consistency checks; they neither rerun the vendor nor authenticate original reports, licenses, publisher, approved host or physical measurements.
+
 ## Deterministic fixture replay (source-only)
 
 - The verifier regenerates only the expected **hashes**, in memory, using the existing fixed UTF-8/CRLF CSV generator contract. No temporary CSV files or vendor processes are created.

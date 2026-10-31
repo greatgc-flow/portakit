@@ -41,6 +41,16 @@ def require(condition, message):
         raise EvidenceError(message)
 
 
+def require_fields(obj, fields, label):
+    """Schema-v1 reports have closed field sets; additions need a new version.
+
+    Unknown keys can otherwise smuggle a forged approval assertion into a
+    self-consistent JSON/log pair without appearing in its console transcript.
+    """
+    require(isinstance(obj, dict) and set(obj) == set(fields),
+            "Unexpected " + label + " evidence fields")
+
+
 def file_signature(info):
     """Portable cross-source identity: path stat vs handle fstat on Windows.
 
@@ -195,6 +205,10 @@ def check_source(doc, frozen):
             "GITHUB_RELEASE_METADATA_SHA_NOT_PUBLISHER_SIGNATURE" and
             doc.get("notice") == source.NOTICE,
             "Source report mismatches release metadata or unverified gates")
+    require_fields(doc, (
+        "schemaVersion", "candidateId", "release", "outcome", "sourceSHA256",
+        "compressedBytes", "structure", "localExeComparison", "provenance",
+        "runtimeWindows", "enterprisePermission", "notice"), "source report")
     structure = doc.get("structure")
     link = doc.get("localExeComparison")
     require(isinstance(structure, dict) and isinstance(link, dict) and
@@ -205,6 +219,12 @@ def check_source(doc, frozen):
             isinstance(structure.get("xanExeSha256"), str) and
             SHA.fullmatch(structure["xanExeSha256"]) is not None,
             "Source ZIP member digest/size invalid")
+    require_fields(structure, (
+        "members", "regularFiles", "directories", "expandedLogicalBytes",
+        "xanExeCount", "rootNames", "xanExeMember", "xanExeBytes",
+        "xanExeSha256"), "source structure")
+    require_fields(link, ("status", "sha256", "bytes", "note"),
+                   "source executable link")
     # These counts are reported by the original ZIP inspector. Check that
     # numbers, roots, bytes and members do not contradict each other.
     members = structure.get("members")
@@ -276,6 +296,12 @@ def check_smoke(doc, folder):
             "OPERATOR_ATTESTED_WINDOWS_OFFLINE_NOT_VERIFIED_BY_SCRIPT" and
             doc.get("notice") == smoke.NOTICE,
             "Smoke report invalid or overclaims verification")
+    require_fields(doc, (
+        "schemaVersion", "outcome", "rowsCounted", "timeoutSeconds", "host",
+        "exeSha256Local", "syntheticInputSha256", "inputsUnchanged",
+        "executablesUnchanged", "unexpectedWorkspaceEntries", "checks",
+        "companyUseEDRRedistribution", "vendorArchiveProvenance",
+        "performanceRanking", "notice"), "smoke report")
     checks = doc.get("checks")
     require(isinstance(checks, list) and len(checks) == len(EXPECTED_CASES) and
             all(isinstance(row, dict) and
@@ -295,6 +321,10 @@ def check_smoke(doc, folder):
                     row["errorType"].isidentifier(),
                     "Raised-runner ERROR record has invalid fields")
             continue
+        require_fields(row, (
+            "tool", "case", "status", "returnCode", "durationMilliseconds",
+            "stdoutBytes", "stderrBytes", "stdoutSha256", "stderrSha256",
+            "capturedOutputTruncated"), "smoke process record")
         rc = row.get("returnCode")
         elapsed = row.get("durationMilliseconds")
         out_count = row.get("stdoutBytes")
@@ -313,6 +343,12 @@ def check_smoke(doc, folder):
                 all(isinstance(row.get(k), str) and SHA.fullmatch(row[k])
                     for k in ("stdoutSha256", "stderrSha256")),
                 "Process record has invalid exit/timing/capture metadata")
+        # The actual captured stream is not preserved. However, a stream
+        # recorded as EMPTY has exactly one independently checkable digest.
+        empty_sha = hashlib.sha256(b"").hexdigest()
+        require((out_count != 0 or row["stdoutSha256"] == empty_sha) and
+                (err_count != 0 or row["stderrSha256"] == empty_sha),
+                "Zero-byte process stream has inconsistent SHA256")
         if status in ("PASS", "FAIL"):
             require(rc == 0 and not truncated and
                     (status != "PASS" or out_count > 0),
@@ -331,6 +367,11 @@ def check_smoke(doc, folder):
             isinstance(doc.get("unexpectedWorkspaceEntries"), list) and
             all(isinstance(x, str) for x in doc["unexpectedWorkspaceEntries"]),
             "Smoke consistency flags absent")
+    entries = doc["unexpectedWorkspaceEntries"]
+    require(entries == sorted(set(entries)) and
+            ("UNKNOWN_SCAN_ERROR" not in entries or
+             entries == ["UNKNOWN_SCAN_ERROR"]),
+            "Smoke workspace entries contradict producer ordering/scan state")
     # Workspace names are rendered in the original operator console log.
     # Prevent a forged JSON/log pair from smuggling control characters,
     # parent traversal or Windows-unsafe path segments into that transcript.
@@ -353,6 +394,8 @@ def check_smoke(doc, folder):
             all(isinstance(fixtures.get(k), str) and
                 SHA.fullmatch(fixtures[k]) for k in ("edge", "bulk")),
             "EXE/fixture SHA fields absent or malformed")
+    require_fields(hashes, ("miller", "xan"), "smoke executable hashes")
+    require_fields(fixtures, ("edge", "bulk"), "smoke fixture hashes")
     for key in ("edge", "bulk"):
         require(sha_file(folder / (key + ".csv")) == fixtures[key],
                 "Retained synthetic CSV has changed: " + key)

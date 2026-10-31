@@ -272,7 +272,9 @@ class EvidenceChainTests(unittest.TestCase):
     def test_pass_case_with_missing_digest_is_invalid(self):
         self.build()
         self.rewrite_smoke(lambda doc: doc["checks"][2].pop("stdoutSha256"))
-        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
+        with self.assertRaisesRegex(
+                chain.EvidenceError,
+                "Unexpected smoke process record|process/capture|Process record"):
             self.verify()
 
     def test_pass_case_with_oversized_capture_is_invalid(self):
@@ -670,6 +672,118 @@ class EvidenceChainTests(unittest.TestCase):
         path.mkdir()
         chain.cleanup_created(path, original_identity)
         self.assertTrue(path.is_dir())
+
+
+    def test_source_extra_approval_field_is_not_trusted(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc.update({"publisherAuthenticated": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected source report"):
+            self.verify()
+
+    def test_source_extra_structure_field_is_not_trusted(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update({"crcCertified": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected source structure"):
+            self.verify()
+
+    def test_source_extra_exe_field_is_not_trusted(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["localExeComparison"].update(
+                {"executionApproved": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected source executable link"):
+            self.verify()
+
+    def test_smoke_extra_approval_field_is_not_trusted(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc.update({"companyApproved": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected smoke report"):
+            self.verify()
+
+    def test_smoke_extra_exe_digest_claim_is_not_trusted(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["exeSha256Local"].update(
+                {"publisherSignature": "VALID"}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected smoke executable hashes"):
+            self.verify()
+
+    def test_smoke_extra_fixture_digest_claim_is_not_trusted(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["syntheticInputSha256"].update(
+                {"realProductionData": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected smoke fixture hashes"):
+            self.verify()
+
+    def test_smoke_extra_process_claim_is_not_trusted(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["checks"][0].update(
+                {"publisherVerified": True}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Unexpected smoke process record"):
+            self.verify()
+
+    def test_zero_byte_stderr_has_only_empty_digest(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["checks"][0].update(
+                {"stderrSha256": "0" * 64}))
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Zero-byte process stream"):
+            self.verify()
+
+    def test_zero_byte_stdout_has_only_empty_digest(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({
+                "status": "FAIL", "stdoutBytes": 0,
+                "stdoutSha256": "f" * 64})
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "Zero-byte process stream"):
+            self.verify()
+
+    def test_workspace_entries_require_producer_sorted_order(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["z.txt", "a.txt"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "workspace entries contradict"):
+            self.verify()
+
+    def test_workspace_entries_cannot_be_duplicated(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["extra.txt", "extra.txt"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "workspace entries contradict"):
+            self.verify()
+
+    def test_scan_failure_sentinel_must_be_only_workspace_entry(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["UNKNOWN_SCAN_ERROR", "z.txt"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError,
+                                    "workspace entries contradict"):
+            self.verify()
 
 
 if __name__ == "__main__":

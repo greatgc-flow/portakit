@@ -388,12 +388,24 @@ def emit(folder, result):
     kit.core.check_links(log)
     if os.path.lexists(target) or os.path.lexists(log):
         raise SmokeError("Evidence files already exist; no overwrite")
-    with kit.sets.Evidence(log) as evidence:
-        with target.open("x", encoding="utf-8", newline="\n") as out:
-            json.dump(result, out, indent=2, ensure_ascii=False)
-            out.write("\n")
-        for line in report_lines(result):
-            evidence.emit(line)
+    # Exclusive creation and best-effort rollback. The producer must not
+    # strand a misleading partial report or delete a competing writer's file.
+    json_identity = log_identity = None
+    try:
+        with kit.sets.Evidence(log) as evidence:
+            log_identity = kit.sets.created_output_identity(
+                os.fstat(evidence.stream.fileno()))
+            with target.open("x", encoding="utf-8", newline="\n") as out:
+                json_identity = kit.sets.created_output_identity(
+                    os.fstat(out.fileno()))
+                json.dump(result, out, indent=2, ensure_ascii=False)
+                out.write("\n")
+            for line in report_lines(result):
+                evidence.emit(line)
+    except BaseException:
+        kit.sets.cleanup_own_output(log, log_identity)
+        kit.sets.cleanup_own_output(target, json_identity)
+        raise
 
 
 def plan(rows=10000):

@@ -1,4 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
+ 
+## 2026-10-31 — bounded live stdout/stderr capture for operator CSV smoke (candidate PR)
+
+- [x] Audited prior CSV smoke implementation against VerySimpleGuide safety/evidence claims: `subprocess.run(..., stdout=PIPE, stderr=PIPE)` collected output without limit until termination, despite a stated 256 KiB post-run threshold.
+- [x] Isolated `call_vendor` now uses direct `Popen` and concurrent bounded pipe readers, retaining at most 256 KiB + 1 byte on **each** stdout/stderr stream and terminating the direct process when either crosses limit; per-call timeout likewise terminates the direct child. Stronger **actual output-memory limit**, not a vendor RAM/disk/network sandbox or process-tree kill.
+- [x] Add synthetic Python subprocess tests for normal separate pipes, stdout/stderr overflow, real timeout, launch failure and explicit prefix digest semantics; no third-party executables run in CI. Keep existing vendor mock tests and all existing catalog/license/EDR/research gates.
+- [ ] PR Python 3.11/3.14 full Windows suite, merge and both post-merge main CI, handoff and Issue #25 evidence comment.
+- [ ] Real approved xan/Miller Windows original archives, corporate permission and standalone offline runtime behavior remain **NOT_VERIFIED**.
+
 
 ## 2026-10-31 — VSG-guided Miller/xan opt-in Windows CSV smoke (merged PR #56)
 

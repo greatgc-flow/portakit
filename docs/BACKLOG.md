@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening
+## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening (PR #70)
 
 - [x] Formalize developer vs final-user responsibility in [END_USER_ACCEPTANCE.md](END_USER_ACCEPTANCE.md): actual vendor GUI/runtime/portability, EULA/OSS/EDR/transfer, local performance and deployment decisions are the end-user/organization's. Source-only CI, review and implementation are independent; a green CI never impersonates legal/operational approval.
 - [x] Personal-kit `scripts/my_toolkit.py` JSON reader rejects duplicate keys at any level and NaN/Infinity, including nested pin and plugin assertions, with no install or automatic rewrite. Create-only JSON/console-log save uses guarded **best-effort** failure rollback that leaves foreign/replaced files untouched. Optional GUI import remains all-or-nothing.
 - [x] Add 9 synthetic, vendor-free negative tests covering duplicate v1/v2 assertions, nonstandard values, errors/collisions on save and UI selection preservation. Live desktop acceptance is not performed by CI and remains final-user responsibility.
-- [ ] Verify exact-head Windows Python 3.11/3.14 PR CI; squash merge only when both pass; verify actual merged-main CI and update Issues #25/#27/#36 with responsibility handoff.
+- [x] [PR #70](https://github.com/greatgc-flow/portakit/pull/70) code+documentation head `7d53eda854517c813d50f18e6f2f125272b92f55` passed [Windows CI #41215539863](https://github.com/greatgc-flow/portakit/actions/runs/41215539863): Python 3.11 and 3.14 each **662/662 PASS**, individual logs inspected. This final backlog documentation update advances the branch HEAD; verify its exact-head PR CI before squash merge, and verify merged-main CI separately. Issue #25/#27/#36 acceptance ownership to be recorded without making false approvals.
 - [ ] Product source gaps (e.g. unsupported archives / industrial CLIENT vs SERVER matrix) remain project backlog; end-user approval ownership is **not** blanket permission to ship unknown vendor software.
 
 ## 2026-11-01 — independent editor-plugin receipt and health-evidence hardening (merged PR #69)

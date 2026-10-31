@@ -38,25 +38,38 @@ class PickerModel:
         self.selected_plugins = []
         self.frozen_plugin_choices = {}
 
-    def rows(self, search="", category="all", status="all"):
+    def rows(self, search="", category="all", status="all", selected_only=False):
+        """Display effective saved-kit approval, never just current catalog pins.
+
+        A formerly research-only ID that was later pinned remains inert in an
+        imported kit until explicitly removed and reselected by the operator.
+        """
         if not isinstance(search, str):
             raise kit.KitError("Search must be text")
+        if type(selected_only) is not bool:
+            raise kit.KitError("selected_only must be a boolean")
         if category != "all" and category not in self.categories:
             raise kit.KitError("Unknown category: " + str(category))
         if status not in ("all", "READY", "OS_ONLY", "RESEARCH_ONLY"):
             raise kit.KitError("Unknown status: " + str(status))
         needle = search.casefold().strip()
         results = []
+        selected = set(self.selected)
         for rec in self.known.values():
-            state = STATES[rec["admission"]]
-            if (category != "all" and rec["primary"] != category) or (
+            is_chosen = rec["id"] in selected
+            is_frozen = is_chosen and rec["id"] in self.frozen_pending
+            # An imported RESEARCH_ONLY item is not READY merely because the
+            # current catalog now pins it. Never silently upgrade consent.
+            state = "RESEARCH_ONLY" if is_frozen else STATES[rec["admission"]]
+            if (selected_only and not is_chosen) or (
+                    category != "all" and rec["primary"] != category) or (
                     status != "all" and state != status):
                 continue
             if needle and not any(needle in str(rec[k]).casefold()
                                   for k in ("id", "name", "primary")):
                 continue
-            results.append(dict(rec, status=state, selected=rec["id"] in self.selected,
-                                locked_pending=rec["id"] in self.frozen_pending))
+            results.append(dict(rec, status=state, selected=is_chosen,
+                                locked_pending=is_frozen))
         return sorted(results, key=lambda x: (x["primary"], x["id"]))
 
     def add(self, ids):
@@ -339,6 +352,7 @@ def launch():
     search = tk.StringVar()
     domain = tk.StringVar(value="all")
     status = tk.StringVar(value="all")
+    selected_filter = tk.BooleanVar(value=False)
     preset = tk.StringVar(value="essentials")
     name = tk.StringVar(value="my-portable-kit")
     output = tk.StringVar(value=str(Path.cwd() / "MyPortableKit.json"))
@@ -363,17 +377,24 @@ def launch():
              fg="#d5dfe9", bg="#121e2b", font=("Segoe UI", 9),
              anchor="w").pack(fill="x", pady=(0, 12))
 
+    # Two filter rows avoid the prior single-line crowding at 850px / high DPI.
     filters = tk.Frame(frame, bg="#121e2b")
     filters.pack(fill="x", pady=(0, 10))
-    search_entry = ttk.Entry(filters, textvariable=search, width=38)
-    search_entry.pack(side="left", padx=(0, 9))
-    ttk.Combobox(filters, textvariable=domain, width=18, state="readonly",
+    search_row = tk.Frame(filters, bg="#121e2b")
+    search_row.pack(fill="x", pady=(0, 5))
+    tk.Label(search_row, text="Search name / ID / category", fg="#a9bdc9",
+             bg="#121e2b").pack(side="left", padx=(0, 9))
+    search_entry = ttk.Entry(search_row, textvariable=search)
+    search_entry.pack(side="left", fill="x", expand=True)
+    filter_row = tk.Frame(filters, bg="#121e2b")
+    filter_row.pack(fill="x")
+    ttk.Combobox(filter_row, textvariable=domain, width=24, state="readonly",
                  values=["all"] + list(model.categories)).pack(side="left", padx=(0, 9))
-    ttk.Combobox(filters, textvariable=status, width=17, state="readonly",
+    ttk.Combobox(filter_row, textvariable=status, width=18, state="readonly",
                  values=["all", "READY", "OS_ONLY", "RESEARCH_ONLY"]).pack(
-                     side="left", padx=(0, 9))
-    tk.Label(filters, text="Search name / ID / category", fg="#a9bdc9",
-             bg="#121e2b").pack(side="left")
+                     side="left", padx=(0, 12))
+    ttk.Checkbutton(filter_row, text="Selected only",
+                    variable=selected_filter).pack(side="left")
 
     holder = tk.Frame(frame, bg="#121e2b")
     holder.pack(fill="both", expand=True)
@@ -432,7 +453,8 @@ def launch():
         old_rows = table.get_children()
         if old_rows:
             table.delete(*old_rows)
-        visible = model.rows(search.get(), domain.get(), status.get())
+        visible = model.rows(search.get(), domain.get(), status.get(),
+                             selected_only=selected_filter.get())
         for row in visible:
             chosen = "●" if row["selected"] else ""
             st = "PENDING (locked)" if row["locked_pending"] else row["status"]
@@ -447,8 +469,10 @@ def launch():
             table.selection_set(*kept)
         if focused in shown_ids:
             table.focus(focused)
+        scope = (str(len(model.selected)) + " selected" if selected_filter.get()
+                 else str(len(model.known)) + " known")
         results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.".format(
-            len(visible), len(model.known), len(kept)))
+            len(visible), scope, len(kept)))
         counts = model.summary()
         summary_text.set(("Selected {selected}  •  Pinned {approved}  •  "
                           "Research {pending}  •  OS {os}  •  Plugins {plugins} "
@@ -496,7 +520,7 @@ def launch():
     table.bind("<Control-a>", highlight_all)
     table.bind("<Delete>", remove_highlighted)
     table.bind("<Escape>", clear_highlight)
-    for var in (search, domain, status):
+    for var in (search, domain, status, selected_filter):
         var.trace_add("write", refresh)
     plugin_choice.trace_add("write", refresh_plugin_details)
 
@@ -508,8 +532,9 @@ def launch():
     command("Add highlighted", lambda: action(lambda: model.add(picked())))
     command("Remove highlighted", lambda: action(lambda: model.remove(picked())))
     command("Add filtered", lambda: action(
-        lambda: model.add([x["id"] for x in model.rows(search.get(), domain.get(),
-                                                       status.get())])))
+        lambda: model.add([x["id"] for x in model.rows(
+            search.get(), domain.get(), status.get(),
+            selected_only=selected_filter.get())])))
     command("Pinned only", lambda: action(model.set_approved_only))
     command("Clear", lambda: action(model.clear))
     ttk.Combobox(buttons, textvariable=preset, width=17, state="readonly",

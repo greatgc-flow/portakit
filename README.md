@@ -1,5 +1,9 @@
 # portakit
 
+## Selected-only picker and consent-safe pending status (2026-10-31)
+
+The optional personal-kit GUI now offers a **Selected only** filter alongside category, search and approval state. Imported choices that were `RESEARCH_ONLY` when saved remain visibly pending even if a newer catalog has pinned them; they do **not** appear under `READY` until a person explicitly removes and reselects the item. Filters never change kit contents, install tools or approve vendor/legal/EDR use. Live Windows Tk display, Korean IME, scaling and accessibility still require the approved workstation checks in [GUI acceptance](docs/GUI_PICKER_ACCEPTANCE_20261030.md).
+
 ## One-command personal kit doctor (2026-10-31)
 
 Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).

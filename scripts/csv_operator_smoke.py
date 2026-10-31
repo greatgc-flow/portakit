@@ -35,10 +35,6 @@ EDGE_ROWS = [
     ["4", "Élodie", "line 1\nline 2"],
     ["5", "😀", "trailing blank"],
 ]
-CASE_NAMES = ("count", "select")
-TOOL_NAMES = ("miller", "xan")
-
-
 class SmokeError(Exception):
     pass
 
@@ -217,16 +213,32 @@ def execute(miller_path, xan_path, evidence_dir, rows, timeout,
             item = {"tool": tool, "case": case, "status": "ERROR",
                     "errorType": type(exc).__name__}
         results.append(item)
-    unchanged_inputs = hashes == {
-        "edge": file_hash(folder / "edge.csv"),
-        "bulk": file_hash(folder / "bulk.csv"),
-    }
-    unchanged_exes = before_executables == {
-        "miller": file_hash(miller), "xan": file_hash(xan),
-    }
+    # Vendor processes might modify or delete fixtures, binaries or current
+    # working directory files. Report the divergence, never fabricate PASS.
+    try:
+        unchanged_inputs = hashes == {
+            "edge": file_hash(folder / "edge.csv"),
+            "bulk": file_hash(folder / "bulk.csv"),
+        }
+    except (OSError, kit.core.PortakitError):
+        unchanged_inputs = False
+    try:
+        unchanged_exes = before_executables == {
+            "miller": file_hash(miller), "xan": file_hash(xan),
+        }
+    except (OSError, kit.core.PortakitError):
+        unchanged_exes = False
+    try:
+        unexpected_entries = [
+            p.relative_to(folder).as_posix() for p in folder.rglob("*")
+            if p.relative_to(folder).as_posix() not in ("edge.csv", "bulk.csv")
+        ]
+    except (OSError, kit.core.PortakitError):
+        unexpected_entries = ["UNKNOWN_SCAN_ERROR"]
     outcome = ("FUNCTIONAL_PASS_ONLY"
                if all(r["status"] == "PASS" for r in results)
-               and unchanged_inputs and unchanged_exes else "BLOCKED")
+               and unchanged_inputs and unchanged_exes and not unexpected_entries
+               else "BLOCKED")
     return folder, {
         "schemaVersion": SCHEMA_VERSION,
         "outcome": outcome,
@@ -237,6 +249,7 @@ def execute(miller_path, xan_path, evidence_dir, rows, timeout,
         "syntheticInputSha256": hashes,
         "inputsUnchanged": unchanged_inputs,
         "executablesUnchanged": unchanged_exes,
+        "unexpectedWorkspaceEntries": sorted(unexpected_entries),
         "checks": results,
         "companyUseEDRRedistribution": "NOT_VERIFIED",
         "vendorArchiveProvenance": "NOT_VERIFIED",
@@ -261,6 +274,9 @@ def report_lines(result):
     lines.extend([
         "INPUT HASHES INTACT: " + str(result["inputsUnchanged"]),
         "EXECUTABLE HASHES INTACT: " + str(result["executablesUnchanged"]),
+        "UNEXPECTED WORKSPACE ENTRIES: " + ", ".join(
+            result["unexpectedWorkspaceEntries"]) if result["unexpectedWorkspaceEntries"]
+            else "UNEXPECTED WORKSPACE ENTRIES: none",
         "VENDOR ARCHIVE PROVENANCE: " + result["vendorArchiveProvenance"],
         "LEGAL/EDR/TRANSFER: " + result["companyUseEDRRedistribution"],
         "PERFORMANCE RANKING: " + result["performanceRanking"],

@@ -1,11 +1,19 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — independent editor-plugin receipt and health-evidence hardening (PR pending)
+## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening
+
+- [x] Formalize developer vs final-user responsibility in [END_USER_ACCEPTANCE.md](END_USER_ACCEPTANCE.md): actual vendor GUI/runtime/portability, EULA/OSS/EDR/transfer, local performance and deployment decisions are the end-user/organization's. Source-only CI, review and implementation are independent; a green CI never impersonates legal/operational approval.
+- [x] Personal-kit `scripts/my_toolkit.py` JSON reader rejects duplicate keys at any level and NaN/Infinity, including nested pin and plugin assertions, with no install or automatic rewrite. Create-only JSON/console-log save uses guarded **best-effort** failure rollback that leaves foreign/replaced files untouched. Optional GUI import remains all-or-nothing.
+- [x] Add 9 synthetic, vendor-free negative tests covering duplicate v1/v2 assertions, nonstandard values, errors/collisions on save and UI selection preservation. Live desktop acceptance is not performed by CI and remains final-user responsibility.
+- [ ] Verify exact-head Windows Python 3.11/3.14 PR CI; squash merge only when both pass; verify actual merged-main CI and update Issues #25/#27/#36 with responsibility handoff.
+- [ ] Product source gaps (e.g. unsupported archives / industrial CLIENT vs SERVER matrix) remain project backlog; end-user approval ownership is **not** blanket permission to ship unknown vendor software.
+
+## 2026-11-01 — independent editor-plugin receipt and health-evidence hardening (merged PR #69)
 
 - [x] Make `scripts/plugin_offline.py` **fail closed on duplicate JSON keys** at every nesting level in persistent plugin receipts; reject NaN/Infinity and malformed/noncanonical host:plugin receipt identifiers. Do not silently trust last-wins source/hash fields or rewrite affected evidence.
 - [x] Align `scripts/plugin_health.py` with invocation-owned, guarded best-effort JSON/console-log rollback; respect existing or replaced output files. No plugin installation, vendor process, download, network listener, registry or default behavior change.
 - [x] Add **10 source-only negative tests** (duplicated receipt ID/lock/file hash, NaN, unsafe keys; JSON/log failures, competing/replaced output and existing log), plus explicit operator guidance and limitations.
-- [ ] Verify exact-head Windows Python 3.11/3.14 PR CI, fix any regressions, squash merge only when green, and verify exact merged-main CI. Record provenance-safe results on Issue #36.
+- [x] [PR #69](https://github.com/greatgc-flow/portakit/pull/69) squash merged `fe2d9dddc08f8931433bc038a5cb30a306153c18`. [Final-head Windows CI #41214761613](https://github.com/greatgc-flow/portakit/actions/runs/41214761613) and [post-merge main CI #41214866286](https://github.com/greatgc-flow/portakit/actions/runs/41214866286) each **653/653 PASS** per Python 3.11 and 3.14; results recorded in Issue #36.
 - [ ] Actual company-use/EULA/EDR/transfer approval, local real original plugin archives, Notepad++ desktop load/compatibility, negative GUI tests and final release signoff remain **NOT_VERIFIED**. Keep issue #36 open.
 
 
@@ -22,7 +30,7 @@
 - [x] Source-only fix in [Draft PR #67](https://github.com/greatgc-flow/portakit/pull/67): reject unknown keys in the exact version-1 source/smoke report contracts, including nested member/EXE/hash maps and evaluated process records. This blocks silent, unrecognized approval claims in coordinated JSON/log rewrites.
 - [x] Verify the SHA-256 of an exactly zero-byte stdout/stderr record and align blocked-workspace arrays with the producer's sorted/unique and isolated scan-error sentinel rule. Add 12 negative synthetic regression tests and document compatible version evolution.
 - [x] **PR-head Windows Python 3.11 and 3.14 full CI:** [run #41212654463](https://github.com/greatgc-flow/portakit/actions/runs/41212654463), tested commit `1510b2610ef550402ccb96270a9a0a7547e35bc3`, both Windows versions **634/634 PASS**, individual job logs reviewed. Earlier red runs reflect a corrected outdated test diagnostic assertion. Final docs-inclusive PR CI #41212878514 and merged-main CI #41213461562 SUCCESS, 634/634 per version; squash-merged as `6cd5ae06f02d291e9a916043f401e2dfd05899d7`. Historical main 622/622 PASS is separate.
-- [ ] User instruction: **do not merge PR #67 or any branch into main in this session**, even after a green PR CI.
+- [x] Superseded former session-only no-merge instruction: user subsequently explicitly authorized merging. PR #67 merged as verified above; subsequent PRs #68/#69 also merged after green Windows CI.
 - [ ] Real vendor ZIP/exe provenance, corporate legal/EDR/transfer, genuinely isolated Windows smoke, compatibility, performance and release acceptance remain NOT_VERIFIED. Keep Issue #25 OPEN and xan RESEARCH_ONLY.
 
 ## 2026-10-31 — session-closeout SSOT

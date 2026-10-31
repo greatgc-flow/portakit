@@ -94,7 +94,9 @@ class ContextMenuTests(unittest.TestCase):
             (self.root / app).mkdir()
             (self.root / app / menu.EXES[app]).write_bytes(b"EXE")
             tools.append({"id": app, "dest": app, "sha256": "a" * 64,
-                          "version": "test"})
+                          "version": "test", "artifact": "zip",
+                          "url": "https://example.invalid/releases/download/test/" +
+                                 app + ".zip"})
             state[app] = {"version": "test", "dest": app, "sha256": "a" * 64}
         (self.root / ".portakit-state.json").write_text(json.dumps(state))
         (self.repo / "catalog.json").write_text(json.dumps({"tools": tools}))
@@ -182,6 +184,54 @@ class ContextMenuTests(unittest.TestCase):
         self.assertFalse(report["changed"])
         self.assertEqual(self.registry.keys, before)
         self.assertTrue(self.run_menu("remove", "winmerge")["changed"])
+
+    def test_missing_or_changed_pin_is_stale_and_cannot_register(self):
+        for mutation in ("no-sha", "wrong-sha", "wrong-version"):
+            with self.subTest(mutation=mutation):
+                self.run_menu("install", "notepad++")
+                state_file = self.root / ".portakit-state.json"
+                source = json.loads(state_file.read_text(encoding="utf-8"))
+                if mutation == "no-sha":
+                    source["notepad++"].pop("sha256")
+                elif mutation == "wrong-sha":
+                    source["notepad++"]["sha256"] = "f" * 64
+                else:
+                    source["notepad++"]["version"] = "other"
+                state_file.write_text(json.dumps(source), encoding="utf-8")
+                self.assertEqual(self.run_menu("status", "notepad++")
+                                 ["items"][0]["state"], "stale")
+                with self.assertRaisesRegex(menu.MenuError, "mismatch"):
+                    self.run_menu("install", "notepad++")
+                # Explicit remove may still remove only an exact owned key.
+                self.assertTrue(self.run_menu("remove", "notepad++")["changed"])
+                source["notepad++"] = {"version": "test", "dest": "notepad++",
+                                        "sha256": "a" * 64}
+                state_file.write_text(json.dumps(source), encoding="utf-8")
+
+    def test_duplicate_json_fields_and_catalog_ids_fail_closed(self):
+        catalog_path = self.repo / "catalog.json"
+        state_path = self.root / ".portakit-state.json"
+        valid_catalog = catalog_path.read_text(encoding="utf-8")
+        valid_state = state_path.read_text(encoding="utf-8")
+        tests = (
+            (catalog_path, '{"tools": [], "tools": ' +
+             json.dumps(json.loads(valid_catalog)["tools"]) + '}'),
+            (state_path, valid_state.replace('"version": "test"',
+                                             '"version": "other", "version": "test"', 1)),
+            (catalog_path, json.dumps({"tools":
+                 json.loads(valid_catalog)["tools"] +
+                 [json.loads(valid_catalog)["tools"][0]]})),
+            (state_path, valid_state.replace('"dest": "notepad++"',
+                                             '"unused": NaN, "dest": "notepad++"', 1)),
+        )
+        for path, malformed in tests:
+            with self.subTest(path=path, invalid=malformed[:35]):
+                path.write_text(malformed, encoding="utf-8")
+                with self.assertRaises(menu.MenuError):
+                    self.run_menu("install", "notepad++")
+                self.assertFalse(self.registry.keys)
+                path.write_text(valid_catalog if path == catalog_path else valid_state,
+                                encoding="utf-8")
 
     def test_unmanaged_or_missing_app_never_registers(self):
         state = self.root / ".portakit-state.json"

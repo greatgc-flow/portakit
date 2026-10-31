@@ -78,7 +78,7 @@ class EvidenceChainTests(unittest.TestCase):
         mutate(doc)
         p.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
         (self.folder / "console.log").write_text(
-            "\n".join(smoke.report_lines(doc)) + "\n", encoding="utf-8")
+            "\n".join(smoke.report_lines(doc)) + "\n", encoding="utf-8", newline="\n")
 
     def test_chain_success_only_synthetic_not_enterprise_pass(self):
         self.build()
@@ -118,7 +118,7 @@ class EvidenceChainTests(unittest.TestCase):
         self.build()
         self.source_json.with_suffix(".log").write_text(
             "RESULT: LOCAL_ORIGINAL_STRUCTURE_PASS\n", encoding="utf-8")
-        with self.assertRaisesRegex(chain.EvidenceError, "footer"):
+        with self.assertRaisesRegex(chain.EvidenceError, "Console transcript|footer"):
             self.verify()
 
     def test_tampered_smoke_console_rejected(self):
@@ -192,6 +192,108 @@ class EvidenceChainTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(chain.run(["--source-json", str(self.source_json),
                                             "--smoke-dir", str(self.folder)]), 2)
+
+
+    def test_source_console_rejects_crlf_normalization(self):
+        """Visible lines alone are not byte-identical evidence."""
+        self.build()
+        path = self.source_json.with_suffix(".log")
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        with self.assertRaisesRegex(chain.EvidenceError, "Console transcript"):
+            self.verify()
+
+    def test_smoke_console_rejects_crlf_normalization(self):
+        self.build()
+        path = self.folder / "console.log"
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        with self.assertRaisesRegex(chain.EvidenceError, "Console transcript"):
+            self.verify()
+
+    def test_smoke_console_requires_final_newline(self):
+        self.build()
+        path = self.folder / "console.log"
+        path.write_bytes(path.read_bytes().rstrip(b"\n"))
+        with self.assertRaisesRegex(chain.EvidenceError, "Console transcript"):
+            self.verify()
+
+    def test_source_console_rejects_extra_footer_lines(self):
+        self.build()
+        path = self.source_json.with_suffix(".log")
+        with path.open("ab") as out:
+            out.write(b"SECOND FOOTER: untrusted\n")
+        with self.assertRaisesRegex(chain.EvidenceError, "footer"):
+            self.verify()
+
+    def test_duplicate_top_level_json_keys_rejected(self):
+        self.build()
+        path = self.source_json
+        contents = path.read_text(encoding="utf-8")
+        contents = contents.replace(
+            '"schemaVersion": 1,', '"schemaVersion": 1, "schemaVersion": 1,', 1)
+        path.write_text(contents, encoding="utf-8")
+        with self.assertRaisesRegex(chain.EvidenceError, "Duplicate JSON"):
+            self.verify()
+
+    def test_duplicate_nested_json_keys_rejected(self):
+        self.build()
+        path = self.folder / "result.json"
+        contents = path.read_text(encoding="utf-8")
+        contents = contents.replace(
+            '"tool": "miller",', '"tool": "miller", "tool": "miller",', 1)
+        path.write_text(contents, encoding="utf-8")
+        with self.assertRaisesRegex(chain.EvidenceError, "Duplicate JSON"):
+            self.verify()
+
+    def test_nonstandard_json_nan_rejected(self):
+        self.build()
+        path = self.source_json
+        contents = path.read_text(encoding="utf-8")
+        contents = contents.replace(
+            '"schemaVersion": 1,', '"schemaVersion": 1, "untrusted": NaN,', 1)
+        path.write_text(contents, encoding="utf-8")
+        with self.assertRaisesRegex(chain.EvidenceError, "Non-finite JSON"):
+            self.verify()
+
+    def test_pass_case_with_nonzero_exit_is_invalid(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["checks"][0].update({"returnCode": 1}))
+        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+            self.verify()
+
+    def test_pass_case_with_claimed_truncated_output_is_invalid(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["checks"][1].update(
+                {"capturedOutputTruncated": True}))
+        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+            self.verify()
+
+    def test_pass_case_with_missing_digest_is_invalid(self):
+        self.build()
+        self.rewrite_smoke(lambda doc: doc["checks"][2].pop("stdoutSha256"))
+        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+            self.verify()
+
+    def test_pass_case_with_oversized_capture_is_invalid(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc["checks"][3].update(
+                {"stdoutBytes": smoke.MAX_CAPTURE + 1}))
+        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+            self.verify()
+
+    def test_null_json_report_rejected(self):
+        self.build()
+        self.source_json.write_text("null\n", encoding="utf-8")
+        with self.assertRaisesRegex(chain.EvidenceError, "Source report mismatches"):
+            self.verify()
+
+    def test_oversized_json_rejected_before_parse(self):
+        self.build()
+        with mock.patch.object(chain, "MAX_REPORT_BYTES", 64):
+            with self.assertRaisesRegex(chain.EvidenceError, "byte limit"):
+                self.verify()
 
 
 if __name__ == "__main__":

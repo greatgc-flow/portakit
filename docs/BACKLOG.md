@@ -8,6 +8,11 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — strict local evidence format / contradiction regression
+
+- [x] Harden the existing read-only xan↔CSV evidence cross-check: canonical UTF-8/LF/final newline and single footer verification instead of splitlines() equivalence; reject duplicate nested JSON keys and NaN/Infinity; reject impossible PASS process-exit, truncation, size and digest claims. Independent synthetic-only negative tests, unchanged CLI and source-only scope.
+- [ ] Actual original-file publisher, enterprise EULA/EDR/transfer/host and isolated vendor runtime evidence remain NOT_VERIFIED; retain xan RESEARCH_ONLY and Issue #25 OPEN. Internally consistent reports do not imply authenticity.
+
 ## 2026-10-31 — read-only cross-evidence chain follow-up
 
 - [x] Add [independent source ↔ CSV evidence verifier](CSV_EVIDENCE_CROSSCHECK.md) and negative tests: pinned xan release ZIP SHA/bytes, optional ZIP-member ↔ local EXE match, recorded smoke EXE SHA, four semantic test verdicts, synthetic fixture hashes and original console log/JSON correspondence. Default read-only, optional create-new JSON + identical log, no vendor execution.

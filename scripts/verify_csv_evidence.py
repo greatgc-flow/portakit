@@ -50,26 +50,54 @@ def read_file(path, bound):
     return data
 
 
+def unique_json_pairs(pairs):
+    """Reject ambiguous duplicate keys at every JSON object depth."""
+    result = {}
+    for key, value in pairs:
+        require(key not in result, "Duplicate JSON evidence key: " + key)
+        result[key] = value
+    return result
+
+
+def reject_json_constant(value):
+    """Python's JSON decoder otherwise accepts non-standard NaN/Infinity."""
+    raise EvidenceError("Non-finite JSON evidence value: " + value)
+
+
 def read_json(path):
     try:
-        return json.loads(read_file(path, MAX_REPORT_BYTES).decode("utf-8"))
+        return json.loads(
+            read_file(path, MAX_REPORT_BYTES).decode("utf-8"),
+            object_pairs_hook=unique_json_pairs,
+            parse_constant=reject_json_constant)
     except (UnicodeError, ValueError) as exc:
         raise EvidenceError("Invalid UTF-8 JSON evidence: " + str(exc)) from exc
 
 
 def same_console(path, expected, source_log=False):
-    """Compare original source/smoke JSON with the exact console transcript."""
+    """Require canonical UTF-8 bytes, not merely equal splitlines().
+
+    Both original emitters use Evidence.emit: one '\\n' after every console
+    line. Their logs must retain exact LF bytes and final newline. The source
+    preflight adds one REPORT: footer with the original operator path; accept
+    its location as historical text, never as a local file locator.
+    """
     try:
-        observed = read_file(path, MAX_REPORT_BYTES).decode("utf-8").splitlines()
+        observed = read_file(path, MAX_REPORT_BYTES).decode("utf-8")
     except UnicodeError as exc:
         raise EvidenceError("Non UTF-8 evidence console transcript") from exc
+    canonical = "\n".join(expected) + "\n"
     if source_log:
-        require(len(observed) == len(expected) + 1 and
-                observed[-1].startswith("REPORT: ") and
-                observed[-1] != "REPORT: ",
-                "Source console report footer absent")
-        observed = observed[:-1]
-    require(observed == expected, "Console transcript contradicts evidence JSON")
+        require(observed.startswith(canonical),
+                "Console transcript contradicts evidence JSON")
+        footer = observed[len(canonical):]
+        require(footer.startswith("REPORT: ") and
+                footer.endswith("\n") and footer.count("\n") == 1 and
+                "\r" not in footer and len(footer) > len("REPORT: \n"),
+                "Source console report footer absent or invalid")
+    else:
+        require(observed == canonical,
+                "Console transcript contradicts evidence JSON")
 
 
 def sha_file(path):
@@ -131,6 +159,24 @@ def check_smoke(doc, folder):
                 row.get("status") in STATUSES
                 for key, row in zip(EXPECTED_CASES, checks)),
             "Smoke case list/order/status invalid")
+    # A case marked PASS by the original evaluator cannot also have a
+    # nonzero process exit, overflowed capture, or missing digest metadata.
+    # No raw stdout is retained, so this checks *record consistency only*.
+    for row in checks:
+        if row["status"] != "PASS":
+            continue
+        require(type(row.get("returnCode")) is int and
+                row["returnCode"] == 0 and
+                row.get("capturedOutputTruncated") is False and
+                type(row.get("stdoutBytes")) is int and
+                0 < row["stdoutBytes"] <= smoke.MAX_CAPTURE and
+                type(row.get("stderrBytes")) is int and
+                0 <= row["stderrBytes"] <= smoke.MAX_CAPTURE and
+                isinstance(row.get("stdoutSha256"), str) and
+                SHA.fullmatch(row["stdoutSha256"]) is not None and
+                isinstance(row.get("stderrSha256"), str) and
+                SHA.fullmatch(row["stderrSha256"]) is not None,
+                "PASS check contradicts recorded process/capture data")
     require(type(doc.get("inputsUnchanged")) is bool and
             type(doc.get("executablesUnchanged")) is bool and
             isinstance(doc.get("unexpectedWorkspaceEntries"), list) and

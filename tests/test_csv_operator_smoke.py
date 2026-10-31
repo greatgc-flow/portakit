@@ -118,6 +118,58 @@ class CSVOperatorTests(fixtures.Workspace):
         self.assertEqual(previous, ((folder / "result.json").read_bytes(),
                                     (folder / "console.log").read_bytes()))
 
+    def test_evidence_json_failure_removes_only_owned_output_pair(self):
+        folder, result = self.exec_ok()
+        with mock.patch.object(smoke.json, "dump",
+                               side_effect=OSError("synthetic disk full")):
+            with self.assertRaisesRegex(OSError, "disk full"):
+                smoke.emit(folder, result)
+        self.assertFalse((folder / "result.json").exists())
+        self.assertFalse((folder / "console.log").exists())
+        self.assertTrue((folder / "bulk.csv").exists())
+        self.assertTrue((folder / "edge.csv").exists())
+
+    def test_evidence_log_failure_removes_only_owned_output_pair(self):
+        folder, result = self.exec_ok()
+        def fail_emit(evidence, line):
+            evidence.stream.write("incomplete\n")
+            evidence.stream.flush()
+            raise OSError("synthetic log error")
+        with mock.patch.object(smoke.kit.sets.Evidence, "emit", new=fail_emit):
+            with self.assertRaisesRegex(OSError, "log error"):
+                smoke.emit(folder, result)
+        self.assertFalse((folder / "result.json").exists())
+        self.assertFalse((folder / "console.log").exists())
+        self.assertTrue((folder / "bulk.csv").exists())
+
+    def test_evidence_concurrent_json_collision_preserves_foreign(self):
+        folder, result = self.exec_ok()
+        target = folder / "result.json"
+        original_init = smoke.kit.sets.Evidence.__init__
+        def intrude(evidence, path):
+            target.write_bytes(b"ANOTHER-WRITER\n")
+            original_init(evidence, path)
+        with mock.patch.object(smoke.kit.sets.Evidence,
+                               "__init__", new=intrude):
+            with self.assertRaises(FileExistsError):
+                smoke.emit(folder, result)
+        self.assertEqual(target.read_bytes(), b"ANOTHER-WRITER\n")
+        self.assertFalse((folder / "console.log").exists())
+
+    def test_evidence_replaced_json_survives_log_failure(self):
+        folder, result = self.exec_ok()
+        target = folder / "result.json"
+        def replace_on_emit(evidence, line):
+            target.unlink()
+            target.write_bytes(b"NEW-OWNER\n")
+            raise OSError("log interrupted")
+        with mock.patch.object(smoke.kit.sets.Evidence, "emit",
+                               new=replace_on_emit):
+            with self.assertRaisesRegex(OSError, "log interrupted"):
+                smoke.emit(folder, result)
+        self.assertEqual(target.read_bytes(), b"NEW-OWNER\n")
+        self.assertFalse((folder / "console.log").exists())
+
     def test_dual_consent_offline_os_and_new_only_before_execution(self):
         def no_calls(*args, **kwargs):
             raise AssertionError("must not call executable")

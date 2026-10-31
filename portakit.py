@@ -1046,6 +1046,36 @@ def execute(args, downloader):
         return remove(identifier, root, state=state)
 
 
+def check_evidence_location(log_file, root, command):
+    """Keep opt-in evidence outside directories a managed operation may delete.
+
+    Core install/update/remove can clear ROOT/.portakit-*.tmp, promote/remove
+    a tool destination, and delete its .old backup. A user-selected log inside
+    one of those locations could disappear after being successfully written.
+    Allow any outside-ROOT path, or ROOT/.portakit-evidence/ (reserved against
+    catalog destinations). 'list' never touches managed directories.
+    This path check is a preflight guard, not a filesystem race-proof lock.
+    """
+    if command == "list":
+        return
+    root_path = os.path.normcase(os.path.abspath(str(root)))
+    evidence_path = os.path.normcase(os.path.abspath(str(log_file)))
+    try:
+        relative = os.path.relpath(evidence_path, root_path)
+    except ValueError:
+        # Distinct Windows drives cannot be nested.
+        return
+    if relative == os.pardir or relative.startswith(os.pardir + os.sep):
+        return
+    parts = Path(relative).parts
+    if len(parts) >= 2 and parts[0].lower() == ".portakit-evidence":
+        return
+    raise PortakitError(
+        "usage",
+        "--log-file within --root must be under .portakit-evidence; "
+        "otherwise use a file outside --root")
+
+
 class _ConsoleTee:
     """Mirror this Python invocation's stream writes to a local evidence log.
 
@@ -1109,6 +1139,7 @@ def main(argv=None, downloader=None):
             # Fail before any command side effect if evidence cannot be
             # created; no default log, no mkdir, no overwrite or reparse path.
             check_links(args.log_file)
+            check_evidence_location(args.log_file, args.root, command)
             evidence = args.log_file.open("x", encoding="utf-8", newline="\n")
             sys.stdout = _ConsoleTee(original_stdout, evidence)
             sys.stderr = _ConsoleTee(original_stderr, evidence)

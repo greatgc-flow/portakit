@@ -159,8 +159,28 @@ def call_vendor(argv, folder, timeout):
         threading.Thread(target=drain, args=(process.stderr, buffers[1]),
                          daemon=True),
     ]
-    for thread in readers:
-        thread.start()
+    try:
+        for thread in readers:
+            thread.start()
+    except RuntimeError as exc:
+        # Failing to start a reader must not orphan a just-launched vendor.
+        try:
+            process.kill()
+            process.wait(timeout=2)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        for thread in readers:
+            if thread.ident is not None:
+                thread.join(timeout=2)
+        for pipe in (process.stdout, process.stderr):
+            try:
+                pipe.close()
+            except OSError:
+                pass
+        return (process.returncode, b"",
+                str(exc).encode("utf-8", errors="replace"),
+                round((time.perf_counter() - start) * 1000, 3),
+                "RUNTIME_ERROR")
     error = None
     try:
         process.wait(timeout=timeout)
@@ -178,7 +198,8 @@ def call_vendor(argv, folder, timeout):
         error = "RUNTIME_ERROR"
         try:
             process.kill()
-        except OSError:
+            process.wait(timeout=2)
+        except (OSError, subprocess.TimeoutExpired):
             pass
     for thread in readers:
         thread.join(timeout=2)

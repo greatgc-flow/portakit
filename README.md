@@ -18,7 +18,7 @@ local `mlr.exe` and `xan.exe` paths, a **new** local evidence directory,
 and an approved offline Windows workstation tests only documented CSV count
 and column-selection semantics on generated synthetic files. It records local
 EXE SHA, SHA drift, individual results and exactly mirrored console evidence.
-Headless CI never executes vendors. A passing smoke is **not** a xan catalog
+Headless CI only executes short synthetic Python subprocess fixtures, **never vendor executables**. Vendor stdout and stderr are now consumed as two bounded streams, with the direct child terminated if either exceeds 256 KiB. This is **not** a Windows Job Object, RAM/disk/network sandbox or descendant-process kill. A passing smoke is **not** a xan catalog
 promotion, company EULA/EDR/transfer approval or performance ranking.
 [Operator guide and safety gates](docs/CSV_OPERATOR_SMOKE.md).
 

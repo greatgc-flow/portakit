@@ -1,8 +1,8 @@
 # PortaKit — current next-chat continuation (2026-10-30)
 
-## 2026-10-31 — offline plugin missing-only source follow-up (candidate)
+## 2026-10-31 — offline plugin missing-only source follow-up (merged #53)
 
-Branch `fix/plugin-apply-missing-only-archives-20261031` updates `scripts/plugin_offline.py` to require approved original ZIPs only for **missing** pinned editor plugins at apply time. Previously managed plugins must still pass full per-file SHA receipt/host-state checks and are skipped without ZIP re-acquisition. `verify` still checks all selected originals; `apply --yes --policy-approved` remains mandatory and cannot auto-install unapproved research choices. Existing/unknown/modified or legacy receipt entries fail closed. Six synthetic negative/positive tests plus docs; **treat this as a branch candidate until live PR and Windows CI, merge, and post-merge main CI are confirmed.** No claim of corporate EULA, OSS, EDR, redistribution, interactive GUI or Release approval. Latest GitHub main always supersedes dated SHA notes.
+[PR #53](https://github.com/greatgc-flow/portakit/pull/53), merged as `ff2af0ce76f1157d7398d5c0b65a1992c4e8ca0e`, updates `scripts/plugin_offline.py` to require approved original ZIPs only for **missing** pinned editor plugins at apply time. Previously managed plugins must still pass full per-file SHA receipt/host-state checks and are skipped without ZIP re-acquisition. `verify` still checks all selected originals; `apply --yes --policy-approved` remains mandatory and cannot auto-install unapproved research choices. Existing/unknown/modified or legacy receipt entries fail closed. Six synthetic negative/positive tests plus docs; PR Windows Python 3.11 and 3.14 **471 tests each PASS**, and [post-merge main CI](https://github.com/greatgc-flow/portakit/actions/runs/41161224819) **PASS**. No claim of corporate EULA, OSS, EDR, redistribution, interactive GUI or Release approval. Latest GitHub main always supersedes dated SHA notes.
 
 
 ## 2026-10-31 — selected-only GUI and historical research-stage guard

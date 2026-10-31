@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
  
-## 2026-10-31 — bounded live stdout/stderr capture for operator CSV smoke (candidate PR)
+## 2026-10-31 — bounded live stdout/stderr capture for operator CSV smoke (merged PR #57)
 
 - [x] Audited prior CSV smoke implementation against VerySimpleGuide safety/evidence claims: `subprocess.run(..., stdout=PIPE, stderr=PIPE)` collected output without limit until termination, despite a stated 256 KiB post-run threshold.
 - [x] Isolated `call_vendor` now uses direct `Popen` and concurrent bounded pipe readers, retaining at most 256 KiB + 1 byte on **each** stdout/stderr stream and terminating the direct process when either crosses limit; per-call timeout likewise terminates the direct child. Stronger **actual output-memory limit**, not a vendor RAM/disk/network sandbox or process-tree kill.
 - [x] Add synthetic Python subprocess tests for normal separate pipes, stdout/stderr overflow, real timeout, launch failure and explicit prefix digest semantics; no third-party executables run in CI. Keep existing vendor mock tests and all existing catalog/license/EDR/research gates.
-- [ ] PR Python 3.11/3.14 full Windows suite, merge and both post-merge main CI, handoff and Issue #25 evidence comment.
+- [x] [PR #57](https://github.com/greatgc-flow/portakit/pull/57) merged as `0c52c929506078fed84ba1ac491c58c6f6ada560` after [PR Windows Python 3.11 and 3.14 each 520/520 tests PASS](https://github.com/greatgc-flow/portakit/actions/runs/41172474618). [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) records evidence and open real-world gates. **Post-merge main CI** [run 41173199779](https://github.com/greatgc-flow/portakit/actions/runs/41173199779) was queued at handoff update; DO NOT treat as success before confirming exact final HEAD. Document-only follow-up commit also requires its own CI.
 - [ ] Real approved xan/Miller Windows original archives, corporate permission and standalone offline runtime behavior remain **NOT_VERIFIED**.
 
 

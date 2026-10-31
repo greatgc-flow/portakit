@@ -272,7 +272,9 @@ class EvidenceChainTests(unittest.TestCase):
     def test_pass_case_with_missing_digest_is_invalid(self):
         self.build()
         self.rewrite_smoke(lambda doc: doc["checks"][2].pop("stdoutSha256"))
-        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
+        with self.assertRaisesRegex(
+                chain.EvidenceError,
+                "Unexpected smoke process record|process/capture|Process record"):
             self.verify()
 
     def test_pass_case_with_oversized_capture_is_invalid(self):

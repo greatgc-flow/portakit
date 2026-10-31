@@ -79,6 +79,24 @@ class BoundedProcessTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "argv"):
                         bounded.run_bounded(args)
 
+    def test_reader_thread_creation_failure_kills_child(self):
+        # A restricted/exhausted Windows host must not leave a child with
+        # unread pipes while the batch waits for its default timeout.
+        with mock.patch.object(bounded.threading.Thread, "start",
+                               side_effect=RuntimeError("no worker slots")):
+            with self.assertRaisesRegex(bounded.BoundedProcessError,
+                                        "RUNTIME_ERROR"):
+                bounded.run_bounded(
+                    python_child("import time; time.sleep(15)"),
+                    timeout_seconds=3)
+
+    def test_exact_output_cap_is_allowed_not_overflow(self):
+        result = bounded.run_bounded(python_child(
+            "import sys; sys.stdout.buffer.write(b'K'*4096); sys.stdout.flush()"),
+            timeout_seconds=5, max_capture_bytes=4096)
+        self.assertEqual(result.stdout, "K" * 4096)
+        self.assertEqual(result.returncode, 0)
+
     def test_launch_error_propagates_without_claiming_complete(self):
         with mock.patch.object(subprocess, "Popen",
                                side_effect=OSError("synthetic executable denied")):

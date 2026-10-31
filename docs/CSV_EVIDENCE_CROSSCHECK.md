@@ -46,6 +46,8 @@ The first command prints a compact result only. The second fails rather than rep
 ## Security, bounds and acceptance
 
 - Only local pre-existing JSON/log and synthetic CSV are read. JSON and log read caps are 1 MiB each; each fixture is capped at 32 MiB. Existing source path reparse/symlink checks are reused.
+- For each input, the verifier now checks **path-vs-open-handle metadata before reading**, handle metadata **after reading**, byte count and **the final path's identity/metadata**. A detected size, mtime/ctime, mode or file-identity change fails closed. These are best-effort read consistency checks: they are **not** a Windows file lock, atomic snapshot, anti-malware verification or protection against privileged timestamp spoofing/concurrent edits after the final check.
+- Optional `--out` uses exclusive create for the new JSON and its same-console log. If a write or log emission fails, it performs **best-effort cleanup only of files actually created by that invocation**, conditional on the original file identity. A pre-existing or concurrently created replacement must not be overwritten or deleted. In a forced write failure, a partial console stream may already have been displayed; failed evidence must not be treated as valid. Empty newly created directories can remain; no source input is modified.
 - Synthetic CI uses dummy files whose names end in .exe and a fake Python runner; **no vendor binary is ever launched** in the new tests.
 - A source metadata snapshot is not a publisher signature, SHA equality is not approval, and the CLI's --approved-offline flag is an assertion, not a sandbox.
 - Do not commit private enterprise paths, local operator evidence files, binary archives/executables, host identities, credentials or unredacted logs to the public repository.
@@ -78,3 +80,7 @@ The first command prints a compact result only. The second fails rather than rep
 - For blocked CSV smoke, validate `unexpectedWorkspaceEntries` as bounded relative paths before passing their text into the report/log verifier. The original producer's `UNKNOWN_SCAN_ERROR` sentinel remains a legitimate **blocked** state; log-control injection and `../` escape are rejected. A safe unexpected file still means BLOCKED, never an automatic pass.
 - The original preflight log's final `REPORT:` footer is an archival path label. The verifier allows an unchanged label from a legitimately copied evidence bundle, but rejects ASCII control characters and excessive path length. It never dereferences the historical label as a file path.
 - The verifier still cannot authenticate a coordinated rewrite of the JSON and console evidence. Actual original bytes, security/legal authorization and Windows runtime tests remain separate approval gates.
+
+## Integrity regression scope
+
+Synthetic Windows tests inject metadata discrepancies at three read boundaries (pre-open, in-read and post-read path), failure of JSON serialization, failure while mirroring an output log, concurrent output-log collision, and pre-existing JSON/log protection. Positive tests compare the original six input files byte-for-byte and mtime-for-mtime before and after verification. These tests run no xan/Miller vendor process. The record set remains mutable plain files; authenticated chain-of-custody and human approvals are outside this script.

@@ -574,5 +574,103 @@ class EvidenceChainTests(unittest.TestCase):
         self.assertEqual(self.verify()["outcome"], "EVIDENCE_CROSSCHECK_ONLY")
 
 
+    def test_input_changed_between_stat_and_open_is_rejected(self):
+        self.build()
+        self.assert_read_fingerprint_change_detected(2, "before open")
+
+    def test_input_changed_during_read_is_rejected(self):
+        self.build()
+        self.assert_read_fingerprint_change_detected(3, "during read")
+
+    def test_input_replaced_after_read_is_rejected(self):
+        self.build()
+        self.assert_read_fingerprint_change_detected(5, "replaced after read")
+
+    def assert_read_fingerprint_change_detected(self, changed_call, message):
+        original = chain.file_signature
+        call_number = [0]
+        def simulate_mutation(info):
+            call_number[0] += 1
+            signature = original(info)
+            if call_number[0] == changed_call:
+                return signature[:-1] + (signature[-1] + 1,)
+            return signature
+        with mock.patch.object(chain, "file_signature",
+                               side_effect=simulate_mutation):
+            with self.assertRaisesRegex(chain.EvidenceError, message):
+                chain.read_file(self.source_json, chain.MAX_REPORT_BYTES)
+
+    def test_input_is_not_rewritten_on_successful_verification(self):
+        self.build()
+        files = [self.source_json, self.source_json.with_suffix(".log"),
+                 self.folder / "result.json", self.folder / "console.log",
+                 self.folder / "edge.csv", self.folder / "bulk.csv"]
+        before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                  for path in files}
+        self.verify()
+        self.assertEqual(before,
+                         {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                          for path in files})
+
+    def test_json_dump_failure_removes_only_new_partial_json(self):
+        self.build()
+        out = self.base / "crosscheck-fail.json"
+        with mock.patch.object(chain.json, "dump", side_effect=OSError("disk full")):
+            with self.assertRaisesRegex(OSError, "disk full"):
+                chain.emit(self.verify(), out)
+        self.assertFalse(out.exists())
+        self.assertFalse(out.with_suffix(".log").exists())
+
+    def test_console_log_failure_removes_new_json_and_partial_log(self):
+        self.build()
+        out = self.base / "crosscheck-emit-fail.json"
+        def faulty_emit(evidence, line):
+            evidence.stream.write("partial\n")
+            evidence.stream.flush()
+            raise OSError("simulated log failure")
+        with mock.patch.object(source.kit.sets.Evidence, "emit", new=faulty_emit):
+            with self.assertRaisesRegex(OSError, "simulated log failure"):
+                chain.emit(self.verify(), out)
+        self.assertFalse(out.exists())
+        self.assertFalse(out.with_suffix(".log").exists())
+
+    def test_concurrent_log_collision_preserves_foreign_file(self):
+        self.build()
+        out = self.base / "crosscheck-collision.json"
+        log = out.with_suffix(".log")
+        original_init = source.kit.sets.Evidence.__init__
+        def intrude(evidence, path):
+            Path(path).write_bytes(b"FOREIGN-USER-LOG\n")
+            original_init(evidence, path)
+        with mock.patch.object(source.kit.sets.Evidence,
+                               "__init__", new=intrude):
+            with self.assertRaises(FileExistsError):
+                chain.emit(self.verify(), out)
+        self.assertFalse(out.exists())
+        self.assertEqual(log.read_bytes(), b"FOREIGN-USER-LOG\n")
+
+    def test_preexisting_json_or_log_is_never_replaced(self):
+        self.build()
+        out = self.base / "crosscheck-existing.json"
+        log = out.with_suffix(".log")
+        for existing in (out, log):
+            with self.subTest(existing=existing):
+                existing.write_bytes(b"ORIGINAL-KEEP-ME\n")
+                with self.assertRaisesRegex(chain.EvidenceError, "NEW JSON"):
+                    chain.emit(self.verify(), out)
+                self.assertEqual(existing.read_bytes(), b"ORIGINAL-KEEP-ME\n")
+                existing.unlink()
+
+    def test_cleanup_skips_replaced_output_file(self):
+        self.build()
+        path = self.base / "foreign-new.json"
+        path.write_text("old", encoding="utf-8")
+        original_identity = chain.created_identity(path.stat())
+        path.unlink()
+        path.mkdir()
+        chain.cleanup_created(path, original_identity)
+        self.assertTrue(path.is_dir())
+
+
 if __name__ == "__main__":
     unittest.main()

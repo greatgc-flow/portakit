@@ -199,8 +199,25 @@ def perform(command, app, root, repo_dir=None, registry=winreg):
             state = "owned" if equals_managed(snapshot, spec, registry) else "modified"
             plan.append((path, spec, state))
         if command == "status":
-            return {"changed": False, "items": [
-                {"key": p, "state": st} for p, _, st in plan]}
+            # Registration ownership and current usability are different.
+            # A missing/moved executable or absent managed state is STALE;
+            # still-owned keys remain removable through explicit 'remove'.
+            active_exe = None
+            if any(st == "owned" for _, _, st in plan):
+                try:
+                    active_exe = managed_executable(root, app, repo_dir)
+                except MenuError:
+                    pass
+            items = []
+            for path, expected, state in plan:
+                if state == "owned":
+                    saved_exe = expected["Icon"][:-2]
+                    if (active_exe is None or
+                            os.path.normcase(os.path.abspath(saved_exe)) !=
+                            os.path.normcase(os.path.abspath(active_exe))):
+                        state = "stale"
+                items.append({"key": path, "state": state})
+            return {"changed": False, "items": items}
         if any(st in ("foreign", "modified") for _, _, st in plan):
             raise MenuError("Refusing to remove foreign/modified Explorer key")
         changed = False

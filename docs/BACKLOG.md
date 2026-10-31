@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — Explorer menu strict managed pin provenance
+
+- [x] Remove `json.loads` permissive duplicate-key/NaN/last-wins receipt and catalog parsing from `context_menu.py`; reuse `core.load_catalog` and `core.read_state` as single source of truth. New registration requires exact version, SHA-256, ID and destination agreement with a managed executable.
+- [x] Add synthetic Windows mock registry regressions for missing/wrong SHA and version, duplicate catalog/receipt fields, duplicate tool IDs and nonstandard NaN. Preserve read-only `STALE` and explicit owned-key `remove`, without modifying any real registry or vendor binary.
+- [ ] Verify exact PR-head Windows 3.11/3.14 CI, squash merge and post-merge main CI before closing.
+
 ## 2026-11-01 — optional single-tool console evidence (source-only)
 
 - [x] Add explicit `portakit.py --log-file FILE` for opt-in **new-only** UTF-8 console-mirrored evidence across stdout/stderr. No default file, no output directory creation, no overwrite, and no change to the existing single-result JSON envelope or CLI return codes. A log-creation error rejects the operation before installation effects.

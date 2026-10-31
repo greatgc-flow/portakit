@@ -6,13 +6,16 @@ Usage: python -I scripts/context_menu.py install|remove|status notepad++|winmerg
 """
 import argparse
 from datetime import datetime
-import json
 import os
 from pathlib import Path
 import stat
 import sys
 import uuid
 import winreg
+
+# One canonical catalog/state validator; no duplicate permissive JSON parser.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import portakit as core  # noqa: E402
 
 
 OWNER = "greatgc-flow/portakit:context-menu:v1"
@@ -60,15 +63,16 @@ def managed_executable(root, app, repo_dir):
     for path in (catalog_path, state_path):
         check_safe_path(path)
     try:
-        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-        state = json.loads(state_path.read_text(encoding="utf-8"))
-        tool = next(t for t in catalog["tools"] if t["id"] == app)
+        catalog = core.load_catalog(catalog_path)
+        state = core.read_state(root)
+        tool = catalog[app]
         installed = state[app]
         dest = tool["dest"]
-        if (not isinstance(installed, dict) or installed.get("dest") != dest
-                or dest != app):
-            raise MenuError(app + ": managed installation destination mismatch")
-    except (OSError, ValueError, KeyError, StopIteration, TypeError) as exc:
+        if (installed["dest"] != dest or dest != app
+                or installed["version"] != tool["version"]
+                or installed.get("sha256") != tool["sha256"]):
+            raise MenuError(app + ": managed installation pin/destination mismatch")
+    except (OSError, ValueError, KeyError, TypeError, core.PortakitError) as exc:
         raise MenuError(app + ": managed installation/catalog not available: " + str(exc))
     exe = root / dest / EXES[app]
     check_safe_path(exe)

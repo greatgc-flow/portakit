@@ -399,6 +399,64 @@ class XanSourceTests(fixtures.Workspace):
         self.assertEqual(self.evidence.with_suffix(".log").read_text(encoding="utf-8"),
                          transcript)
 
+    def test_json_serialization_failure_cleans_both_owned_outputs(self):
+        report = auditor.inspect(self.source, self.metadata)
+        with mock.patch.object(auditor.json, "dump",
+                               side_effect=OSError("synthetic full disk")):
+            with self.assertRaisesRegex(OSError, "full disk"):
+                auditor.emit(report, self.evidence)
+        self.assertFalse(self.evidence.exists())
+        self.assertFalse(self.evidence.with_suffix(".log").exists())
+
+    def test_transcript_write_failure_cleans_both_owned_outputs(self):
+        report = auditor.inspect(self.source, self.metadata)
+        def fail_emit(evidence, line):
+            evidence.stream.write("incomplete\n")
+            evidence.stream.flush()
+            raise OSError("synthetic transcript error")
+        with mock.patch.object(auditor.kit.sets.Evidence, "emit", new=fail_emit):
+            with self.assertRaisesRegex(OSError, "transcript error"):
+                auditor.emit(report, self.evidence)
+        self.assertFalse(self.evidence.exists())
+        self.assertFalse(self.evidence.with_suffix(".log").exists())
+
+    def test_concurrent_json_creation_preserves_foreign_report(self):
+        report = auditor.inspect(self.source, self.metadata)
+        original_init = auditor.kit.sets.Evidence.__init__
+        target = self.evidence
+        def create_collision(evidence, path):
+            target.write_bytes(b"OTHER-WRITER\n")
+            original_init(evidence, path)
+        with mock.patch.object(auditor.kit.sets.Evidence,
+                               "__init__", new=create_collision):
+            with self.assertRaises(FileExistsError):
+                auditor.emit(report, target)
+        self.assertEqual(target.read_bytes(), b"OTHER-WRITER\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_replaced_json_is_not_deleted_during_rollback(self):
+        report = auditor.inspect(self.source, self.metadata)
+        target = self.evidence
+        def replace_on_log_failure(evidence, line):
+            target.unlink()
+            target.write_bytes(b"REPLACEMENT-WRITER\n")
+            raise OSError("synthetic emission error")
+        with mock.patch.object(auditor.kit.sets.Evidence,
+                               "emit", new=replace_on_log_failure):
+            with self.assertRaisesRegex(OSError, "emission error"):
+                auditor.emit(report, target)
+        self.assertEqual(target.read_bytes(), b"REPLACEMENT-WRITER\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_cleanup_helper_never_removes_foreign_directory(self):
+        path = self.evidence
+        path.write_bytes(b"ours")
+        owned = auditor.kit.sets.created_output_identity(path.stat())
+        path.unlink()
+        path.mkdir()
+        auditor.kit.sets.cleanup_own_output(path, owned)
+        self.assertTrue(path.is_dir())
+
     def test_no_output_by_default_and_no_vendor_exec_even_on_cli_fail(self):
         with mock.patch.object(auditor, "official_record", return_value=self.metadata):
             with mock.patch("subprocess.Popen",

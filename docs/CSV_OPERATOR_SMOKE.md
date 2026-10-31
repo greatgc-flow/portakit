@@ -42,6 +42,16 @@ A successful run is **FUNCTIONAL_PASS_ONLY**, with operator-local EXE SHA-256 fi
 
 The report explicitly retains vendor archive provenance, corporate EULA/OSS/EDR/transfer rights and performance ranking as **NOT_VERIFIED / NOT_ASSESSED**. The command records individual elapsed milliseconds but **one pass is not a representative benchmark**, nor CPU/RAM measurement. Manual side effects outside its local scratch directory and network isolation remain unmeasured.
 
+## Optional pre-execution original-file check
+
+Before any separately authorized runtime smoke, an operator may use the
+[read-only xan ZIP original preflight](XAN_ZIP_LOCAL_PREFLIGHT.md) against
+the approved local official release archive. It validates a local original's
+release-metadata SHA, size, CRC and safe ZIP structure. **It does not unpack
+or authenticate the `xan.exe` file intended for execution**, nor permit
+execution under enterprise rules. Preserve this distinction and check the
+actual executable provenance separately before the manual opt-in smoke.
+
 ## Boundaries and follow-up
 
 - **In scope, verified by isolated headless CI:** consent and Windows gates, direct-path validation, 4-case command contract, Unicode/quoted CSV parsing, output and timeouts, drift and workspace checks, no overwrite, deterministic local evidence. CI uses **fake vendor responses, synthetic EXE placeholders and short Python-only subprocesses** to validate live stdout/stderr caps and timeouts; it never launches xan or Miller vendor programs.

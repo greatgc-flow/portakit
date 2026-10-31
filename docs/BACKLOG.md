@@ -1,4 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
+
+## 2026-10-31 — xan read-only local original ZIP SHA and CRC preflight (candidate PR)
+
+- [x] Added `scripts/xan_zip_preflight.py` as independent supplemental *RESEARCH_ONLY* tool using locked official-release snapshot's xan 0.61.0 Win x64 ZIP original size and digest. It **never downloads/executes/extracts/installs**, and does not change the catalog.
+- [x] Original SHA+bytes precheck, streaming ZIP CRC and declared sizes, 4,096-member/512MiB expanded bounds, 32-level path depth, Windows path/ADS/device/link/case collision/file-as-parent checks, exact one xan.exe requirement, postcheck SHA on same open original handle.
+- [x] Synthetic SHA mismatch/CRC/truncated/escape/symlink/special/case/expanded-budget/duplicate/no-exe/metadata drift/changed-source/no-overwrite and exact console-mirror regression tests. Real official xan ZIP was **NOT** downloaded or examined, so original/hash/Windows acceptance remains OPEN.
+- [ ] PR CI Windows Python 3.11 and 3.14, final PR merge/postmerge main CI and Issue #25 feedback follow-up.
+- [ ] Approved actual local original ZIP SHA and physical Windows runtime tests, pathological CSV, benchmark, company license/EDR/redistribution remain **NOT_VERIFIED**.
+
  
 ## 2026-10-31 — bounded live stdout/stderr capture for operator CSV smoke (merged PR #57)
 

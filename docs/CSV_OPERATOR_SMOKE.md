@@ -63,3 +63,7 @@ security approvals exist.
 - **Very Simple decision:** One optional module; read-only plan as the default; one explicitly authorized run path; fixed, well-sourced commands instead of generic user-defined shell execution, benchmarking DSL, new provider layer or catalog promotions. External binary execution is a stronger reality gate than structural checks, never conflated with them.
 
 No automatic download, installation, network connection, privileged driver, registry mutation, scheduled task or default listener is introduced.
+
+## Optional operator acceptance sequence
+
+For the exact local-source SHA/ZIP member vs separately approved isolated Windows xan/Miller functional evidence workflow, follow the [operator acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md). It keeps legal/EDR, actual binary runtime, real network isolation and performance as independent NOT_VERIFIED gates. No vendor runs are started by this guide.

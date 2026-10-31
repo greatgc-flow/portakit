@@ -4,9 +4,14 @@
 
 - [x] Preserve merged #57–#59 code / docs, original-source security test failures and fixes, exact main/PR Windows 554-test evidence, VSG goals and independent enterprise reality gates in [final closeout](handoff/PORTAKIT_20261031_FINAL_CLOSEOUT.md).
 - [x] Provide [single new-chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261031.md) and update older handoff pointer; do not copy personal chat content/vendor binaries into a public repository.
-- [ ] Independently verify **final closeout/docs-only main commit** on both Windows matrices (older main CI #41182533046 passed, but applies only to old HEAD).
+- [x] Independently verified the exact closeout/docs-only main commit 2289e4f1f71c3fc2b5f2211d398be1179e694e11 on [Windows CI #41185778538](https://github.com/greatgc-flow/portakit/actions/runs/41185778538): Python 3.11 554/554 PASS and Python 3.14 554/554 PASS, both logs checked.
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
+
+## 2026-10-31 — next-session operator acceptance handoff
+
+- [x] Provide an [operator-local xan/Miller acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md) with seven independent reality gates, verified exact-head 554/554 latest Windows CI, existing safe commands, evidence-key cross-checks, and fail-closed STOP rules. The document itself is NOT real vendor/legal/host acceptance.
+- [ ] Obtain separate approved original and enterprise security/legal/EDR/transfer clearance, then perform physical offline Windows testing and repeated benchmark evidence. Issue #25 stays OPEN; no catalog promotion.
 
 ## 2026-10-31 — xan original ZIP ↔ local EXE read-only identity (merged PR #59)
 

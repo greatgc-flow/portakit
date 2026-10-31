@@ -1,10 +1,17 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — shared strict JSON boundary for catalog, installed state and toolsets (PR pending)
+## 2026-11-01 — bounded core install subprocess in optional toolset apply (PR pending)
+
+- [x] Replace default unbounded `subprocess.run(capture_output=True)` in `scripts/toolsets.py apply` with a small Windows-compatible independent `scripts/bounded_process.py`: **600s per child** (CLI `--child-timeout 1..3600`), concurrent stdout/stderr drains, **256 KiB per stream**, prompt direct-child stop on timeout/output overflow, no shell/inherited stdin.
+- [x] Fail-closed batch on launch error, TIMEOUT, OUTPUT_LIMIT, failed/invalid core result JSON (duplicate success keys or non-null error), with exact locally mirrored console failure evidence; previously managed tools never silently rolled back. The injected fake runner remains available solely to synthetic regression tests.
+- [x] Add **10 bounded-process synthetic Python child tests** + **5 batch integration negative tests**, no vendors/network/reg/driver/industrial listener. Describe that this is **not** an OS process-tree sandbox (descendants, CPU/RAM/disk/network not contained).
+- [ ] Review exact PR-head Windows Python 3.11/3.14 CI, squash merge only when both PASS, then independently verify merged-main CI. Real enterprise/human deployment acceptance stays final-user responsibility and out of CI scope.
+
+## 2026-11-01 — shared strict JSON boundary for catalog, installed state and toolsets (merged PR #71)
 
 - [x] Establish **one** source-level JSON parser in `portakit.py`, rejecting duplicate object keys at all depths and nonstandard NaN/Infinity. Use it for `catalog.json` installable SHA locks, local `.portakit-state.json` receipts, `scripts/toolsets.py` declarative categories/profiles/aliases, and `scripts/my_toolkit.py` v1/v2 personal kits. Invalid input fails closed; do not rewrite existing files.
 - [x] Add 9 vendor-free negative tests: top-level/nested catalog duplicate SHA; invalid numeric constant, installed-state duplicate IDs/lock/NaN, toolset schema/category duplicated keys and nonfinite metadata. Existing v1/v2 kit-reader negative tests remain intact after parser deduplication.
-- [ ] Verify Windows Python 3.11 + 3.14 full PR-head CI; squash merge only when successful and independently verify merged-main CI. This source-level verification is unrelated to final-user enterprise acceptance.
+- [x] [PR #71](https://github.com/greatgc-flow/portakit/pull/71) squash merged as `b35f20d52131c367eddbd5e78dcf5f91fed71c68`; [exact PR-head CI #41216187278](https://github.com/greatgc-flow/portakit/actions/runs/41216187278) and independently [post-merge main CI #41216414526](https://github.com/greatgc-flow/portakit/actions/runs/41216414526) **671/671 PASS** each for Windows Python 3.11/3.14, individual logs confirmed; pinned archives run #41216187363 SUCCESS. This is source-level proof, not final-user enterprise acceptance.
 
 ## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening (merged PR #70)
 

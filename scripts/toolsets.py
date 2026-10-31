@@ -9,12 +9,10 @@ import argparse
 import hashlib
 from urllib.parse import urlsplit, unquote
 from datetime import datetime
-import json
 import msvcrt
 import os
 from pathlib import Path
 import re
-import subprocess
 import stat
 import sys
 import uuid
@@ -24,6 +22,8 @@ MANIFEST = REPO / "toolsets.json"
 TOOL = REPO / "portakit.py"
 ID = re.compile(r"[a-z0-9][a-z0-9._+-]*\Z")
 sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bounded_process as bounded  # noqa: E402 (no vendor execution in helper)
 import portakit as core  # noqa: E402  (reuse catalog, state, reparse checks)
 
 
@@ -307,7 +307,16 @@ def verify_offline_assets(rows, archive_dir, *, load_catalog=core.load_catalog):
     return plan
 
 
-def apply(plan, recommended, log, runner=subprocess.run, *, offline_dir=None):
+def apply(plan, recommended, log, runner=None, *, offline_dir=None,
+          child_timeout=bounded.DEFAULT_TIMEOUT):
+    """Apply verified plan using bounded core-child capture by default.
+
+    runner is a test-only injected subprocess.run-compatible callback.
+    Per-child timeout is configurable for slow offline devices. stdout/stderr
+    are each limited to 256KiB on the real execution path.
+    """
+    if type(child_timeout) is not int or not 1 <= child_timeout <= bounded.MAX_TIMEOUT:
+        raise ToolsetError("child_timeout must be an integer in 1..3600 seconds")
     root = Path(plan["root"])
     if not plan["tools"]:
         print("NO_OP: selected toolsets contain no verified pinned tools")
@@ -329,6 +338,8 @@ def apply(plan, recommended, log, runner=subprocess.run, *, offline_dir=None):
                           if offline_dir is not None else {})
         with Evidence(log) as evidence:
             evidence.emit("OPERATION: apply toolsets (explicit --yes)")
+            evidence.emit("CHILD_TIMEOUT_SECONDS: " + str(child_timeout))
+            evidence.emit("CHILD_OUTPUT_LIMIT_PER_STREAM: " + str(bounded.MAX_CAPTURE))
             evidence.emit("ROOT: " + str(root))
             evidence.emit("SELECTED: " + ", ".join(plan["selected"]))
             evidence.emit("RECOMMENDED: " + ("YES (new installs only)" if recommended else "NO"))
@@ -350,9 +361,12 @@ def apply(plan, recommended, log, runner=subprocess.run, *, offline_dir=None):
                     cmd.append("--recommended")
                 evidence.emit("INSTALL: " + name + " (catalog SHA-pinned)")
                 try:
-                    completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
-                                       errors="replace", check=False)
-                except OSError as exc:
+                    if runner is None:
+                        completed = bounded.run_bounded(cmd, timeout_seconds=child_timeout)
+                    else:
+                        completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
+                                           errors="replace", check=False)
+                except (OSError, bounded.BoundedProcessError) as exc:
                     result["failed"] = name
                     evidence.emit("STOP: " + name + " launcher error: " + str(exc))
                     evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
@@ -367,9 +381,12 @@ def apply(plan, recommended, log, runner=subprocess.run, *, offline_dir=None):
                     evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
                     break
                 try:
-                    parsed = json.loads(completed.stdout)
-                    if (parsed.get("ok") is not True or parsed.get("command") != "install"
-                            or parsed.get("data", {}).get("id") != name):
+                    parsed = core.strict_json_loads(completed.stdout)
+                    if (not isinstance(parsed, dict) or parsed.get("ok") is not True
+                            or parsed.get("command") != "install"
+                            or not isinstance(parsed.get("data"), dict)
+                            or parsed["data"].get("id") != name
+                            or parsed.get("error") is not None):
                         raise ValueError("Unexpected core installer result")
                 except (ValueError, AttributeError, TypeError) as exc:
                     result["failed"] = name
@@ -396,13 +413,15 @@ def main(argv=None):
     parser.add_argument("--yes", action="store_true",
                         help="required acknowledgement for apply; never for plan/list")
     parser.add_argument("--log-file", help="new log path for apply; must not exist")
+    parser.add_argument("--child-timeout", type=int, metavar="SECONDS",
+                        help="apply only; per-tool core installer timeout 1..3600 (default: 600)")
     args = parser.parse_args(argv)
     try:
         catalog = core.load_catalog(core.DEFAULT_CATALOG)
         categories, profiles = load_manifest(args.manifest, catalog)
         if args.command == "list":
             if (args.toolsets or args.include or args.exclude or args.recommended
-                    or args.yes or args.log_file or args.offline_dir):
+                    or args.yes or args.log_file or args.offline_dir or args.child_timeout is not None):
                 raise ToolsetError("list takes no selections/installation options")
             print("CATEGORIES")
             for name, group in categories.items():
@@ -421,7 +440,7 @@ def main(argv=None):
                         print(name + "\t" + ", ".join(profile.get("tools", [])))
             return 0
         if args.command == "plan" and (args.yes or args.log_file or args.recommended
-                                        or args.offline_dir):
+                                        or args.offline_dir or args.child_timeout is not None):
             raise ToolsetError("plan is read-only; --yes/--recommended/--log-file apply only")
         if args.command == "apply" and not args.yes:
             raise ToolsetError("apply requires explicit --yes (plan first)")
@@ -443,7 +462,9 @@ def main(argv=None):
         log = args.log_file or str(root / ".portakit-evidence" /
                  ("toolsets-" + datetime.now().strftime("%Y%m%d-%H%M%S")
                   + "-" + uuid.uuid4().hex[:8] + ".log"))
-        result = apply(plan, args.recommended, log, offline_dir=args.offline_dir)
+        result = apply(plan, args.recommended, log, offline_dir=args.offline_dir,
+                       child_timeout=(args.child_timeout if args.child_timeout is not None
+                                      else bounded.DEFAULT_TIMEOUT))
         return 1 if result["failed"] else 0
     except (ToolsetError, core.PortakitError, OSError, ValueError) as exc:
         print("ERROR: " + str(exc), file=sys.stderr)

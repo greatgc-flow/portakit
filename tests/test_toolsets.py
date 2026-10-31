@@ -234,6 +234,83 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(result["failed"], "winmerge")
         self.assertIn("PARTIAL:", log.read_text(encoding="utf-8"))
 
+    def test_unbounded_old_core_response_is_now_rejected(self):
+        plan = self.plan(["minimal"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        # A zero-exit fake installer cannot forge overlapping success fields.
+        def duplicate_json(cmd, **kwargs):
+            name = cmd[cmd.index("install") + 1]
+            fake = ('{"ok": false, "ok": true, "command": "install", '
+                    '"data": {"id": "' + name + '"}, "error": null}')
+            return subprocess.CompletedProcess(cmd, 0, fake, "")
+        log = self.root / "duplicate-installer-result.log"
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = toolsets.apply(plan, False, log, runner=duplicate_json)
+        self.assertEqual(result["failed"], "notepad++")
+        self.assertEqual(result["installed"], [])
+        self.assertIn("invalid core result", log.read_text("utf-8"))
+        self.assertIn("Duplicate JSON key", log.read_text("utf-8"))
+
+    def test_core_child_envelope_error_with_zero_exit_blocks(self):
+        plan = self.plan(["minimal"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        def fake_error(cmd, **kwargs):
+            name = cmd[cmd.index("install") + 1]
+            payload = {"ok": True, "command": "install",
+                       "data": {"id": name}, "error": {"code": "unverified"}}
+            return subprocess.CompletedProcess(cmd, 0, json.dumps(payload), "")
+        log = self.root / "failed-envelope.log"
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = toolsets.apply(plan, False, log, runner=fake_error)
+        self.assertEqual(result["failed"], "notepad++")
+        self.assertEqual(result["installed"], [])
+        self.assertIn("invalid core result", log.read_text("utf-8"))
+
+    def test_bounded_process_failure_aborts_without_next_tool(self):
+        plan = self.plan(["minimal"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        invocations = []
+        def blocked(cmd, *, timeout_seconds):
+            invocations.append((cmd, timeout_seconds))
+            raise toolsets.bounded.BoundedProcessError("OUTPUT_LIMIT")
+        log = self.root / "bounded-error.log"
+        with mock.patch.object(toolsets.bounded, "run_bounded", side_effect=blocked):
+            with contextlib.redirect_stdout(io.StringIO()):
+                result = toolsets.apply(plan, False, log, child_timeout=7)
+        self.assertEqual(result["installed"], [])
+        self.assertEqual(result["failed"], "notepad++")
+        self.assertEqual(len(invocations), 1)
+        self.assertEqual(invocations[0][1], 7)
+        self.assertIn("OUTPUT_LIMIT", log.read_text("utf-8"))
+        self.assertIn("PARTIAL:", log.read_text("utf-8"))
+        self.assertIn("CHILD_TIMEOUT_SECONDS: 7", log.read_text("utf-8"))
+
+    def test_invalid_apply_timeout_rejected_before_writes(self):
+        plan = self.plan(["minimal"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        for invalid in (None, 0, -1, 3601, True, 5.0, "6"):
+            with self.subTest(timeout=invalid):
+                with self.assertRaisesRegex(toolsets.ToolsetError, "child_timeout"):
+                    toolsets.apply(plan, False, self.root / "no.log",
+                                   runner=mock.Mock(), child_timeout=invalid)
+                self.assertFalse(self.root.exists())
+
+    def test_cli_timeout_restricted_to_apply_and_must_be_valid(self):
+        for args in (["list", "--child-timeout", "1"],
+                     ["plan", "minimal", "--child-timeout", "1"]):
+            with self.subTest(args=args):
+                with contextlib.redirect_stderr(io.StringIO()) as error:
+                    self.assertEqual(toolsets.main(args + ["--root", str(self.root)]), 1)
+                self.assertFalse(self.root.exists())
+        for value in ("0", "-1", "3601"):
+            with self.subTest(value=value):
+                args = ["apply", "minimal", "--yes", "--child-timeout", value,
+                        "--root", str(self.root)]
+                with contextlib.redirect_stderr(io.StringIO()) as error:
+                    self.assertEqual(toolsets.main(args), 1)
+                self.assertIn("child_timeout", error.getvalue())
+                self.assertFalse(self.root.exists())
+
     def test_empty_nw_apply_is_pure_no_op(self):
         p = self.plan(["nw"])
         p.update(include=[], exclude=[], manifest=self.manifest)

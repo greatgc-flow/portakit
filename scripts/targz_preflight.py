@@ -92,7 +92,7 @@ def read_structure(stream):
     roots = set()
     files = directories = expanded = 0
     with gzip.GzipFile(fileobj=stream, mode="rb") as gz:
-        limited = BoundedReader(gz)
+        limited = BoundedReader(gz, limit=MAX_GZIP_OUTPUT)
         with tarfile.open(fileobj=limited, mode="r|") as archive:
             for member in archive:
                 if len(entries) >= MAX_MEMBERS:

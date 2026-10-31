@@ -286,11 +286,22 @@ jobs:
             New-Item -ItemType Directory -Path $dir | Out-Null
             [System.IO.File]::WriteAllBytes((Join-Path $dir $item.Exe), [byte[]](1,2,3))
           }
-          $state = @{
-            'notepad++' = @{ version='CI'; dest='notepad++'; sha256=('a' * 64) }
-            'winmerge' = @{ version='CI'; dest='winmerge'; sha256=('a' * 64) }
-          } | ConvertTo-Json -Depth 4
-          [System.IO.File]::WriteAllText((Join-Path $root '.portakit-state.json'), $state)
+          # The real managed-pin validator now runs in the shell-menu CLI.
+          # Use source-catalog exact pins, not invented version/hash fixtures.
+          $catalog = Get-Content -LiteralPath 'catalog.json' -Raw | ConvertFrom-Json
+          $state = @{}
+          foreach ($id in @('notepad++', 'winmerge')) {
+            $rows = @($catalog.tools | Where-Object { $_.id -eq $id })
+            if ($rows.Count -ne 1) { throw "Missing/ambiguous CI pin: $id" }
+            $pin = $rows[0]
+            $state[$id] = @{
+              version = [string]$pin.version
+              dest = [string]$pin.dest
+              sha256 = [string]$pin.sha256
+            }
+          }
+          [System.IO.File]::WriteAllText((Join-Path $root '.portakit-state.json'),
+                                         ($state | ConvertTo-Json -Depth 4))
           try {
             foreach ($id in @('notepad++', 'winmerge')) {
               python -I scripts/context_menu.py install $id --root "$root"

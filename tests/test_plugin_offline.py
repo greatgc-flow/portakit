@@ -229,6 +229,73 @@ class OfflinePluginTests(unittest.TestCase):
                 plugins.write_receipts(self.root, {
                     "notepad++:compareplus": fresh})
 
+    def test_duplicate_top_level_receipt_id_is_rejected(self):
+        self.make_host()
+        self.evidence_apply()
+        record = plugins.read_receipts(self.root)["notepad++:compareplus"]
+        encoded = json.dumps(record)
+        key = '"notepad++:compareplus"'
+        self.receipt.write_text(
+            "{" + key + ":" + encoded + "," + key + ":" + encoded + "}",
+            encoding="utf-8")
+        before = self.receipt.read_bytes()
+        with self.assertRaisesRegex(plugins.PluginDeployError,
+                                    "Duplicate plugin receipt JSON key"):
+            plugins.make_plan(self.saved, self.pins, self.root)
+        self.assertEqual(self.receipt.read_bytes(), before)
+
+    def test_duplicate_nested_receipt_lock_is_rejected(self):
+        self.make_host()
+        self.evidence_apply()
+        source = self.receipt.read_text(encoding="utf-8")
+        self.receipt.write_text(
+            source.replace('"hostSha256":',
+                           '"hostSha256": "FORGED", "hostSha256":', 1),
+            encoding="utf-8")
+        with self.assertRaisesRegex(plugins.PluginDeployError,
+                                    "Duplicate plugin receipt JSON key"):
+            plugins.make_plan(self.saved, self.pins, self.root)
+
+    def test_duplicate_nested_plugin_file_digest_is_rejected(self):
+        self.make_host()
+        self.evidence_apply()
+        source = self.receipt.read_text(encoding="utf-8")
+        digest = plugins.read_receipts(self.root)["notepad++:compareplus"][
+            "fileHashes"]["ComparePlus.dll"]
+        self.receipt.write_text(
+            source.replace('"ComparePlus.dll":',
+                           '"ComparePlus.dll": "' + digest + '", "ComparePlus.dll":',
+                           1), encoding="utf-8")
+        with self.assertRaisesRegex(plugins.PluginDeployError,
+                                    "Duplicate plugin receipt JSON key"):
+            plugins.read_receipts(self.root)
+
+    def test_nonfinite_receipt_json_is_not_accepted(self):
+        self.make_host()
+        self.evidence_apply()
+        source = self.receipt.read_text(encoding="utf-8")
+        self.receipt.write_text(
+            source.replace('"version":', '"unreviewed": NaN, "version":', 1),
+            encoding="utf-8")
+        with self.assertRaisesRegex(plugins.PluginDeployError,
+                                    "non-finite plugin receipt"):
+            plugins.make_plan(self.saved, self.pins, self.root)
+
+    def test_malformed_receipt_identity_rejected_even_if_unused(self):
+        self.make_host()
+        self.evidence_apply()
+        record = plugins.read_receipts(self.root)["notepad++:compareplus"]
+        for bad in ("notepad++:../compareplus", "unknown:extra:segment",
+                    "Notepad++:compareplus", "notepad++:\nspoof"):
+            with self.subTest(bad=bad):
+                self.receipt.write_text(
+                    json.dumps({bad: record}), encoding="utf-8")
+                before = self.receipt.read_bytes()
+                with self.assertRaisesRegex(plugins.PluginDeployError,
+                                            "Invalid saved plugin receipt"):
+                    plugins.make_plan(self.saved, self.pins, self.root)
+                self.assertEqual(self.receipt.read_bytes(), before)
+
     def test_installed_plugin_symlink_refused(self):
         host = self.make_host()
         self.evidence_apply()

@@ -320,7 +320,7 @@ class PickerTests(unittest.TestCase):
         self.assertEqual(self.model.rows(selected_only=True), [])
         self.model.add(["jq"])
         before = self.model.draft("unchanged")
-        for invalid in (None, 1, "true", [], False if False else object()):
+        for invalid in (None, 1, "true", [], object()):
             with self.assertRaisesRegex(picker.kit.KitError,
                                         "selected_only must be a boolean"):
                 self.model.rows(selected_only=invalid)

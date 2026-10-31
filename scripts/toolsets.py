@@ -9,12 +9,10 @@ import argparse
 import hashlib
 from urllib.parse import urlsplit, unquote
 from datetime import datetime
-import json
 import msvcrt
 import os
 from pathlib import Path
 import re
-import subprocess
 import stat
 import sys
 import uuid

@@ -296,5 +296,49 @@ class EvidenceChainTests(unittest.TestCase):
                 self.verify()
 
 
+    def test_deterministic_fixtures_match_smoke_generator_at_bounds(self):
+        for rows in (1, 17, smoke.MAX_ROWS):
+            with self.subTest(rows=rows):
+                folder = self.base / ("fixtures-" + str(rows))
+                folder.mkdir()
+                generated = smoke.prepare_fixtures(folder, rows)
+                self.assertEqual(chain.expected_fixture_sha256(rows), generated)
+
+    def test_edge_content_and_report_hash_rewritten_together_rejected(self):
+        self.build()
+        path = self.folder / "edge.csv"
+        original = path.read_bytes()
+        path.write_bytes(original.replace("한글".encode("utf-8"),
+                                          "변조".encode("utf-8"), 1))
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.rewrite_smoke(lambda report:
+                           report["syntheticInputSha256"].update({"edge": digest}))
+        with self.assertRaisesRegex(chain.EvidenceError, "deterministic fixture: edge"):
+            self.verify()
+
+    def test_bulk_content_and_report_hash_rewritten_together_rejected(self):
+        self.build()
+        path = self.folder / "bulk.csv"
+        original = path.read_bytes()
+        path.write_bytes(original.replace(b"name1,", b"nameX,", 1))
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.rewrite_smoke(lambda report:
+                           report["syntheticInputSha256"].update({"bulk": digest}))
+        with self.assertRaisesRegex(chain.EvidenceError, "deterministic fixture: bulk"):
+            self.verify()
+
+    def test_report_row_count_changed_with_consistent_log_rejected(self):
+        self.build()
+        self.rewrite_smoke(lambda report: report.update({"rowsCounted": 18}))
+        with self.assertRaisesRegex(chain.EvidenceError, "deterministic fixture: bulk"):
+            self.verify()
+
+    def test_invalid_fixture_row_count_is_not_coerced(self):
+        for value in (None, 0, smoke.MAX_ROWS + 1, True, "17", []):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(chain.EvidenceError, "row count"):
+                    chain.expected_fixture_sha256(value)
+
+
 if __name__ == "__main__":
     unittest.main()

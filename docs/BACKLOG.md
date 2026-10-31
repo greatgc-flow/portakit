@@ -8,6 +8,11 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — deterministic synthetic fixture consistency
+
+- [x] Independently derive synthetic `edge.csv` and `bulk.csv` expected UTF-8/CRLF SHA-256 hashes from the existing fixed fixture grammar and recorded row count without generating files. Reject coordinated CSV+recorded-hash mutation or unsupported row count; include lower/upper boundary and negative tests, preserve default read-only behavior.
+- [ ] Actual approved vendor original, execution, enterprise EULA/EDR/transfer, offline host, compatibility and measured performance remain NOT_VERIFIED. Keep Issue #25 open and xan RESEARCH_ONLY.
+
 ## 2026-10-31 — strict local evidence format / contradiction regression
 
 - [x] Harden the existing read-only xan↔CSV evidence cross-check: canonical UTF-8/LF/final newline and single footer verification instead of splitlines() equivalence; reject duplicate nested JSON keys and NaN/Infinity; reject impossible PASS process-exit, truncation, size and digest claims. Independent synthetic-only negative tests, unchanged CLI and source-only scope.

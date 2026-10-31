@@ -78,7 +78,7 @@ class EvidenceChainTests(unittest.TestCase):
         mutate(doc)
         p.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
         (self.folder / "console.log").write_text(
-            "\n".join(smoke.report_lines(doc)) + "\n", encoding="utf-8")
+            "\n".join(smoke.report_lines(doc)) + "\n", encoding="utf-8", newline="\n")
 
     def test_chain_success_only_synthetic_not_enterprise_pass(self):
         self.build()
@@ -118,7 +118,7 @@ class EvidenceChainTests(unittest.TestCase):
         self.build()
         self.source_json.with_suffix(".log").write_text(
             "RESULT: LOCAL_ORIGINAL_STRUCTURE_PASS\n", encoding="utf-8")
-        with self.assertRaisesRegex(chain.EvidenceError, "footer"):
+        with self.assertRaisesRegex(chain.EvidenceError, "Console transcript|footer"):
             self.verify()
 
     def test_tampered_smoke_console_rejected(self):

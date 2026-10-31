@@ -54,7 +54,7 @@
         {
           "asset": "xan-x86_64-pc-windows-msvc.zip",
           "size": 6473075,
-          "sha256": "5f7bef4dcffb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54"
+          "sha256": "5f7bef4dcffbfb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54"
         }
       ],
       "assessment": "Compressed ZIP is comparatively small and compatible in format with current core. Higher-priority research candidate, NOT pinned or deployable. Real offline SHA and CSV/Unicode/sorting/performance/legal checks still needed.",

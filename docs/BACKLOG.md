@@ -4,7 +4,7 @@
 
 - [x] Replace default unbounded `subprocess.run(capture_output=True)` in `scripts/toolsets.py apply` with a small Windows-compatible independent `scripts/bounded_process.py`: **600s per child** (CLI `--child-timeout 1..3600`), concurrent stdout/stderr drains, **256 KiB per stream**, prompt direct-child stop on timeout/output overflow, no shell/inherited stdin.
 - [x] Fail-closed batch on launch error, TIMEOUT, OUTPUT_LIMIT, failed/invalid core result JSON (duplicate success keys or non-null error), with exact locally mirrored console failure evidence; previously managed tools never silently rolled back. The injected fake runner remains available solely to synthetic regression tests.
-- [x] Add **8 bounded-process synthetic Python child tests** + **5 batch integration negative tests**, no vendors/network/reg/driver/industrial listener. Describe that this is **not** an OS process-tree sandbox (descendants, CPU/RAM/disk/network not contained).
+- [x] Add **10 bounded-process synthetic Python child tests** + **5 batch integration negative tests**, no vendors/network/reg/driver/industrial listener. Describe that this is **not** an OS process-tree sandbox (descendants, CPU/RAM/disk/network not contained).
 - [ ] Review exact PR-head Windows Python 3.11/3.14 CI, squash merge only when both PASS, then independently verify merged-main CI. Real enterprise/human deployment acceptance stays final-user responsibility and out of CI scope.
 
 ## 2026-11-01 — shared strict JSON boundary for catalog, installed state and toolsets (merged PR #71)

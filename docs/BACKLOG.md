@@ -1,11 +1,17 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening (PR #70)
+## 2026-11-01 — shared strict JSON boundary for catalog, installed state and toolsets (PR pending)
+
+- [x] Establish **one** source-level JSON parser in `portakit.py`, rejecting duplicate object keys at all depths and nonstandard NaN/Infinity. Use it for `catalog.json` installable SHA locks, local `.portakit-state.json` receipts, `scripts/toolsets.py` declarative categories/profiles/aliases, and `scripts/my_toolkit.py` v1/v2 personal kits. Invalid input fails closed; do not rewrite existing files.
+- [x] Add 9 vendor-free negative tests: top-level/nested catalog duplicate SHA; invalid numeric constant, installed-state duplicate IDs/lock/NaN, toolset schema/category duplicated keys and nonfinite metadata. Existing v1/v2 kit-reader negative tests remain intact after parser deduplication.
+- [ ] Verify Windows Python 3.11 + 3.14 full PR-head CI; squash merge only when successful and independently verify merged-main CI. This source-level verification is unrelated to final-user enterprise acceptance.
+
+## 2026-11-01 — final-user acceptance ownership; personal-kit input/output hardening (merged PR #70)
 
 - [x] Formalize developer vs final-user responsibility in [END_USER_ACCEPTANCE.md](END_USER_ACCEPTANCE.md): actual vendor GUI/runtime/portability, EULA/OSS/EDR/transfer, local performance and deployment decisions are the end-user/organization's. Source-only CI, review and implementation are independent; a green CI never impersonates legal/operational approval.
 - [x] Personal-kit `scripts/my_toolkit.py` JSON reader rejects duplicate keys at any level and NaN/Infinity, including nested pin and plugin assertions, with no install or automatic rewrite. Create-only JSON/console-log save uses guarded **best-effort** failure rollback that leaves foreign/replaced files untouched. Optional GUI import remains all-or-nothing.
 - [x] Add 9 synthetic, vendor-free negative tests covering duplicate v1/v2 assertions, nonstandard values, errors/collisions on save and UI selection preservation. Live desktop acceptance is not performed by CI and remains final-user responsibility.
-- [x] [PR #70](https://github.com/greatgc-flow/portakit/pull/70) code+documentation head `7d53eda854517c813d50f18e6f2f125272b92f55` passed [Windows CI #41215539863](https://github.com/greatgc-flow/portakit/actions/runs/41215539863): Python 3.11 and 3.14 each **662/662 PASS**, individual logs inspected. This final backlog documentation update advances the branch HEAD; verify its exact-head PR CI before squash merge, and verify merged-main CI separately. Issue #25/#27/#36 acceptance ownership to be recorded without making false approvals.
+- [x] [PR #70](https://github.com/greatgc-flow/portakit/pull/70) squash merged as `1647fe182c461b8370c1d01edec20ab3bf6a054b`. [Final PR-head CI #41215662333](https://github.com/greatgc-flow/portakit/actions/runs/41215662333) and [post-merge main CI #41215781088](https://github.com/greatgc-flow/portakit/actions/runs/41215781088) both **662/662 PASS** per Windows Python 3.11 and 3.14, checked job logs. Issue #25/#27/#36 bodies now distinguish developer technical work from final-user enterprise acceptance; no false certification.
 - [ ] Product source gaps (e.g. unsupported archives / industrial CLIENT vs SERVER matrix) remain project backlog; end-user approval ownership is **not** blanket permission to ship unknown vendor software.
 
 ## 2026-11-01 — independent editor-plugin receipt and health-evidence hardening (merged PR #69)

@@ -9,6 +9,18 @@ The optional personal-kit GUI now offers a **Selected only** filter alongside ca
 Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).
 
 
+## xan local-original ZIP source audit (2026-10-31)
+
+Optional `python -I scripts/xan_zip_preflight.py --original LOCAL.zip` verifies
+an already authorized local **xan 0.61.0** Win x64 original ZIP's release
+metadata SHA/size, ZIP CRC, bounded contents and Windows-safe paths without
+extracting or running vendor programs. Default is **read-only** (no writes);
+optional `--out NEW.json` creates an exact console-mirrored `.log`.
+Exit 0 is **local source/structure only**, not publisher authentication,
+company use/license/EDR approval, GUI/CPU benchmark or installer permission.
+The canonical catalog and installable IDs are unchanged.
+[One-command operator guide](docs/XAN_ZIP_LOCAL_PREFLIGHT.md).
+
 ## One-command synthetic CSV smoke (2026-10-31)
 
 Following [VerySimpleGuide](https://github.com/greatgc-flow/VerySimpleGuide),

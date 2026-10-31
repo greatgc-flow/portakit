@@ -77,7 +77,9 @@ def read_file(path, bound):
     with target.open("rb", buffering=0) as handle:
         opened = os.fstat(handle.fileno())
         require(file_signature(before) == file_signature(opened),
-                "Evidence file changed before open: " + target.name)
+                "Evidence file changed before open: " + target.name +
+                " path=" + str(file_signature(before)) +
+                " handle=" + str(file_signature(opened)))
         data = handle.read(bound + 1)
         after = os.fstat(handle.fileno())
         require(file_signature(opened) == file_signature(after),

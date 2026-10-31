@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — selected-only GUI and frozen research-stage safety (candidate)
+## 2026-10-31 — selected-only GUI and frozen research-stage safety (merged PR #52)
 
 - [x] Optional `Selected only` model/UI filter combines with search, primary domain and effective approval stage; empty selection stays valid and filters do not mutate saved kit or launch vendor apps.
 - [x] Imported former `RESEARCH_ONLY` items remain visibly `PENDING (locked)` and excluded from GUI `READY` filter after their catalog pin is later added. They are installable only after explicit remove/reselect and a newly saved validated snapshot.
 - [x] Split the crowded GUI filter line into two compact rows to improve minimum-width usability; **actual 850px/100-200% DPI, keyboard screen reader and Korean IME acceptance remains HUMAN_NOT_VERIFIED.**
-- [ ] Verify PR Windows Python 3.11/3.14 and post-merge main CI; don't infer legal/EDR approval from pinned metadata.
+- [x] [PR #52](https://github.com/greatgc-flow/portakit/pull/52) squash-merged as `1f14b505`; PR Windows Python 3.11/3.14 **465 tests each PASS**. [Post-merge main Windows CI](https://github.com/greatgc-flow/portakit/actions/runs/41159957752) is independently tracked. Pinned metadata does not imply corporate legal/EDR approval.
 
 
 ## 2026-10-31 — one-command personal-kit doctor (merged PR #50)

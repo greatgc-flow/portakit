@@ -99,8 +99,18 @@ def run_bounded(argv, *, timeout_seconds=DEFAULT_TIMEOUT,
         for stream, buffer in zip((child.stdout, child.stderr), output):
             worker = threading.Thread(target=capture, args=(stream, buffer),
                                       daemon=True)
-            threads.append(worker)
-            worker.start()
+            try:
+                worker.start()
+                threads.append(worker)
+            except RuntimeError:
+                # An exhausted host may refuse a reader thread. Stop the
+                # child immediately, never wait with undrained pipes.
+                pipe_failure.set()
+                try:
+                    child.kill()
+                except OSError:
+                    pass
+                break
         try:
             child.wait(timeout=timeout_seconds)
         except subprocess.TimeoutExpired:

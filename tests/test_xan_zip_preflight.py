@@ -162,13 +162,10 @@ class XanSourceTests(fixtures.Workspace):
                     auditor.inspect(self.source, self.metadata)
 
     def test_encrypted_and_unsupported_compression_denied(self):
-        # Construct ZIP normally, then patch the in-memory ZipInfo metadata.
-        with zipfile.ZipFile(io.BytesIO(self.data)) as z:
-            info = z.infolist()[0]
-            with mock.patch.object(info, "flag_bits", info.flag_bits | 1):
-                with self.assertRaisesRegex(auditor.XanPreflightError, "Encrypted"):
-                    auditor.inspect_members(io.BytesIO(self.data)) if False else (
-                        self.check_encryption_via_zipinfo_patch())
+        # In-memory ZipInfo patch tests the fail-closed flag without needing
+        # to generate an actually encrypted third-party ZIP fixture.
+        with self.assertRaisesRegex(auditor.XanPreflightError, "Encrypted"):
+            self.check_encryption_via_zipinfo_patch()
         self.use_zip(build_zip(compression=zipfile.ZIP_BZIP2))
         with self.assertRaisesRegex(auditor.XanPreflightError, "Unsupported ZIP compression"):
             auditor.inspect(self.source, self.metadata)

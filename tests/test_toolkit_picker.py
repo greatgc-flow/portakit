@@ -109,6 +109,22 @@ class PickerTests(unittest.TestCase):
             self.model.load_existing(self.saved)
         self.assertEqual(self.model.selected, ["ripgrep"])
 
+    def test_duplicate_json_import_keeps_existing_ui_selection(self):
+        self.model.add(["jq"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("source", self.saved)
+        self.model.clear()
+        self.model.add(["ripgrep", "cmd"])
+        before = self.model.draft("preserved")
+        payload = self.saved.read_text(encoding="utf-8")
+        self.saved.write_text(
+            payload.replace('"lockedPins":', '"lockedPins": {}, "lockedPins":', 1),
+            encoding="utf-8")
+        with self.assertRaisesRegex(picker.kit.KitError, "Duplicate JSON key"):
+            self.model.load_existing(self.saved)
+        self.assertEqual(self.model.draft("preserved"), before)
+        self.assertFalse((Path(self.temp) / "apps").exists())
+
     def test_import_pending_frozen_even_if_vendor_later_approved(self):
         self.model.add(["duckdb-cli", "jq"])
         with contextlib.redirect_stdout(io.StringIO()):

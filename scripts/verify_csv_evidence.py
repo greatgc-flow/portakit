@@ -42,9 +42,14 @@ def require(condition, message):
 
 
 def file_signature(info):
-    """Compare path and opened-handle metadata; not atomic Windows locking."""
+    """Portable cross-source identity: path stat vs handle fstat on Windows.
+
+    Windows can expose different st_ctime_ns semantics for Path.stat and
+    os.fstat even for the SAME unchanged file. Compare ctime only within
+    one stat source, never across path-vs-handle boundaries.
+    """
     return (info.st_dev, info.st_ino, info.st_mode, info.st_size,
-            info.st_mtime_ns, info.st_ctime_ns)
+            info.st_mtime_ns)
 
 
 def created_identity(info):
@@ -77,17 +82,18 @@ def read_file(path, bound):
     with target.open("rb", buffering=0) as handle:
         opened = os.fstat(handle.fileno())
         require(file_signature(before) == file_signature(opened),
-                "Evidence file changed before open: " + target.name +
-                " path=" + str(file_signature(before)) +
-                " handle=" + str(file_signature(opened)))
+                "Evidence file changed before open: " + target.name)
         data = handle.read(bound + 1)
         after = os.fstat(handle.fileno())
-        require(file_signature(opened) == file_signature(after),
+        require(file_signature(opened) == file_signature(after) and
+                opened.st_ctime_ns == after.st_ctime_ns,
                 "Evidence file changed during read: " + target.name)
     require(len(data) == opened.st_size,
             "Evidence file changed while reading: " + target.name)
     source.kit.core.check_links(target)
-    require(file_signature(after) == file_signature(target.stat()),
+    final = target.stat()
+    require(file_signature(after) == file_signature(final) and
+            before.st_ctime_ns == final.st_ctime_ns,
             "Evidence file replaced after read: " + target.name)
     return data
 

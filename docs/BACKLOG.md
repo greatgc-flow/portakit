@@ -1,10 +1,15 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — industrial protocol client/server research source matrix (docs PR pending)
+## 2026-11-01 — handoff / session closure SSOT
+
+- [x] [Current handoff and copyable new-chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261101.md) records exact last code/doc `main` `769860bf9042ff1c0e09fbf0febf7701b9507e2a`, [Windows CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391) **686/686 PASS** per Python 3.11/3.14, reviewed PRs #67–#73, unchanged four open Issues and distinct final-user/site acceptance ownership.
+- [ ] Final docs-only handoff PR and merged-main CI must be independently reverified before claiming any newer SHA is a validated latest SSOT. Never publish private host or third-party vendor assets.
+
+## 2026-11-01 — industrial protocol client/server research source matrix (merged PR #73)
 
 - [x] Review eight report candidates (**Secs4Net, secsgem, pymcprotocol, python-snap7/Snap7 Server, cpppo, PyXGT, QModMaster and open62541**) against upstream evidence in [role matrix](../research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md). Disambiguate GEM host/equipment vs HSMS active/passive, PC PLC client vs virtual PLC server, and SDK vs runnable simulator.
 - [x] Provide safe role-based candidate guidance and fail-closed framing/timeout/memory/concurrency test criteria. **No active listener, probe, vendor download, real I/O, new pin, simulator binary, or release**. Preserve distinct final-user enterprise and live lab acceptance.
-- [ ] Verify docs-only PR-head and merged-main CI independently. Revisit exact vendor versions/runtimes and candidate admission individually if a future user chooses a concrete simulator implementation.
+- [x] [PR #73](https://github.com/greatgc-flow/portakit/pull/73) squash merged `769860bf9042ff1c0e09fbf0febf7701b9507e2a`. [Exact PR-head CI #41218083490](https://github.com/greatgc-flow/portakit/actions/runs/41218083490) and [post-merge main CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391) both **686/686 PASS** per Windows Python 3.11/3.14, actual job logs inspected. Research is a source capability matrix only; exact runtime, legal and operator tests remain final-user responsibilities.
 
 ## 2026-11-01 — bounded core install subprocess in optional toolset apply (merged PR #72)
 

@@ -8,9 +8,9 @@
 
 **Actual operator tests, company-use and transfer/redistribution licenses, EDR approval, isolated vendor execution, local GUI acceptance and deployment go/no-go are the responsibility of the final user or its organization.** PortaKit development supplies code, independent synthetic tests, SHA-pinned selection, read-only diagnostics and optional user-attested installation. **CI pass and catalog READY never grant corporate permission.** Real-world acceptance is **not required to complete unrelated source-only PRs**; research-only vendor binaries remain inert and there is no automatic admission, installation or release. [Responsibility matrix and final-user checklist](docs/END_USER_ACCEPTANCE.md).
 
-## Latest verified source CI
+## Latest verified source CI (before this docs-only handoff refresh)
 
-Merged `main` `769860bf9042ff1c0e09fbf0febf7701b9507e2a` passed [Windows Python 3.11 and 3.14 CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391), **686/686 tests each** (independent job logs verified). The subsequent docs-only handoff PR must verify its own head and merged-main CI.
+The last functionally changed `main` checkpoint `a4ef03a5569ed289187e9bfce2c08b7645e30b74` passed [independent merged-main Windows CI #41225137743](https://github.com/greatgc-flow/portakit/actions/runs/41225137743), **706/706 tests each on Python 3.11 and 3.14** (both job logs independently verified). Recent [PRs #76–#82](docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md) cover toolset receipt checks, stale Explorer menus, opt-in core/batch evidence log placement and empty managed-folder diagnosis. These are synthetic/code CI proofs only, not real vendor execution or enterprise approval. Any **newer docs-only `main` SHA** must verify its own CI; always prefer the current GitHub Actions state to this historical checkpoint.
 
 ## Industrial protocol role research (2026-11-01)
 

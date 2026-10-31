@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — optional single-tool console evidence (source-only)
+
+- [x] Add explicit `portakit.py --log-file FILE` for opt-in **new-only** UTF-8 console-mirrored evidence across stdout/stderr. No default file, no output directory creation, no overwrite, and no change to the existing single-result JSON envelope or CLI return codes. A log-creation error rejects the operation before installation effects.
+- [x] Add synthetic regression cases: JSON success, stderr failure, warning-before-JSON stream ordering, collision/missing directory blocking, and injected write failure/stream-restoration. Actual I/O errors after an operation begins cannot promise atomic log rollback; incomplete logs are invalid evidence.
+- [ ] Verify exact PR-head Windows Python 3.11/3.14 CI, squash merge and independently check the merged-main CI. Final-user real vendor/enterprise approval remains independent.
+
 ## 2026-11-01 — safe read-only Explorer stale-link diagnosis
 
 - [x] Extend existing `scripts/context_menu.py status` only: exact PortaKit-owned menu keys are `STALE` when the target executable moved/vanished, the saved root no longer matches `--root`, or the managed receipt is absent. Keep `OWNED`, `FOREIGN`, `MODIFIED`, `ABSENT` distinct and preserve exact file-mirrored console messages.

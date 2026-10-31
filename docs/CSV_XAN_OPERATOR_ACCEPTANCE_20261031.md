@@ -85,3 +85,7 @@ Do not introduce unapproved process monitors, network probes, drivers, services,
 References: [source-only xan preflight](XAN_ZIP_LOCAL_PREFLIGHT.md), [synthetic CSV smoke](CSV_OPERATOR_SMOKE.md), [CSV candidates research](../research/CSV_ALTERNATIVES_20261031.json), [open acceptance Issue #25](https://github.com/greatgc-flow/portakit/issues/25).
 
 This document is an **operator execution plan, not a completed acceptance report**. No actual original/executable or enterprise authorization was supplied or exercised while preparing it.
+
+## Optional independent evidence consistency check
+
+Once **both independently authorized local evidence sets already exist**, use the [read-only source ↔ CSV cross-check](CSV_EVIDENCE_CROSSCHECK.md). This validates recorded ZIP-member, local EXE, smoke executable and synthetic fixtures/console transcripts without starting any vendor executable. Exit 0 means EVIDENCE_CROSSCHECK_ONLY, never a company license, EDR, publisher, physical airgap or release authorization. Keep G3–G7 separately NOT_VERIFIED until human-owner evidence.

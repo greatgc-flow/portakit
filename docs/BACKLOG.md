@@ -8,6 +8,11 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — read-only cross-evidence chain follow-up
+
+- [x] Add [independent source ↔ CSV evidence verifier](CSV_EVIDENCE_CROSSCHECK.md) and negative tests: pinned xan release ZIP SHA/bytes, optional ZIP-member ↔ local EXE match, recorded smoke EXE SHA, four semantic test verdicts, synthetic fixture hashes and original console log/JSON correspondence. Default read-only, optional create-new JSON + identical log, no vendor execution.
+- [ ] Obtain separately approved physical Windows originals, test and security/legal evidence before treating any chained result as real-world admission proof. Mock-only CI means only script behavior is verified; keep Issue #25 OPEN and xan RESEARCH_ONLY.
+
 ## 2026-10-31 — next-session operator acceptance handoff
 
 - [x] Provide an [operator-local xan/Miller acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md) with seven independent reality gates, verified exact-head 554/554 latest Windows CI, existing safe commands, evidence-key cross-checks, and fail-closed STOP rules. The document itself is NOT real vendor/legal/host acceptance.

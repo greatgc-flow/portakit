@@ -60,3 +60,7 @@ Keep [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) open and re
 ## Optional operator acceptance sequence
 
 For the exact local-source SHA/ZIP member vs separately approved isolated Windows xan/Miller functional evidence workflow, follow the [operator acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md). It keeps legal/EDR, actual binary runtime, real network isolation and performance as independent NOT_VERIFIED gates. No vendor runs are started by this guide.
+
+## Separate source-to-runtime evidence reconciliation
+
+After a separately authorized Windows functional smoke has already produced local evidence, use the [read-only CSV evidence cross-check](CSV_EVIDENCE_CROSSCHECK.md) for recorded SHA, synthetic fixtures and console consistency. It does not read or execute the source ZIP, authenticate the publisher or certify an offline Windows host.

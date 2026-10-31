@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — evidence-only three-tool lightweight research (candidate PR)
+## 2026-10-31 — evidence-only three-tool lightweight research (merged PR #54)
 
 - [x] Check official GitHub 2026-10-31 release API and vendor docs for DuckDB CLI v2.0.0, xsv 0.13.0 and Tailviewer v1.0.0-rc1; record actual asset filenames, official compressed byte counts and **metadata-only** SHA availability without downloading any binary.
 - [x] Distinguish DuckDB `tar.gz` (not accepted by current `zip/exe/sfx7z` installer), Windows VC++ runtime, automatic extension/network permissions from approved offline smoke. xsv upstream archived in 2025; author recommends qsv/xan. Tailviewer has 2022 portable ZIP and .NET Framework 4.7.1+ prerequisite.
 - [x] Add machine-readable supplemental research ledger and optional read-only `lightweight_review.py` audit with eight open enterprise/runtime/size gates, no auto-promotion, new-only local JSON+console evidence and headless regressions. Three IDs stay `RESEARCH_ONLY`; no actual binary downloaded or used.
-- [ ] Windows Python 3.11/3.14 PR and post-merge main CI must pass; record PR number, results and issue #25 comment.
+- [x] [PR #54](https://github.com/greatgc-flow/portakit/pull/54) squash-merged as `3aa83daf478f797b6407052d590ea8762024ed20`. Windows Python 3.11 and 3.14 PR runs each **482/482 PASS**, and [post-merge code `main` CI](https://github.com/greatgc-flow/portakit/actions/runs/41168279537) both PASS. Findings recorded in [Issue #25](https://github.com/greatgc-flow/portakit/issues/25); no software was promoted.
 - [ ] Independent live vendor-original SHA, safe extraction, expanded bytes, Windows execution/performance, corporate EULA/OSS/EDR/redistribution approvals remain unverified. Never claim automatic admission or public Release.
 
 

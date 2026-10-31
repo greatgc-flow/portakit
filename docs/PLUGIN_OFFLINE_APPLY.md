@@ -42,10 +42,40 @@ python -I scripts/plugin_offline.py apply --kit Editor.json --root D:\PortableAp
 
 All three subcommands require a validated personal **schema-v2** JSON kit. `--yes` and `--policy-approved` must be supplied together for apply. Neither flag supplies legal authorization on its own. `--skip-pending` explicitly suppresses only unapproved research plugins; missing pinned vendor archives or failed host validation always block. Existing old **schema-v1** kits and their legacy `--recommended` behavior are untouched.
 
+## Missing-only original ZIP preflight (2026-10-31)
+
+`apply` now requires original vendor ZIPs **only for selected pinned plugins whose
+current managed status is `install`**. Already-managed plugins are rechecked
+against their per-file SHA-256 receipt during planning and after acquiring the
+existing locks, then skipped without re-requesting their original archive.
+This is analogous to the main offline toolkit's missing-only readiness.
+
+```cmd
+:: Already-managed, SHA-matched selected plugins: local no-op, no source folder needed.
+:: Both policy attestation flags and a new local evidence log remain mandatory.
+python -I scripts/plugin_offline.py apply --kit Editor.json --root D:\PortableApps --yes --policy-approved
+
+:: Mixed installed + missing: the source directory needs original ZIPs only
+:: for the missing selected plugins. All missing ZIPs are verified before writes.
+python -I scripts/plugin_offline.py apply --kit Editor.json --root D:\PortableApps --offline-dir D:\ApprovedVendorArchives --yes --policy-approved
+
+:: Explicit original archive audit is unchanged: checks EVERY selected pinned ZIP.
+python -I scripts/plugin_offline.py verify --kit Editor.json --root D:\PortableApps --offline-dir D:\ApprovedVendorArchives
+```
+
+A missing original for a still-uninstalled plugin, hash mismatch, modified
+managed plugin, stale host, absent policy attestation or research-only selection
+without `--skip-pending` **still fails closed**. An empty pinned subset with
+explicit `--skip-pending` performs no installation. `apply` is not a repair
+command for modified installed files. For a no-op, the CLI allows omission of
+`--offline-dir`; `verify` still requires it. If any selected plugin needs
+installation and `--offline-dir` is omitted, the command fails before writing
+managed plugin files. Existing evidence logs are never overwritten.
+
 ## Strict scope and recovery
 
 - Host must already be in a managed, exact catalog pinned state, with no backup lock or link. No app execution, full installation, silent host update or admin rights.
-- All selected pinned original archives are SHA-256 checked before any change, then snapshotted locally with a **second SHA** before extraction; ZIP contents use the existing path traversal, reparse, maximum members and expanded-bytes guards.
+- All **missing selected pinned** original archives are SHA-256 checked before any change, then snapshotted locally with a **second SHA** before extraction; ZIP contents use the existing path traversal, reparse, maximum members and expanded-bytes guards.
 - Extraction occurs in a new temporary stage on the same volume. The plugin is moved to its intended Notepad++ `plugins/PluginName` directory without overwriting an existing destination. A required DLL must exist. No editor user configuration is rewritten.
 - Managed receipts live in `ROOT/.portakit-plugin-state.json` with plugin+host pin metadata; an unmanaged folder, stale receipt, absent host, modified pinned version, missing source or corrupt manifest **fails closed**. Previously managed plugins are reused **only when all local extracted-file hashes still match the managed receipt**; otherwise the operation is blocked without replacing the files. This is not a publisher-signature or anti-malware verdict.
 - Each plugin is transactional: stage or receipt write failure removes that plugin's new folder and leaves previous user files untouched. **Whole batch is not atomic**: earlier successful plugin installs remain if a later plugin fails. Do not delete managed plugin folders manually; reconcile independently. Close Notepad++ before installing so it can reload plugins on next launch.

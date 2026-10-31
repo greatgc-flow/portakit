@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-31 — idempotent offline editor-plugin apply (candidate PR)
+
+- [x] Reuse `plugin_offline.make_plan` state to SHA-check original ZIPs only for missing pinned plugins. Installed plugins are still fully rehashed against receipts, and changed/unknown/legacy entries block before any install.
+- [x] Make `--offline-dir` optional **only** for fully managed/no-op `apply`; `verify` continues requiring originals for every pinned choice. Missing items without a source folder fail closed. Dual operator consent, per-plugin rollback, locks and console-evidence behavior remain unchanged.
+- [x] Six independent synthetic regressions: installed no-source no-op, mixed missing-only preflight, missing archive non-mutation, no-directory blocking, CLI consent and research-only no-op.
+- [ ] Verify Windows Python 3.11/3.14 PR full suite and post-merge `main` CI. Preserve separate live plugin/GUI compatibility, EULA/OSS/EDR, source-transfer and public Release human gates (Issue #36).
+
+
 ## 2026-10-31 — selected-only GUI and frozen research-stage safety (merged PR #52)
 
 - [x] Optional `Selected only` model/UI filter combines with search, primary domain and effective approval stage; empty selection stays valid and filters do not mutate saved kit or launch vendor apps.

@@ -421,5 +421,98 @@ class OfflinePluginTests(unittest.TestCase):
         self.assertFalse((self.root / "notepad++/gup.exe").exists())
 
 
+    def test_apply_idempotent_without_archive_directory_or_originals(self):
+        """Installed matching receipts never need the old vendor ZIP again."""
+        host = self.make_host()
+        self.evidence_apply()
+        receipt_before = self.receipt.read_bytes()
+        (self.root / "notepad++/plugins/ComparePlus/ComparePlus.dll").is_file()
+        self.source_path.unlink()
+        with mock.patch.object(plugins, "verify_all",
+                               side_effect=AssertionError("unneeded original")):
+            with plugins.kit.sets.Evidence(self.tmp / "no-original.log") as log:
+                plugins.apply(self.saved, self.pins, self.root, None, evidence=log)
+        self.assertEqual(self.receipt.read_bytes(), receipt_before)
+        self.assertIn("SKIP: compareplus",
+                      (self.tmp / "no-original.log").read_text("utf-8"))
+        self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").is_file())
+
+    def test_mixed_existing_and_missing_checks_only_missing_archive(self):
+        """A previously installed plugin never forces re-import of its old ZIP."""
+        host = self.make_host()
+        self.evidence_apply()
+        self.add_jsontools()
+        self.source_path.unlink()
+        with mock.patch.object(plugins, "verify_all",
+                               wraps=plugins.verify_all) as check:
+            with plugins.kit.sets.Evidence(self.tmp / "mixed.log") as log:
+                plugins.apply(self.saved, self.pins, self.root, self.originals,
+                              evidence=log)
+        self.assertEqual(len(check.call_args.args[0]), 1)
+        self.assertEqual(check.call_args.args[0][0][0]["id"], "jsontools-npp")
+        self.assertTrue((host / "plugins/JsonTools/JsonTools.dll").is_file())
+        self.assertEqual(set(plugins.read_receipts(self.root)), {
+            "notepad++:compareplus", "notepad++:jsontools-npp"})
+        self.assertIn("SKIP: compareplus",
+                      (self.tmp / "mixed.log").read_text("utf-8"))
+
+    def test_missing_mixed_original_fails_before_new_install(self):
+        """Missing second ZIP blocks with no mutation of the first plugin."""
+        host = self.make_host()
+        self.evidence_apply()
+        second = self.add_jsontools()
+        second.unlink()
+        self.source_path.unlink()
+        before = self.receipt.read_bytes()
+        with self.assertRaisesRegex(plugins.PluginDeployError,
+                                    "Missing original vendor archive"):
+            with plugins.kit.sets.Evidence(self.tmp / "mixed-missing.log") as log:
+                plugins.apply(self.saved, self.pins, self.root, self.originals,
+                              evidence=log)
+        self.assertEqual(self.receipt.read_bytes(), before)
+        self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").is_file())
+        self.assertFalse((host / "plugins/JsonTools").exists())
+
+    def test_apply_without_dir_fails_when_plugin_missing(self):
+        """Omission must fail closed rather than silently skipping installation."""
+        host = self.make_host()
+        with self.assertRaisesRegex(plugins.PluginDeployError, "require --offline-dir"):
+            with plugins.kit.sets.Evidence(self.tmp / "need-dir.log") as log:
+                plugins.apply(self.saved, self.pins, self.root, None, evidence=log)
+        self.assertFalse((host / "plugins").exists())
+        self.assertFalse(self.receipt.exists())
+
+    def test_cli_noop_no_offline_dir_still_requires_dual_consent(self):
+        """No-op is permitted without archives, but never bypasses consent."""
+        self.make_host()
+        self.evidence_apply()
+        self.source_path.unlink()
+        self.save_kit()
+        base = ("apply", "--kit", str(self.saved_path),
+                "--root", str(self.root))
+        rc, out, err = self.cli(*base)
+        self.assertEqual(rc, 1)
+        self.assertIn("--yes AND --policy-approved", err)
+        rc, out, err = self.cli(*(base + ("--yes", "--policy-approved",
+                                         "--log-file", str(self.tmp / "cli-noop.log"))))
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn("SKIP: compareplus", out)
+        self.assertEqual(out, (self.tmp / "cli-noop.log").read_text("utf-8"))
+        self.assertIn("RESULT: COMPLETE", out)
+
+    def test_research_only_skip_noop_no_archive(self):
+        """Pure research selections stay excluded even without vendor files."""
+        self.make_host()
+        saved = plugins.kit.make_kit("research", ["notepad++"],
+                                     self.pins, self.known,
+                                     plugins=["csvlint-npp"])
+        with plugins.kit.sets.Evidence(self.tmp / "research-noop.log") as log:
+            plugins.apply(saved, self.pins, self.root, None,
+                          skip_pending=True, evidence=log)
+        self.assertFalse(self.receipt.exists())
+        self.assertIn("NO_OP: no SHA-pinned plugins selected",
+                      (self.tmp / "research-noop.log").read_text("utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

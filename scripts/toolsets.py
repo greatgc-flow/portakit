@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import stat
 import sys
 import uuid
 
@@ -193,6 +194,34 @@ def create_plan(names, include, exclude, root, manifest=MANIFEST, *,
             "recommended_available": bool(tool.get("recommended")),
         })
     return {"selected": list(names), "root": str(root), "tools": operations}
+
+
+def created_output_identity(info):
+    """Capture (device, file ID) while the output's own handle is open.
+
+    Used only to recognize files created by the current evidence operation.
+    This is a cautious best-effort cleanup guard, not an atomic Windows lock.
+    """
+    return info.st_dev, info.st_ino
+
+
+def cleanup_own_output(path, identity):
+    """Best-effort remove only a regular output with its original identity.
+
+    A competing writer's existing or replaced file must remain untouched.
+    Fail closed on reparse/link checks; never follow an unknown replacement.
+    """
+    if identity is None:
+        return
+    candidate = Path(path)
+    try:
+        core.check_links(candidate)
+        current = candidate.stat()
+        if (stat.S_ISREG(current.st_mode) and
+                created_output_identity(current) == identity):
+            candidate.unlink()
+    except (OSError, core.PortakitError):
+        pass
 
 
 class Evidence:

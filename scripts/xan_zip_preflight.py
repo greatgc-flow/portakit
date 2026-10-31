@@ -323,18 +323,27 @@ def emit(report, output=None):
     if target == transcript or os.path.lexists(target) or os.path.lexists(transcript):
         raise XanPreflightError("Evidence JSON/log already exists; no overwrite")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(transcript) as evidence:
-        try:
+    kit.core.check_links(target)
+    kit.core.check_links(transcript)
+    # No overwrite. On failure, remove only output paths still referencing
+    # the same regular files created by this invocation, never foreign files.
+    json_identity = log_identity = None
+    try:
+        with kit.sets.Evidence(transcript) as evidence:
+            log_identity = kit.sets.created_output_identity(
+                os.fstat(evidence.stream.fileno()))
             with target.open("x", encoding="utf-8", newline="\n") as stream:
+                json_identity = kit.sets.created_output_identity(
+                    os.fstat(stream.fileno()))
                 json.dump(report, stream, ensure_ascii=False, indent=2)
                 stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            evidence.emit(line)
-        evidence.emit("REPORT: " + str(target))
+            for line in lines:
+                evidence.emit(line)
+            evidence.emit("REPORT: " + str(target))
+    except BaseException:
+        kit.sets.cleanup_own_output(transcript, log_identity)
+        kit.sets.cleanup_own_output(target, json_identity)
+        raise
 
 
 def run(argv=None):

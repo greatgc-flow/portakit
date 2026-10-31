@@ -4,7 +4,7 @@
 
 - [x] Source-only fix in [Draft PR #67](https://github.com/greatgc-flow/portakit/pull/67): reject unknown keys in the exact version-1 source/smoke report contracts, including nested member/EXE/hash maps and evaluated process records. This blocks silent, unrecognized approval claims in coordinated JSON/log rewrites.
 - [x] Verify the SHA-256 of an exactly zero-byte stdout/stderr record and align blocked-workspace arrays with the producer's sorted/unique and isolated scan-error sentinel rule. Add 12 negative synthetic regression tests and document compatible version evolution.
-- [ ] **PR-head Windows Python 3.11 and 3.14 full CI:** verify exact SHA, actual job logs and any regressions before considering review readiness. The prior main 622/622 PASS is historical evidence only.
+- [x] **PR-head Windows Python 3.11 and 3.14 full CI:** [run #41212654463](https://github.com/greatgc-flow/portakit/actions/runs/41212654463), tested commit `1510b2610ef550402ccb96270a9a0a7547e35bc3`, both Windows versions **634/634 PASS**, individual job logs reviewed. Earlier red runs reflect a corrected outdated test diagnostic assertion. This documentation update advances the branch HEAD, so verify the newer exact-head CI independently before treating the final PR state as green. Historical main 622/622 PASS is separate.
 - [ ] User instruction: **do not merge PR #67 or any branch into main in this session**, even after a green PR CI.
 - [ ] Real vendor ZIP/exe provenance, corporate legal/EDR/transfer, genuinely isolated Windows smoke, compatibility, performance and release acceptance remain NOT_VERIFIED. Keep Issue #25 OPEN and xan RESEARCH_ONLY.
 

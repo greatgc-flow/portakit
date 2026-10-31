@@ -336,6 +336,9 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
             raise ToolsetError("Blocked during apply preflight; no new tool downloaded")
         offline_assets = (verify_offline_assets(current["tools"], offline_dir)
                           if offline_dir is not None else {})
+        # Keep the verified pin snapshot for each read-only post-install check.
+        # A successful child JSON alone does not prove its receipt was persisted.
+        verified_catalog = core.load_catalog(core.DEFAULT_CATALOG)
         with Evidence(log) as evidence:
             evidence.emit("OPERATION: apply toolsets (explicit --yes)")
             evidence.emit("CHILD_TIMEOUT_SECONDS: " + str(child_timeout))
@@ -391,6 +394,20 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
                 except (ValueError, AttributeError, TypeError) as exc:
                     result["failed"] = name
                     evidence.emit("STOP: " + name + " invalid core result: " + str(exc))
+                    break
+                try:
+                    pin = verified_catalog[name]
+                    if (pin["version"] != row["version"]
+                            or pin["sha256"] != row["sha256"]):
+                        raise ToolsetError("catalog pin changed since preflight")
+                    observed = status_of(pin, root, core.read_state(root))
+                    if observed != "already-installed":
+                        raise ToolsetError("managed install not confirmed: " + observed)
+                except (KeyError, OSError, ValueError, core.PortakitError,
+                        ToolsetError) as exc:
+                    result["failed"] = name
+                    evidence.emit("STOP: " + name + " post-install check: " + str(exc))
+                    evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
                     break
                 result["installed"].append(name)
             evidence.emit("RESULT: " + ("FAILED" if result["failed"] else "COMPLETE"))

@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — toolset post-install state verification (source-only)
+
+- [x] Inspect `scripts/toolsets.py` batch apply: a zero-exit core JSON success had been counted as installed without reopening the managed state receipt and verifying the destination exists under the pinned catalog. Close the false-complete evidence path with `status_of` and `core.read_state` **after each child response**; stop on missing/mismatched receipt or directory; preserve previously completed tools and exact mirrored evidence.
+- [x] Add synthetic tests for success JSON with absent receipt, missing directory, and wrong SHA receipt; update approved-fixture runners to write simulated managed receipts. No vendor binaries, process-tree/OS sandbox, or enterprise approval claim.
+- [ ] Complete final PR exact-head Windows 3.11/3.14 CI, squash merge and independently verify merged-main push CI before closing.
+
 ## 2026-11-01 — fail-closed core child pipe reader (source-only regression)
 
 - [x] Close a specific failure path in `scripts/bounded_process.py`: an unexpected exception in an output reader thread could otherwise be printed only as a background thread traceback while the installer receives an incomplete but apparently successful capture. Treat **all ordinary reader/pipe-close exceptions** as `RUNTIME_ERROR` and terminate the direct child on reader failure.

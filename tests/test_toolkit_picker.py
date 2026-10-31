@@ -299,5 +299,72 @@ class PickerTests(unittest.TestCase):
         self.assertNotIn(".apply(", source)
 
 
+    def test_selected_only_composes_with_category_search_and_stage(self):
+        self.model.add(["jq", "duckdb-cli", "cmd"])
+        original = self.model.draft("unchanged")
+        self.assertEqual([r["id"] for r in self.model.rows(selected_only=True)],
+                         sorted(self.model.selected,
+                                key=lambda x: (self.model.known[x]["primary"], x)))
+        self.assertEqual([r["id"] for r in self.model.rows(
+            selected_only=True, status="READY")], ["jq"])
+        self.assertEqual([r["id"] for r in self.model.rows(
+            selected_only=True, search="DUCK")], ["duckdb-cli"])
+        self.assertEqual([r["id"] for r in self.model.rows(
+            selected_only=True, category="network")], [])
+        self.assertEqual([r["id"] for r in self.model.rows(
+            selected_only=True, status="OS_ONLY")], ["cmd"])
+        self.assertEqual(self.model.draft("unchanged"), original)
+        self.assertFalse(self.saved.exists())
+
+    def test_selected_only_empty_and_invalid_input_rejected_without_mutation(self):
+        self.assertEqual(self.model.rows(selected_only=True), [])
+        self.model.add(["jq"])
+        before = self.model.draft("unchanged")
+        for invalid in (None, 1, "true", [], False if False else object()):
+            with self.assertRaisesRegex(picker.kit.KitError,
+                                        "selected_only must be a boolean"):
+                self.model.rows(selected_only=invalid)
+        self.assertEqual(self.model.draft("unchanged"), before)
+
+    def test_imported_research_promotion_is_not_ready_in_gui_filters(self):
+        # Reproduce a future catalog promotion without changing the real pins.
+        self.model.add(["duckdb-cli", "jq"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("before", self.saved)
+        new_pins = dict(self.model.pins)
+        new_pins["duckdb-cli"] = {"version": "9.9", "sha256": "a" * 64,
+                                  "dest": "duckdb-cli"}
+        new_known = dict(self.model.known)
+        new_known["duckdb-cli"] = dict(new_known["duckdb-cli"],
+                                       admission="PINNED_CATALOG")
+        later = picker.PickerModel(inventories=(
+            new_pins, self.model.categories, self.model.profiles, new_known))
+        later.load_existing(self.saved)
+        self.assertIn("duckdb-cli", later.frozen_pending)
+        self.assertNotIn("duckdb-cli", [x["id"] for x in later.rows(
+            status="READY", selected_only=True)])
+        frozen = later.rows(status="RESEARCH_ONLY", selected_only=True)
+        self.assertEqual([x["id"] for x in frozen], ["duckdb-cli"])
+        self.assertTrue(frozen[0]["locked_pending"])
+        self.assertTrue(frozen[0]["selected"])
+        self.assertNotIn("duckdb-cli", later.draft("unchanged")["lockedPins"])
+        later.remove(["duckdb-cli"])
+        later.add(["duckdb-cli"])
+        self.assertIn("duckdb-cli", [x["id"] for x in later.rows(
+            status="READY", selected_only=True)])
+        self.assertIn("duckdb-cli", later.draft("reselected")["lockedPins"])
+
+    def test_gui_selected_filter_is_read_only_and_has_no_install_path(self):
+        import ast
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        ast.parse(source)
+        self.assertIn('selected_filter = tk.BooleanVar(value=False)', source)
+        self.assertIn('text="Selected only"', source)
+        self.assertIn('selected_only=selected_filter.get()', source)
+        self.assertIn('for var in (search, domain, status, selected_filter)', source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn(".apply(", source)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -30,7 +30,7 @@ The first command prints a compact result only. The second fails rather than rep
 1. Validate the source report schema/version and that original ZIP SHA + byte size match the pinned **research-only** official-release metadata. Check the source still reports runtime/enterprise approval as NOT_VERIFIED.
 2. Check the unique ZIP xan.exe member digest and byte count, and verify its optional local EXE comparison matches both fields. NOT_CHECKED remains incomplete, even if downstream smoke reported passing results.
 3. Check the smoke report has exactly four known cases in the fixed order: Miller count, xan count, Miller select and xan select; reject missing/duplicate/unsupported statuses, impossible pass results, missing integrity fields and contradictory input/executable mutation reports.
-4. Independently recompute SHA-256 of retained synthetic edge.csv and bulk.csv (bounded local reads; no changes to CSV files). Validate both against their original reported SHA values.
+4. Independently recompute SHA-256 of retained synthetic edge.csv and bulk.csv (bounded local reads; no changes to CSV files). Validate both against their original reported SHA values **and independently regenerate the exact deterministic CSV content hash** from the fixed synthetic row grammar and recorded row count. Changing the CSV and its JSON hash together cannot pass this consistency check unless the original synthetic content is preserved.
 5. Reconstruct each console transcript from the existing source/smoke display functions and compare **exact canonical UTF-8 text bytes**, including **LF line endings and final newline**, against the companion .log. The source preflight .log includes one REPORT: path footer with its historical path (may differ from a copied evidence file's new location). Changed CRLF, missing terminator, or appended footer lines are rejected.
 6. When the source was explicitly bound to a local xan.exe, compare that digest to the executable SHA recorded by the smoke. Mismatch blocks the chain.
 7. Preserve publisher, company license/EDR/transfer, physical host isolation and performance certification as NOT_VERIFIED, regardless of the internal result.
@@ -57,3 +57,10 @@ The first command prints a compact result only. The second fails rather than rep
 - A case recorded as PASS must also have process returnCode 0, capturedOutputTruncated false, bounded nonempty stdout, bounded stderr and syntactically valid captured-prefix SHA fields. This catches **contradictory recorded claims**, but raw vendor stdout is not retained and cannot be independently reproduced by this checker.
 - Console verification checks exact expected LF bytes, not `splitlines()` equivalence; Windows CRLF conversion is flagged as a changed file. The original log emitter writes LF on both Windows and Linux.
 - Cross-check outcome **does not authenticate** a local JSON+log pair. A coordinated rewrite can still be self-consistent; independent source provenance, corporate signoff, approved host and real vendor testing remain distinct gates.
+
+## Deterministic fixture replay (source-only)
+
+- The verifier regenerates only the expected **hashes**, in memory, using the existing fixed UTF-8/CRLF CSV generator contract. No temporary CSV files or vendor processes are created.
+- `edge.csv`: the original fixed header, Unicode/quoted/multiline/blank test records. `bulk.csv`: the original header plus the exact `rowsCounted` generated rows using the fixed name sequence.
+- This detects edited CSV content even when the recorded SHA fields and matching log are edited together. Bounded row generation supports the existing 1–100,000-row smoke range without building a large in-memory row list.
+- It does **not** prove the operator ran a real vendor process or authenticate a coordinated rewrite of unrelated fields. Enterprise/legal/EDR, offline host, executable provenance and performance gates remain separate and NOT_VERIFIED.

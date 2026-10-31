@@ -4,7 +4,9 @@ This is internal evidence consistency, NOT publisher authentication,
 corporate permission, physical isolation, or a vendor execution test.
 """
 import argparse
+import csv
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -104,6 +106,27 @@ def sha_file(path):
     return hashlib.sha256(read_file(path, MAX_FIXTURE_BYTES)).hexdigest()
 
 
+def expected_fixture_sha256(rows):
+    """Recompute exact UTF-8 CRLF fixture hashes without writing files."""
+    require(type(rows) is int and 1 <= rows <= smoke.MAX_ROWS,
+            "Invalid synthetic CSV row count")
+    def digest_rows(records):
+        digest = hashlib.sha256()
+        buffer = io.StringIO(newline="")
+        writer = csv.writer(buffer, lineterminator="\r\n")
+        for record in records:
+            buffer.seek(0)
+            buffer.truncate(0)
+            writer.writerow(record)
+            digest.update(buffer.getvalue().encode("utf-8"))
+        return digest.hexdigest()
+    def bulk_rows():
+        yield smoke.EDGE_ROWS[0]
+        for number in range(1, rows + 1):
+            yield [str(number), "name" + str(number % 17), "synthetic"]
+    return {"edge": digest_rows(smoke.EDGE_ROWS),
+            "bulk": digest_rows(bulk_rows())}
+
 def check_source(doc, frozen):
     """Match frozen xan release metadata and the local member identity."""
     require(isinstance(doc, dict) and type(doc.get("schemaVersion")) is int and
@@ -193,6 +216,10 @@ def check_smoke(doc, folder):
     for key in ("edge", "bulk"):
         require(sha_file(folder / (key + ".csv")) == fixtures[key],
                 "Retained synthetic CSV has changed: " + key)
+    expected = expected_fixture_sha256(doc["rowsCounted"])
+    for key in ("edge", "bulk"):
+        require(fixtures[key] == expected[key],
+                "Synthetic CSV differs from deterministic fixture: " + key)
     clean = (all(row["status"] == "PASS" for row in checks) and
              doc["inputsUnchanged"] and doc["executablesUnchanged"] and
              not doc["unexpectedWorkspaceEntries"])

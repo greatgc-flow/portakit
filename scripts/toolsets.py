@@ -321,6 +321,10 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
     if not plan["tools"]:
         print("NO_OP: selected toolsets contain no verified pinned tools")
         return {"installed": [], "skipped": [], "failed": None}
+    # Share the single-tool CLI's fail-closed placement rule: a batch must
+    # never remove or rename its own evidence while replacing a managed tool.
+    # Validate before mkdir, lock, download or any child installer process.
+    core.check_evidence_location(log, root, "install")
     if any(row["status"].startswith("blocked-") for row in plan["tools"]):
         raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
     if offline_dir is not None and recommended:

@@ -162,29 +162,6 @@ class EnvelopeTests(fixtures.Workspace):
                          "private prior evidence")
         self.assertFalse(self.root.exists())
 
-    def test_mutating_command_refuses_log_inside_tool_and_backup(self):
-        # Synthetic ZIP fixture only. A successful remove/update must never
-        # silently delete or relocate the evidence file it just wrote.
-        tool, download = self.package()
-        self.write_catalog([tool])
-        self.assertEqual(self.call("install", "demo", downloader=download)[0], 0)
-        receipt = self.state_bytes()
-        for folder in ("demo", "demo.old", "unrelated"):
-            with self.subTest(folder=folder):
-                destination = self.root / folder
-                destination.mkdir(exist_ok=True)
-                log = destination / "audit.log"
-                with mock.patch.object(pk, "execute",
-                                       side_effect=AssertionError("executed")):
-                    code, result = self.call("--log-file", str(log),
-                                             "remove", "demo")
-                self.assertEqual(code, 1)
-                self.assertEqual(result["error"]["code"], "usage")
-                self.assertIn(".portakit-evidence", result["error"]["message"])
-                self.assertFalse(log.exists())
-        self.assertEqual(self.state_bytes(), receipt)
-        self.assertTrue((self.root / "demo" / "demo.exe").is_file())
-
     def test_mutating_command_refuses_log_in_cleaned_temp_directory(self):
         self.write_catalog([entry()])
         temporary = self.root / ".portakit-stage-demo.tmp"
@@ -198,19 +175,6 @@ class EnvelopeTests(fixtures.Workspace):
         self.assertFalse(log.exists())
         self.assertTrue(temporary.exists())
         self.assertFalse((self.root / ".portakit-state.json").exists())
-
-    def test_mutating_command_accepts_reserved_local_evidence_and_retains_it(self):
-        tool, download = self.package()
-        self.write_catalog([tool])
-        self.assertEqual(self.call("install", "demo", downloader=download)[0], 0)
-        evidence_dir = self.root / ".portakit-evidence"
-        evidence_dir.mkdir()
-        log = evidence_dir / "remove.log"
-        code, out, err = self.run_main("--log-file", str(log), "remove", "demo")
-        self.assertEqual((code, err), (0, ""))
-        self.assertEqual(log.read_text(encoding="utf-8"), out)
-        self.assertEqual(json.loads(out)["data"]["id"], "demo")
-        self.assertFalse((self.root / "demo").exists())
 
     def test_read_only_list_allows_user_log_under_other_root_dir(self):
         self.write_catalog([entry()])
@@ -238,6 +202,42 @@ class EnvelopeTests(fixtures.Workspace):
 
 
 class InstallTests(fixtures.InstallWorkspace):
+    def test_mutating_command_refuses_log_inside_tool_and_backup(self):
+        # Synthetic ZIP fixture only. A successful remove/update must never
+        # silently delete or relocate the evidence file it just wrote.
+        tool, download = self.package()
+        self.write_catalog([tool])
+        self.assertEqual(self.call("install", "demo", downloader=download)[0], 0)
+        receipt = self.state_bytes()
+        for folder in ("demo", "demo.old", "unrelated"):
+            with self.subTest(folder=folder):
+                destination = self.root / folder
+                destination.mkdir(exist_ok=True)
+                log = destination / "audit.log"
+                with mock.patch.object(pk, "execute",
+                                       side_effect=AssertionError("executed")):
+                    code, result = self.call("--log-file", str(log),
+                                             "remove", "demo")
+                self.assertEqual(code, 1)
+                self.assertEqual(result["error"]["code"], "usage")
+                self.assertIn(".portakit-evidence", result["error"]["message"])
+                self.assertFalse(log.exists())
+        self.assertEqual(self.state_bytes(), receipt)
+        self.assertTrue((self.root / "demo" / "demo.exe").is_file())
+
+    def test_mutating_command_accepts_reserved_local_evidence_and_retains_it(self):
+        tool, download = self.package()
+        self.write_catalog([tool])
+        self.assertEqual(self.call("install", "demo", downloader=download)[0], 0)
+        evidence_dir = self.root / ".portakit-evidence"
+        evidence_dir.mkdir()
+        log = evidence_dir / "remove.log"
+        code, out, err = self.run_main("--log-file", str(log), "remove", "demo")
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(log.read_text(encoding="utf-8"), out)
+        self.assertEqual(json.loads(out)["data"]["id"], "demo")
+        self.assertFalse((self.root / "demo").exists())
+
     def test_cli_install_uses_injected_downloader(self):
         tool, download = self.package(artifact="exe", id="jq", dest="jq")
         self.write_catalog([tool])

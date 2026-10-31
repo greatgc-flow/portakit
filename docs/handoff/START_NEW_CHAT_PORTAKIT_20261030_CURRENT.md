@@ -1,5 +1,10 @@
 # PortaKit — current next-chat continuation (2026-10-30)
 
+## 2026-10-31 — lightweight 3-tool research snapshot (candidate)
+
+Branch `research/lightweight-admission-evidence-20261031` prepares [source-cited review](../../docs/LIGHTWEIGHT_CANDIDATES.md) for DuckDB CLI v2.0.0 (official Windows x64 `tar.gz` / GitHub release SHA metadata; current core supports only zip/exe/sfx7z), xsv 0.13.0 (upstream archived 2025; Windows MSVC ZIP without GitHub API digest), and Tailviewer portable 1.0.0.39 (2022 ZIP / .NET Framework 4.7.1+, no GitHub API digest). Creates a supplemental machine-readable release-metadata snapshot and read-only optional `scripts/lightweight_review.py` with eight independent missing admission gates, new-only local JSON and exact console evidence, zero downloads/install/vendor execution. All three remain `RESEARCH_ONLY`; **vendor assets, Windows smoke, expansion size and enterprise legal/EDR/redistribution have not been verified**. Treat branch candidate until PR Windows CI, merge, and post-merge main CI are documented; latest live main overrides dated handoff.
+
+
 ## 2026-10-31 — offline plugin missing-only source follow-up (merged #53)
 
 [PR #53](https://github.com/greatgc-flow/portakit/pull/53), merged as `ff2af0ce76f1157d7398d5c0b65a1992c4e8ca0e`, updates `scripts/plugin_offline.py` to require approved original ZIPs only for **missing** pinned editor plugins at apply time. Previously managed plugins must still pass full per-file SHA receipt/host-state checks and are skipped without ZIP re-acquisition. `verify` still checks all selected originals; `apply --yes --policy-approved` remains mandatory and cannot auto-install unapproved research choices. Existing/unknown/modified or legacy receipt entries fail closed. Six synthetic negative/positive tests plus docs; PR Windows Python 3.11 and 3.14 **471 tests each PASS**, and [post-merge main CI](https://github.com/greatgc-flow/portakit/actions/runs/41161224819) **PASS**. No claim of corporate EULA, OSS, EDR, redistribution, interactive GUI or Release approval. Latest GitHub main always supersedes dated SHA notes.

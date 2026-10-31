@@ -326,6 +326,32 @@ class CSVOperatorTests(fixtures.Workspace):
             "xan", "count", (0, b"1\n", b"", 1.0, None), 1
         )["capturedOutputTruncated"])
 
+    def test_bom_and_korean_csv_semantics_on_synthetic_stdout(self):
+        payload = b'\xef\xbb\xbf' + selected_output()
+        for tool in ('xan', 'miller'):
+            with self.subTest(tool=tool):
+                self.assertEqual(smoke.check_output(tool, 'select', payload, 5), 'PASS')
+
+    def test_malformed_quoted_csv_stdout_is_negative(self):
+        malformed = b'id,name\r\n1,"unterminated\r\n'
+        for tool in ('miller', 'xan'):
+            with self.subTest(tool=tool):
+                self.assertEqual(smoke.check_output(tool, 'select', malformed, 5), 'FAIL')
+
+    def test_utf16_and_extra_record_are_not_inferred_compatible(self):
+        utf16 = 'id,name\r\n1,한글\r\n'.encode('utf-16')
+        extra = selected_output() + b'999,EXTRA\r\n'
+        for output in (utf16, extra):
+            with self.subTest(size=len(output)):
+                self.assertEqual(smoke.check_output('xan', 'select', output, 5), 'FAIL')
+        # The observed source fixture uses UTF-8. This does not make a
+        # claim about the vendor's support for UTF-16 input files.
+
+    def test_output_missing_header_or_wrong_count_are_rejected(self):
+        for output in (b'5\n', b'count\r\n4\r\n', b'count\r\n5\r\nextra\r\n'):
+            with self.subTest(output=output):
+                self.assertEqual(smoke.check_output('miller', 'count', output, 5), 'FAIL')
+
     def test_vendor_cmds_from_current_upstream_documented_usage(self):
         commands = smoke.build_cases(self.miller, self.xan, self.base)
         self.assertEqual(commands[0][2][1:3], ["--csv", "count"])

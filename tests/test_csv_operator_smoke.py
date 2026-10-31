@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 import unittest
 from unittest import mock
 
@@ -252,6 +253,67 @@ class CSVOperatorTests(fixtures.Workspace):
         self.assertEqual(value, 1)
         self.assertIn("BOTH", err.getvalue())
         self.assertFalse(self.output.exists())
+
+    def test_live_pipe_capture_of_synthetic_python_only(self):
+        # This is the Python interpreter supplied by CI, NOT xan or Miller.
+        code = ('import sys; '
+                'sys.stdout.buffer.write(b"count\\n1\\n"); '
+                'sys.stderr.buffer.write(b"synthetic warning")')
+        with mock.patch.object(smoke.subprocess, "run",
+                               side_effect=AssertionError("run must not buffer")):
+            result = smoke.call_vendor(
+                [sys.executable, "-c", code], self.base, 5)
+        self.assertEqual((result[0], result[1], result[2], result[4]),
+                         (0, b"count\\n1\\n", b"synthetic warning", None))
+        self.assertEqual(smoke.evaluate("miller", "count", result, 1)["status"],
+                         "PASS")
+
+    def test_live_stdout_and_stderr_each_enforce_cap_without_spooling(self):
+        # One synthetic OS process per pipe; no real third-party vendor code.
+        for name in ("stdout", "stderr"):
+            with self.subTest(pipe=name):
+                code = ('import sys; '
+                        'sys.' + name + '.buffer.write(b"x" * 1048576); '
+                        'sys.' + name + '.flush()')
+                response = smoke.call_vendor(
+                    [sys.executable, "-c", code], self.base, 5)
+                self.assertEqual(response[4], "OUTPUT_LIMIT")
+                self.assertLessEqual(len(response[1]), smoke.MAX_CAPTURE + 1)
+                self.assertLessEqual(len(response[2]), smoke.MAX_CAPTURE + 1)
+                review = smoke.evaluate("xan", "count", response, 1)
+                self.assertEqual(review["status"], "OUTPUT_LIMIT")
+                self.assertTrue(review["capturedOutputTruncated"])
+
+    def test_live_timeout_kills_synthetic_direct_process(self):
+        response = smoke.call_vendor(
+            [sys.executable, "-c", "import time; time.sleep(2)"],
+            self.base, 0.15)
+        self.assertEqual(response[4], "TIMEOUT")
+        self.assertLess(response[3], 2000)
+        review = smoke.evaluate("xan", "count", response, 1)
+        self.assertEqual(review["status"], "TIMEOUT")
+        self.assertFalse(review["capturedOutputTruncated"])
+
+    def test_live_exec_launch_failure_is_error_not_success(self):
+        with mock.patch.object(smoke.subprocess, "Popen",
+                               side_effect=OSError("synthetic cannot launch")):
+            response = smoke.call_vendor(
+                [sys.executable, "-c", "pass"], self.base, 1)
+        self.assertEqual(response[4], "RUNTIME_ERROR")
+        self.assertIn(b"synthetic cannot launch", response[2])
+        self.assertEqual(smoke.evaluate(
+            "xan", "count", response, 1)["status"], "RUNTIME_ERROR")
+
+    def test_stdout_digest_is_explicitly_captured_prefix_on_limit(self):
+        payload = b"x" * (smoke.MAX_CAPTURE + 1)
+        evaluation = smoke.evaluate(
+            "xan", "count", (None, payload, b"", 1.0, "OUTPUT_LIMIT"), 1)
+        self.assertTrue(evaluation["capturedOutputTruncated"])
+        self.assertEqual(evaluation["stdoutBytes"], smoke.MAX_CAPTURE + 1)
+        self.assertEqual(evaluation["status"], "OUTPUT_LIMIT")
+        self.assertFalse(smoke.evaluate(
+            "xan", "count", (0, b"1\\n", b"", 1.0, None), 1
+        )["capturedOutputTruncated"])
 
     def test_vendor_cmds_from_current_upstream_documented_usage(self):
         commands = smoke.build_cases(self.miller, self.xan, self.base)

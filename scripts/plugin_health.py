@@ -103,18 +103,27 @@ def emit(report, output=None):
     if target == log or os.path.lexists(target) or os.path.lexists(log):
         raise HealthError("Report/log already exists; refusing overwrite")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(log) as transcript:
-        try:
+    kit.core.check_links(target)
+    kit.core.check_links(log)
+    # Create-only pair; a partial JSON/log is invalid evidence. Roll back
+    # only regular output files still matching our opened file identities.
+    json_identity = log_identity = None
+    try:
+        with kit.sets.Evidence(log) as transcript:
+            log_identity = kit.sets.created_output_identity(
+                os.fstat(transcript.stream.fileno()))
             with target.open("x", encoding="utf-8", newline="\n") as stream:
+                json_identity = kit.sets.created_output_identity(
+                    os.fstat(stream.fileno()))
                 json.dump(report, stream, indent=2, ensure_ascii=False)
                 stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            transcript.emit(line)
-        transcript.emit("REPORT: " + str(target))
+            for line in lines:
+                transcript.emit(line)
+            transcript.emit("REPORT: " + str(target))
+    except BaseException:
+        kit.sets.cleanup_own_output(log, log_identity)
+        kit.sets.cleanup_own_output(target, json_identity)
+        raise
 
 
 def run(argv=None):

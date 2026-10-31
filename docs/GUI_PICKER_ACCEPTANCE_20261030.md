@@ -1,5 +1,12 @@
 # Personal toolkit GUI manual acceptance (2026-10-30)
 
+## 2026-10-31 — selected filter and frozen-stage acceptance addition
+
+The picker adds a **Selected only** checkbox and arranges text search and filter controls into two rows. Check `Selected only` with zero choices, mixed pinned/research/OS choices, combined search/category/stage filters, and multi-highlight across filter changes. Changing filters must never delete a hidden selected item, change `KIT.json`, or launch binaries. Confirm scroll/focus readability at 850 px and 100/150/200% DPI on a real approved interactive Windows workstation.
+
+**Historical stage guard:** import a synthetic older JSON that saved a research-only tool; if a later reviewed test catalog promotes that tool, the previously saved choice must still display `PENDING (locked)` and appear under `RESEARCH_ONLY`, **not `READY`**. The user may opt in again by explicitly removing/reselecting and creating a new kit with the current pin snapshot. Do not modify the production catalog just to perform this test. Headless CI exercises a synthetic in-memory future catalog; human GUI evidence stays **NOT_VERIFIED** until actually reviewed.
+
+
 ## One-command local operator evidence — optional helper (2026-10-30)
 
 Run the recorder from an **approved, nonproduction interactive Windows workstation**. This is separate from vendor-app GUI acceptance (`GuiAcceptance.cmd`) and tests only the **personal-kit picker**.

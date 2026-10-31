@@ -25,6 +25,20 @@ class ToolsetTests(unittest.TestCase):
     def plan(self, names, include=(), exclude=()):
         return toolsets.create_plan(names, include, exclude, self.root, self.manifest)
 
+    def mark_managed(self, identifier, *, create_directory=True, wrong_pin=False):
+        """Simulate only an installed directory and receipt, never run vendors."""
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        pin = catalog[identifier]
+        if create_directory:
+            (self.root / pin["dest"]).mkdir(parents=True, exist_ok=True)
+        state = toolsets.core.read_state(self.root)
+        state[identifier] = {
+            "version": pin["version"],
+            "sha256": ("f" * 64 if wrong_pin else pin["sha256"]),
+            "dest": pin["dest"],
+        }
+        toolsets.core.write_state(self.root, state)
+
     def test_curated_groups_and_profiles_resolve_to_catalog_only(self):
         catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
         categories, profiles = toolsets.load_manifest(self.manifest, catalog)
@@ -199,6 +213,7 @@ class ToolsetTests(unittest.TestCase):
         def runner(cmd, **kwargs):
             calls.append(list(cmd))
             app = cmd[cmd.index("install") + 1]
+            self.mark_managed(app)
             return subprocess.CompletedProcess(
                 cmd, 0, json.dumps({"ok": True, "command": "install",
                                     "data": {"id": app}, "error": None}), "")
@@ -223,6 +238,7 @@ class ToolsetTests(unittest.TestCase):
             calls.append(app)
             if app == "winmerge":
                 return subprocess.CompletedProcess(cmd, 3, "", "unreachable download")
+            self.mark_managed(app)
             return subprocess.CompletedProcess(
                 cmd, 0, json.dumps({"ok": True, "command": "install",
                                     "data": {"id": app}}), "")
@@ -233,6 +249,62 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(result["installed"], ["notepad++"])
         self.assertEqual(result["failed"], "winmerge")
         self.assertIn("PARTIAL:", log.read_text(encoding="utf-8"))
+
+    def test_success_json_without_written_state_fails_closed_and_stops_batch(self):
+        plan = self.plan(["mes-support"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        calls = []
+
+        def fake_success(cmd, **kwargs):
+            name = cmd[cmd.index("install") + 1]
+            calls.append(name)
+            return subprocess.CompletedProcess(
+                cmd, 0, json.dumps({"ok": True, "command": "install",
+                                    "data": {"id": name}, "error": None}), "")
+
+        log = self.root / "missing-receipt.log"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = toolsets.apply(plan, False, log, runner=fake_success)
+        self.assertEqual(calls, ["notepad++"])
+        self.assertEqual(result["installed"], [])
+        self.assertEqual(result["failed"], "notepad++")
+        self.assertIn("managed install not confirmed: install", output.getvalue())
+        self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
+
+    def test_success_json_with_mismatched_or_missing_managed_target_fails(self):
+        for kind in ("missing-directory", "wrong-pin"):
+            with self.subTest(kind=kind):
+                # Per-case disposable install root avoids carrying state between runs.
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary) / "portable"
+                    plan = toolsets.create_plan(
+                        ["data"], (), (), root, self.manifest)
+                    plan.update(include=[], exclude=[], manifest=self.manifest)
+
+                    def fake_success(cmd, **kwargs):
+                        pin = toolsets.core.load_catalog(
+                            toolsets.core.DEFAULT_CATALOG)["jq"]
+                        root.mkdir(parents=True, exist_ok=True)
+                        if kind == "wrong-pin":
+                            (root / pin["dest"]).mkdir()
+                        toolsets.core.write_state(root, {"jq": {
+                            "version": pin["version"], "dest": pin["dest"],
+                            "sha256": ("f" * 64 if kind == "wrong-pin"
+                                       else pin["sha256"]),
+                        }})
+                        return subprocess.CompletedProcess(
+                            cmd, 0, json.dumps({"ok": True, "command": "install",
+                                                "data": {"id": "jq"},
+                                                "error": None}), "")
+
+                    log = root / "post-check.log"
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        result = toolsets.apply(
+                            plan, False, log, runner=fake_success)
+                    self.assertEqual(result["installed"], [])
+                    self.assertEqual(result["failed"], "jq")
+                    self.assertIn("post-install check:", log.read_text("utf-8"))
 
     def test_unbounded_old_core_response_is_now_rejected(self):
         plan = self.plan(["minimal"])

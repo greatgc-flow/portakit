@@ -56,3 +56,7 @@ Headless CI only uses **fabricated ZIP archives** and dummy bytes called xan.exe
 ## Separate next acceptance checks
 
 Keep [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) open and record exact SHA and compressed/expanded size **without posting original vendor files**. After the independent enterprise approval of real vendor execution, run the existing optional [CSV operator smoke](CSV_OPERATOR_SMOKE.md) on an actually isolated nonproduction offline Windows host with explicit dual approval flags. Expand functional cases to BOM, UTF-16, deliberately malformed CSV, and repeatable 100k+ record CPU/RAM/disk observations **only after observing cross-tool compatibility on approved originals**. No tool catalog promotion, OSS/EDR/transfer claim, or new release Gate D until human validation.
+
+## Optional operator acceptance sequence
+
+For the exact local-source SHA/ZIP member vs separately approved isolated Windows xan/Miller functional evidence workflow, follow the [operator acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md). It keeps legal/EDR, actual binary runtime, real network isolation and performance as independent NOT_VERIFIED gates. No vendor runs are started by this guide.

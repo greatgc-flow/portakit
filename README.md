@@ -6,7 +6,11 @@
 
 ## Latest verified source CI
 
-Merged `main` `1647fe182c461b8370c1d01edec20ab3bf6a054b` passed [Windows Python 3.11 and 3.14 CI #41215781088](https://github.com/greatgc-flow/portakit/actions/runs/41215781088), **662/662 tests each** (individual logs verified). A later source-only PR must independently verify its new HEAD and merged-main CI.
+Merged `main` `b35f20d52131c367eddbd5e78dcf5f91fed71c68` passed [Windows Python 3.11 and 3.14 CI #41216414526](https://github.com/greatgc-flow/portakit/actions/runs/41216414526), **671/671 tests each** (individual job logs verified). The later source-only PR must verify its own head and merged-main CI.
+
+## Bounded optional toolset installation (2026-11-01)
+
+`scripts/toolsets.py apply --yes` now runs its own core child using bounded **stdout and stderr** capture (**256 KiB per stream**) and an explicit **600s per-tool timeout**, adjustable with `--child-timeout 1..3600`. On overflow/timeout/invalid or contradictory core JSON, the batch **stops and logs failure**, retaining previously completed tools rather than implying a successful all-or-nothing transaction. This is **not** child-tree sandboxing or local legal/EDR approval. The plan/list commands remain read-only and do not accept apply-only timeout flags. [Examples, limitations and responsibility boundary](docs/TOOLSETS.md).
 
 ## Declarative JSON safety (2026-11-01)
 

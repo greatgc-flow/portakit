@@ -9,6 +9,19 @@ The optional personal-kit GUI now offers a **Selected only** filter alongside ca
 Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).
 
 
+## One-command synthetic CSV smoke (2026-10-31)
+
+Following [VerySimpleGuide](https://github.com/greatgc-flow/VerySimpleGuide),
+an optional `python -I scripts/csv_operator_smoke.py` **plans only**
+(read-only, no vendor execution). Explicit `run --yes --approved-offline` with
+local `mlr.exe` and `xan.exe` paths, a **new** local evidence directory,
+and an approved offline Windows workstation tests only documented CSV count
+and column-selection semantics on generated synthetic files. It records local
+EXE SHA, SHA drift, individual results and exactly mirrored console evidence.
+Headless CI never executes vendors. A passing smoke is **not** a xan catalog
+promotion, company EULA/EDR/transfer approval or performance ranking.
+[Operator guide and safety gates](docs/CSV_OPERATOR_SMOKE.md).
+
 ## DuckDB TAR safety preflight / CSV alternatives (2026-10-31)
 
 Optional `python -I scripts/targz_preflight.py --original LOCAL.tar.gz` reads

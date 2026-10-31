@@ -31,7 +31,7 @@ The first command prints a compact result only. The second fails rather than rep
 2. Check the unique ZIP xan.exe member digest and byte count, and verify its optional local EXE comparison matches both fields. NOT_CHECKED remains incomplete, even if downstream smoke reported passing results.
 3. Check the smoke report has exactly four known cases in the fixed order: Miller count, xan count, Miller select and xan select; reject missing/duplicate/unsupported statuses, impossible pass results, missing integrity fields and contradictory input/executable mutation reports.
 4. Independently recompute SHA-256 of retained synthetic edge.csv and bulk.csv (bounded local reads; no changes to CSV files). Validate both against their original reported SHA values.
-5. Reconstruct each console transcript from the existing source/smoke display functions and compare against its companion .log. The source preflight .log includes an extra REPORT: path footer. A copied, malformed or edited log is rejected.
+5. Reconstruct each console transcript from the existing source/smoke display functions and compare **exact canonical UTF-8 text bytes**, including **LF line endings and final newline**, against the companion .log. The source preflight .log includes one REPORT: path footer with its historical path (may differ from a copied evidence file's new location). Changed CRLF, missing terminator, or appended footer lines are rejected.
 6. When the source was explicitly bound to a local xan.exe, compare that digest to the executable SHA recorded by the smoke. Mismatch blocks the chain.
 7. Preserve publisher, company license/EDR/transfer, physical host isolation and performance certification as NOT_VERIFIED, regardless of the internal result.
 
@@ -50,3 +50,10 @@ The first command prints a compact result only. The second fails rather than rep
 - A source metadata snapshot is not a publisher signature, SHA equality is not approval, and the CLI's --approved-offline flag is an assertion, not a sandbox.
 - Do not commit private enterprise paths, local operator evidence files, binary archives/executables, host identities, credentials or unredacted logs to the public repository.
 - Keep [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) open until the seven independent human/enterprise acceptance gates are actually completed, including real compatibility and repeatable performance. xan remains RESEARCH_ONLY.
+
+## Strict evidence format (source-only hardening)
+
+- Reports use UTF-8 JSON. **Duplicate object keys at any depth** and nonstandard NaN/Infinity numeric tokens are invalid rather than using a JSON parser's last-wins interpretation.
+- A case recorded as PASS must also have process returnCode 0, capturedOutputTruncated false, bounded nonempty stdout, bounded stderr and syntactically valid captured-prefix SHA fields. This catches **contradictory recorded claims**, but raw vendor stdout is not retained and cannot be independently reproduced by this checker.
+- Console verification checks exact expected LF bytes, not `splitlines()` equivalence; Windows CRLF conversion is flagged as a changed file. The original log emitter writes LF on both Windows and Linux.
+- Cross-check outcome **does not authenticate** a local JSON+log pair. A coordinated rewrite can still be self-consistent; independent source provenance, corporate signoff, approved host and real vendor testing remain distinct gates.

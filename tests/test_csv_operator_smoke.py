@@ -304,6 +304,17 @@ class CSVOperatorTests(fixtures.Workspace):
         self.assertEqual(smoke.evaluate(
             "xan", "count", response, 1)["status"], "RUNTIME_ERROR")
 
+    def test_reader_start_failure_reaps_synthetic_direct_process(self):
+        # A failure to allocate pipe-reading threads must kill the process.
+        with mock.patch.object(smoke.threading.Thread, "start",
+                               side_effect=RuntimeError("no worker thread")):
+            response = smoke.call_vendor(
+                [sys.executable, "-c", "import time; time.sleep(4)"],
+                self.base, 1)
+        self.assertEqual(response[4], "RUNTIME_ERROR")
+        self.assertIn(b"no worker thread", response[2])
+        self.assertLess(response[3], 2500)
+
     def test_stdout_digest_is_explicitly_captured_prefix_on_limit(self):
         payload = b"x" * (smoke.MAX_CAPTURE + 1)
         evaluation = smoke.evaluate(

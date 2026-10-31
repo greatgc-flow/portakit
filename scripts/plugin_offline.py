@@ -311,9 +311,9 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
     # Original vendor archives are needed only for plugins not yet installed.
     # Reused managed plugins have already been checked in make_plan against
     # their per-file SHA receipts; do not require re-acquisition of ZIP files.
+    status_by_id = {row["id"]: row["status"] for row in items}
     to_install = [(item, host, pin) for item, host, pin in selected
-                  if next(row for row in items if row["id"] == item["id"])
-                  ["status"] == "install"]
+                  if status_by_id[item["id"]] == "install"]
     if not selected:
         evidence.emit("NO_OP: no SHA-pinned plugins selected")
         return

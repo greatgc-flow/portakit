@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — protect opt-in core evidence against managed directory mutation
+
+- [x] Block `--log-file` inside managed root folders that `install`, `update`, `configure` and `remove` may rename/delete, including legacy `.old` and `.portakit-*.tmp` paths. Permit explicit existing `ROOT/.portakit-evidence/` or any external path; retain `list` freedom. No automatic directory creation or file overwrite.
+- [x] Add synthetic non-vendor negative tests for tool, backup, other root subfolder and cleanup temp paths; verify rejected requests never invoke an install/remove operation, and `ROOT/.portakit-evidence/` survives a successful synthetic remove with exact console-mirrored JSON.
+- [ ] Exact PR-head Windows Python 3.11/3.14 full CI, squash merge and separate merged-main push CI remain gating. Real enterprise acceptance belongs to the final user.
+
 ## 2026-11-01 — Explorer menu strict managed pin provenance
 
 - [x] Remove `json.loads` permissive duplicate-key/NaN/last-wins receipt and catalog parsing from `context_menu.py`; reuse `core.load_catalog` and `core.read_state` as single source of truth. New registration requires exact version, SHA-256, ID and destination agreement with a managed executable.

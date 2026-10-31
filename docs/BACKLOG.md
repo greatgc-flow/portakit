@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — original ZIP and CSV smoke producer output I/O (PR pending)
+
+- [x] Harden both **independent** report producers (`scripts/xan_zip_preflight.py` and `scripts/csv_operator_smoke.py`) against partial JSON/log writes. Reuse one identity-guarded best-effort helper in `scripts/toolsets.py`: cleanup only regular output files still matching IDs captured from this invocation's open handles; preserve any foreign/existing/replaced file on collision/failure.
+- [x] Add 9 synthetic, vendor-free regression tests covering JSON serialization failure, log emission failure, concurrent JSON collision, replaced foreign JSON preservation, and a directory replacement guard. Both producers must preserve exact console-mirrored log on success, with no implicit vendor execution.
+- [ ] Run PR-head Windows Python 3.11+3.14 full CI and inspect exact job logs; fix regressions before merge. If both pass, squash merge and verify exact merged-main CI.
+- [ ] Real original publisher identity, corporate EULA/EDR/transfer approval, isolated Windows CSV behavior, negative compatibility, performance and release signoff remain **NOT_VERIFIED**. Keep xan RESEARCH_ONLY and Issue #25 open.
+- **Limit:** best-effort failure cleanup is not an atomic filesystem transaction, a guarantee across power loss/process kill, or authenticated evidence; failed output must never be interpreted as a completed record.
+
 ## 2026-10-31 — CSV evidence schema-v1 claim boundary (Draft PR #67, NOT MERGED)
 
 - [x] Source-only fix in [Draft PR #67](https://github.com/greatgc-flow/portakit/pull/67): reject unknown keys in the exact version-1 source/smoke report contracts, including nested member/EXE/hash maps and evaluated process records. This blocks silent, unrecognized approval claims in coordinated JSON/log rewrites.

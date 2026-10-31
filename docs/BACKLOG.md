@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — fail-closed core child pipe reader (source-only regression)
+
+- [x] Close a specific failure path in `scripts/bounded_process.py`: an unexpected exception in an output reader thread could otherwise be printed only as a background thread traceback while the installer receives an incomplete but apparently successful capture. Treat **all ordinary reader/pipe-close exceptions** as `RUNTIME_ERROR` and terminate the direct child on reader failure.
+- [x] Add a deterministic synthetic test injecting `RuntimeError` into the capture reader without patching `subprocess` globally; existing exact-limit, overflow, timeout and nonzero-return behavior must remain unchanged.
+- [ ] This does **not** add CPU/RAM/disk limits or process-tree termination. Operator-approved vendor execution and enterprise acceptance remain the final user's responsibility. Verify exact-head Windows 3.11/3.14 CI, squash merge and independent post-merge `main` CI before declaring completion.
+
 ## 2026-11-01 — handoff / session closure SSOT
 
 - [x] [Current handoff and copyable new-chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261101.md) records exact last code/doc `main` `769860bf9042ff1c0e09fbf0febf7701b9507e2a`, [Windows CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391) **686/686 PASS** per Python 3.11/3.14, reviewed PRs #67–#73, unchanged four open Issues and distinct final-user/site acceptance ownership.

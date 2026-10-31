@@ -4,43 +4,43 @@
 
 - [x] Keep the existing read-only toolset status and post-install receipt check, but distinguish missing from **empty** managed directories (`blocked-missing` vs `blocked-empty`), never reporting either as `already-installed` or a completed child install. Do not guess app-specific executable locations or execute vendor code.
 - [x] Add synthetic tests for a matching receipt+empty folder in plan (no writes/child) and a zero-exit core JSON with an empty target folder (post-install STOP/PARTIAL). Update existing fake installed folders to contain an inert text marker. This is a minimal presence check, not end-user vendor integrity/EDR/license acceptance.
-- [ ] Exact PR-head Windows 3.11/3.14 tests, any triggered archive smoke, squash merge and independent post-merge main CI.
+- [x] [PR #82](https://github.com/greatgc-flow/portakit/pull/82) squash merged as `a4ef03a5569ed289187e9bfce2c08b7645e30b74`. [Exact PR-head CI #41224955787](https://github.com/greatgc-flow/portakit/actions/runs/41224955787) and [independent merged-main CI #41225137743](https://github.com/greatgc-flow/portakit/actions/runs/41225137743) both **706/706 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — protect batch toolset evidence location (source-only)
 
 - [x] Reuse `core.check_evidence_location` during `scripts/toolsets.py apply` before root creation/locking/install, so explicit `--log-file` cannot point into managed tools, backups, cleanup-temp or arbitrary in-root directories. Preserve existing default `ROOT/.portakit-evidence/` and outside-root paths; keep install plans and selection behavior unchanged.
 - [x] Update synthetic batch tests to locate non-default evidence outside `ROOT`; add separate negative cases for managed/current/backup/temp/other in-root paths and positive case proving dedicated-root evidence survives simulated installation and equals console output.
-- [ ] Verify exact PR-head Windows Python 3.11/3.14 complete CI, any triggered archive smoke, squash merge, and independently verify merged-main CI. No real vendor or final-user enterprise acceptance assumed.
+- [x] [PR #81](https://github.com/greatgc-flow/portakit/pull/81) squash merged as `3ffedd710354cce955c8ffc35d087a3648c52a72`. [Exact PR-head CI #41224506703](https://github.com/greatgc-flow/portakit/actions/runs/41224506703) and [independent merged-main CI #41224609039](https://github.com/greatgc-flow/portakit/actions/runs/41224609039) both **704/704 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — protect opt-in core evidence against managed directory mutation
 
 - [x] Block `--log-file` inside managed root folders that `install`, `update`, `configure` and `remove` may rename/delete, including legacy `.old` and `.portakit-*.tmp` paths. Permit explicit existing `ROOT/.portakit-evidence/` or any external path; retain `list` freedom. No automatic directory creation or file overwrite.
 - [x] Add synthetic non-vendor negative tests for tool, backup, other root subfolder and cleanup temp paths; verify rejected requests never invoke an install/remove operation, and `ROOT/.portakit-evidence/` survives a successful synthetic remove with exact console-mirrored JSON.
-- [ ] Exact PR-head Windows Python 3.11/3.14 full CI, squash merge and separate merged-main push CI remain gating. Real enterprise acceptance belongs to the final user.
+- [x] [PR #80](https://github.com/greatgc-flow/portakit/pull/80) squash merged as `d00edf9692fdee49b42504e68ad833a9ec4f8316`. [Exact PR-head CI #41223133909](https://github.com/greatgc-flow/portakit/actions/runs/41223133909) and [independent merged-main CI #41223307332](https://github.com/greatgc-flow/portakit/actions/runs/41223307332) both **702/702 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — Explorer menu strict managed pin provenance
 
 - [x] Remove `json.loads` permissive duplicate-key/NaN/last-wins receipt and catalog parsing from `context_menu.py`; reuse `core.load_catalog` and `core.read_state` as single source of truth. New registration requires exact version, SHA-256, ID and destination agreement with a managed executable.
 - [x] Add synthetic Windows mock registry regressions for missing/wrong SHA and version, duplicate catalog/receipt fields, duplicate tool IDs and nonstandard NaN. Preserve read-only `STALE` and explicit owned-key `remove`, without modifying any real registry or vendor binary.
-- [ ] Verify exact PR-head Windows 3.11/3.14 CI, squash merge and post-merge main CI before closing.
+- [x] [PR #79](https://github.com/greatgc-flow/portakit/pull/79) squash merged as `f5682a0cddc96c42c1b7f34600076d546363015c`. [Exact PR-head CI #41222464017](https://github.com/greatgc-flow/portakit/actions/runs/41222464017) and [independent merged-main CI #41222556088](https://github.com/greatgc-flow/portakit/actions/runs/41222556088) both **698/698 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — optional single-tool console evidence (source-only)
 
 - [x] Add explicit `portakit.py --log-file FILE` for opt-in **new-only** UTF-8 console-mirrored evidence across stdout/stderr. No default file, no output directory creation, no overwrite, and no change to the existing single-result JSON envelope or CLI return codes. A log-creation error rejects the operation before installation effects.
 - [x] Add synthetic regression cases: JSON success, stderr failure, warning-before-JSON stream ordering, collision/missing directory blocking, and injected write failure/stream-restoration. Actual I/O errors after an operation begins cannot promise atomic log rollback; incomplete logs are invalid evidence.
-- [ ] Verify exact PR-head Windows Python 3.11/3.14 CI, squash merge and independently check the merged-main CI. Final-user real vendor/enterprise approval remains independent.
+- [x] [PR #78](https://github.com/greatgc-flow/portakit/pull/78) squash merged as `d4d8530a0f18a64a8923dc0e9550eae0c88b4e46`. [Exact PR-head CI #41222041462](https://github.com/greatgc-flow/portakit/actions/runs/41222041462) and [independent merged-main CI #41222136301](https://github.com/greatgc-flow/portakit/actions/runs/41222136301) both **696/696 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — safe read-only Explorer stale-link diagnosis
 
 - [x] Extend existing `scripts/context_menu.py status` only: exact PortaKit-owned menu keys are `STALE` when the target executable moved/vanished, the saved root no longer matches `--root`, or the managed receipt is absent. Keep `OWNED`, `FOREIGN`, `MODIFIED`, `ABSENT` distinct and preserve exact file-mirrored console messages.
 - [x] Regression-test removed executable, missing receipt and moved managed root with mock registry; verify `status` makes no registry changes and explicit `remove` remains reversible. No Windows 11 shell COM, services, admin, registry mutation during source-only CI.
-- [ ] Verify exact PR-head Windows Python 3.11/3.14 CI and independent post-squash `main` CI. Real Explorer GUI/EDR/enterprise approval remains final-user-owned.
+- [x] [PR #77](https://github.com/greatgc-flow/portakit/pull/77) squash merged as `a84a07aa407ab31a43e8cc66178ebd6ffbcd6a5c`. [Exact PR-head CI #41221218988](https://github.com/greatgc-flow/portakit/actions/runs/41221218988) and [independent merged-main CI #41221315060](https://github.com/greatgc-flow/portakit/actions/runs/41221315060) both **691/691 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — toolset post-install state verification (source-only)
 
 - [x] Inspect `scripts/toolsets.py` batch apply: a zero-exit core JSON success had been counted as installed without reopening the managed state receipt and verifying the destination exists under the pinned catalog. Close the false-complete evidence path with `status_of` and `core.read_state` **after each child response**; stop on missing/mismatched receipt or directory; preserve previously completed tools and exact mirrored evidence.
 - [x] Add synthetic tests for success JSON with absent receipt, missing directory, and wrong SHA receipt; update approved-fixture runners to write simulated managed receipts. No vendor binaries, process-tree/OS sandbox, or enterprise approval claim.
-- [ ] Complete final PR exact-head Windows 3.11/3.14 CI, squash merge and independently verify merged-main push CI before closing.
+- [x] [PR #76](https://github.com/greatgc-flow/portakit/pull/76) squash merged as `02ea77df0212b38468cbb423177ad34786027acf`. [Exact PR-head CI #41220858248](https://github.com/greatgc-flow/portakit/actions/runs/41220858248) and [independent merged-main CI #41220967150](https://github.com/greatgc-flow/portakit/actions/runs/41220967150) both **689/689 PASS** on Windows Python 3.11 and 3.14 (job logs checked). Synthetic/source and final-user enterprise acceptance remain separate.
 
 ## 2026-11-01 — fail-closed core child pipe reader (source-only regression)
 

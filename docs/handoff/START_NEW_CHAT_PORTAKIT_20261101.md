@@ -5,9 +5,9 @@
 ## 1. Verified remote state at handoff
 
 - Repository: https://github.com/greatgc-flow/portakit
-- Latest independently verified **main**: `769860bf9042ff1c0e09fbf0febf7701b9507e2a`
-- Latest [merged-main Windows CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391): **SUCCESS**, **686/686 PASS** on **Python 3.11 and 3.14**; independent job logs checked.
-- Latest [PR #73](https://github.com/greatgc-flow/portakit/pull/73) docs-only head `7425e5b04d12994f053302d965b0b981a8c0d2a9`, [PR CI #41218083490](https://github.com/greatgc-flow/portakit/actions/runs/41218083490) **SUCCESS 686/686 each**; squash merged.
+- Latest independently verified **functional-source `main` before this docs-only refresh**: `a4ef03a5569ed289187e9bfce2c08b7645e30b74`. A docs-only PR merged after that SHA creates a newer `main` and must pass its own independent CI.
+- Latest source [merged-main Windows CI #41225137743](https://github.com/greatgc-flow/portakit/actions/runs/41225137743): **SUCCESS**, **706/706 PASS** on **Python 3.11 and 3.14**; each job log independently checked. PR #82 head [CI #41224955787](https://github.com/greatgc-flow/portakit/actions/runs/41224955787) was **706/706 PASS** per version; archive smoke [#41224955832](https://github.com/greatgc-flow/portakit/actions/runs/41224955832) **SUCCESS**.
+- Historical [PR #73](https://github.com/greatgc-flow/portakit/pull/73) research docs head `7425e5b04d12994f053302d965b0b981a8c0d2a9`, [PR CI #41218083490](https://github.com/greatgc-flow/portakit/actions/runs/41218083490) **686/686 each**; squash merged. See newer tested PRs below.
 - **Open PRs: zero** at last check. Open Issues: [#25](https://github.com/greatgc-flow/portakit/issues/25), [#27](https://github.com/greatgc-flow/portakit/issues/27), [#36](https://github.com/greatgc-flow/portakit/issues/36), [#51](https://github.com/greatgc-flow/portakit/issues/51).
 - Public repository rulesets `[]`, `main.protected=false` as last verified; **no branch protection change** was made. Issue #51 contains an optional minimal policy proposal only.
 
@@ -22,8 +22,15 @@
 | [#71](https://github.com/greatgc-flow/portakit/pull/71) | `b35f20d52131c367eddbd5e78dcf5f91fed71c68` | One strict JSON parser shared across catalog, state, toolsets, kits | 671 |
 | [#72](https://github.com/greatgc-flow/portakit/pull/72) | `93474402bad5456d0bb9cf5f42cb3f76775e7776` | Toolset core installer per-child timeout, live stdout/stderr caps, strict success | 686 |
 | [#73](https://github.com/greatgc-flow/portakit/pull/73) | `769860bf9042ff1c0e09fbf0febf7701b9507e2a` | Research-only industrial CLIENT/SERVER/SIMULATOR role matrix | 686 |
+| [#76](https://github.com/greatgc-flow/portakit/pull/76) | `02ea77df0212b38468cbb423177ad34786027acf` | Verify managed receipt and dest after successful toolset child | 689 |
+| [#77](https://github.com/greatgc-flow/portakit/pull/77) | `a84a07aa407ab31a43e8cc66178ebd6ffbcd6a5c` | Explorer stale-menu read-only classification | 691 |
+| [#78](https://github.com/greatgc-flow/portakit/pull/78) | `d4d8530a0f18a64a8923dc0e9550eae0c88b4e46` | Optional exclusive-create single-tool stdout/stderr evidence | 696 |
+| [#79](https://github.com/greatgc-flow/portakit/pull/79) | `f5682a0cddc96c42c1b7f34600076d546363015c` | Share strict core catalog/state receipt checks for Explorer menu | 698 |
+| [#80](https://github.com/greatgc-flow/portakit/pull/80) | `d00edf9692fdee49b42504e68ad833a9ec4f8316` | Protect core CLI evidence from tool/backup/tmp deletion paths | 702 |
+| [#81](https://github.com/greatgc-flow/portakit/pull/81) | `3ffedd710354cce955c8ffc35d087a3648c52a72` | Share core safe evidence path rule in batch toolset apply | 704 |
+| [#82](https://github.com/greatgc-flow/portakit/pull/82) | `a4ef03a5569ed289187e9bfce2c08b7645e30b74` | Empty managed folders blocked in plan, postcheck, offline readiness | 706 |
 
-The docs-only handoff closeout (if this file was later squash merged) has its **own, newer** HEAD and GitHub Actions run: confirm them independently; this checkpoint is not evidence of future CI.
+The PR #76–#82 history above contains independently verified **PR-head and merged-main** Windows CI for each source checkpoint; successful exact links are recorded in each PR conversation. Earlier red CI runs during test-fixture alignment were corrected **before** merges, and their root causes are documented in PR comments. A new docs-only closeout has a **different SHA and CI**; inspect them independently rather than claiming this checkpoint covers future commits.
 
 ## 2. Governing invariants and product scope
 
@@ -49,7 +56,7 @@ The docs-only handoff closeout (if this file was later squash merged) has its **
 
 ## 4. Remaining work, kept MECE
 
-- **Engineering / source-only:** continue targeted feature gaps and negative tests with discrete branch/PR, not repeated speculative hardening. High-value options: safe new metadata-only research, bounded real CPU/memory-independent child coordination, optional interface/unit tests, or one protocol-specific parser/TDD issue chosen with clear device SERVER role. The industrial matrix classifies only; it does **not** create a simulator.
+- **Engineering / source-only:** continue targeted feature gaps and negative tests with discrete branch/PR, not repeated speculative hardening. Core and batch opt-in evidence paths are now preflight protected, and an **empty** managed directory is blocked rather than falsely marked installed. A **nonempty** directory alone does not prove contents, signature, compatibility or vendor functionality; any stronger verification must remain source-only, optional and precisely scoped. High-value next options: bounded real CPU/memory-independent child coordination, optional interface/unit tests, or one protocol-specific parser/TDD issue chosen with clear device SERVER role. The industrial matrix classifies only; it does **not** create a simulator.
 - **Issue #25:** technical vendor capability/future individual admission. The eight-role **source matrix is done**; actual installed compatibility/legal/company acceptance is final-user-owned. Avoid converting the research issue into an automatic vendor promotion.
 - **Issues #27 and #36:** selectable GUI and independent editor plugins are substantially implemented and synthetic-tested; live desktop/real DLL permission are final-user-owned. Do not replace the GUI with a new framework or reimplement existing features.
 - **Issue #51:** optional minimal main-branch governance is **NOT implemented**; no ruleset change without explicit separate user approval. Existing single-maintainer fast PR/squash workflow must remain usable.
@@ -58,7 +65,7 @@ The docs-only handoff closeout (if this file was later squash merged) has its **
 ## 5. New-chat continuation prompt (copy everything below into a new chat)
 
 > **PortaKit — full handoff restoration and source development continuation**  
-> My GitHub repository is `https://github.com/greatgc-flow/portakit`. Start from the **actual latest** remote `main` HEAD, open PRs, Issues #25/#27/#36/#51 and Actions, rather than trusting historical SHA. The last source-complete checkpoint before docs closeout was `769860bf9042ff1c0e09fbf0febf7701b9507e2a`, with merged-main Windows CI #41218229391 **686/686 PASS** on Python 3.11/3.14. Read `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md` and its listed current documents before work; confirm any newer docs-only closeout commit and CI.  
+> My GitHub repository is `https://github.com/greatgc-flow/portakit`. Start from the **actual latest** remote `main` HEAD, open PRs, Issues #25/#27/#36/#51 and Actions, rather than trusting historical SHA. The latest verified functional-source checkpoint before this documentation refresh was `a4ef03a5569ed289187e9bfce2c08b7645e30b74`, with merged-main Windows CI #41225137743 **706/706 PASS** on Python 3.11/3.14. A newer docs-only commit requires its own exact-head/main CI verification. Read `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md` and its listed current documents before work; confirm any newer docs-only closeout commit and CI.  
 > **You may create branches/Issues/PRs, commit, and squash-merge to main after exact-head Windows Python 3.11+3.14 full green CI; independently verify post-merge main CI.** This explicitly supersedes the older do-not-merge instruction.  
 > **Real operator tests and all enterprise company-use, EULA, OSS/EDR, file transfer/redistribution, runtime compatibility, real GUI and deployment approvals are the final user's/organization's responsibility**, not a blocker to unrelated developer source work. Do not fabricate/claim such approval, run industrial protocols on production networks, install drivers/services, redistribute unapproved binaries or promote RESEARCH_ONLY tools.  
 > Prioritize **Very Simple**, optional independent modules, null/empty/duplicate/error cases, no unsafe defaults, exact console-to-local evidence logs, MECE classification, a short regression-driven PR, and updated public-safe docs/Issues. Avoid speculative redundant implementation. The latest industrial role matrix is under `research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md`; `pymcprotocol` and `PyXGT` are client-focused, not drop-in virtual PLC servers. Continue actual engineering and report tested commit/CI facts, not progress promises. If a conversation becomes genuinely too long, commit/update GitHub handoff context and provide one new-chat prompt.

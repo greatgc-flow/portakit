@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 
 HERE = Path(__file__).resolve().parents[1]
@@ -109,23 +110,92 @@ def prepare_fixtures(folder, rows):
 
 
 def call_vendor(argv, folder, timeout):
-    """Run only explicitly approved vendor CLIs. Not OS/network isolation."""
+    """Run an approved CLI with bounded *live* stdout/stderr pipe consumption.
+
+    Each reader retains at most MAX_CAPTURE+1 bytes. Overflow terminates the
+    direct process rather than allowing subprocess.run to accumulate unlimited
+    output in RAM. Separate pipes must be drained concurrently to avoid the
+    classic stdout/stderr deadlock. This is NOT OS sandboxing, a process-tree
+    kill, or a CPU/RAM/disk/network quota for the vendor process.
+    """
     start = time.perf_counter()
     try:
-        finished = subprocess.run(
+        process = subprocess.Popen(
             argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, cwd=str(folder), shell=False,
-            timeout=timeout, check=False)
-        return (finished.returncode, finished.stdout, finished.stderr,
-                round((time.perf_counter() - start) * 1000, 3), None)
-    except subprocess.TimeoutExpired as exc:
-        # subprocess.run kills and reaps the timed-out process, but child
-        # processes and system-wide side effects cannot be guaranteed absent.
-        return (None, exc.stdout or b"", exc.stderr or b"",
-                round((time.perf_counter() - start) * 1000, 3), "TIMEOUT")
+            stderr=subprocess.PIPE, cwd=str(folder), shell=False)
     except OSError as exc:
         return (None, b"", str(exc).encode("utf-8", errors="replace"),
                 round((time.perf_counter() - start) * 1000, 3), "RUNTIME_ERROR")
+
+    buffers = [bytearray(), bytearray()]
+    overflow = threading.Event()
+    read_failure = threading.Event()
+
+    def drain(pipe, buffer):
+        try:
+            while True:
+                chunk = os.read(pipe.fileno(), 8192)
+                if not chunk:
+                    break
+                available = MAX_CAPTURE + 1 - len(buffer)
+                if available > 0:
+                    buffer.extend(chunk[:available])
+                if len(buffer) > MAX_CAPTURE:
+                    overflow.set()
+                    # Stop generation as soon as the byte cap is observed.
+                    try:
+                        process.kill()
+                    except OSError:
+                        pass
+                    break
+        except OSError:
+            read_failure.set()
+        finally:
+            pipe.close()
+
+    readers = [
+        threading.Thread(target=drain, args=(process.stdout, buffers[0]),
+                         daemon=True),
+        threading.Thread(target=drain, args=(process.stderr, buffers[1]),
+                         daemon=True),
+    ]
+    for thread in readers:
+        thread.start()
+    error = None
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        error = "TIMEOUT"
+        try:
+            process.kill()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            error = "RUNTIME_ERROR"
+    except OSError:
+        error = "RUNTIME_ERROR"
+        try:
+            process.kill()
+        except OSError:
+            pass
+    for thread in readers:
+        thread.join(timeout=2)
+    if any(thread.is_alive() for thread in readers):
+        # E.g. an untrusted child process inherited a pipe. Do not call PASS.
+        read_failure.set()
+        for pipe in (process.stdout, process.stderr):
+            try:
+                pipe.close()
+            except OSError:
+                pass
+    if overflow.is_set():
+        error = "OUTPUT_LIMIT"
+    elif read_failure.is_set():
+        error = "RUNTIME_ERROR"
+    return (process.returncode, bytes(buffers[0]), bytes(buffers[1]),
+            round((time.perf_counter() - start) * 1000, 3), error)
 
 
 def check_output(tool, case, payload, rows):
@@ -160,8 +230,12 @@ def evaluate(tool, case, response, rows):
         "tool": tool, "case": case, "status": "ERROR",
         "returnCode": rc, "durationMilliseconds": millis,
         "stdoutBytes": len(stdout), "stderrBytes": len(stderr),
+        # Hashes cover the CAPTURED prefix, never claim a digest for data
+        # that was intentionally rejected and not retained.
         "stdoutSha256": hashlib.sha256(stdout).hexdigest(),
         "stderrSha256": hashlib.sha256(stderr).hexdigest(),
+        "capturedOutputTruncated": (len(stdout) > MAX_CAPTURE or
+                                    len(stderr) > MAX_CAPTURE),
     }
     if len(stdout) > MAX_CAPTURE or len(stderr) > MAX_CAPTURE:
         result["status"] = "OUTPUT_LIMIT"

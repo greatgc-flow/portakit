@@ -42,7 +42,6 @@ class CSVAlternativesTests(unittest.TestCase):
                     self.assertIsNotNone(re.fullmatch("[0-9a-f]{64}", asset["sha256"]))
 
     def test_qsv_current_x64_is_over_global_archive_cap(self):
-        import importlib.util
         # No vendor binary is loaded by this assertion.
         qsv = next(x for x in self.source["alternatives"] if x["id"] == "qsv")
         expected = [402543109, 129287020]
@@ -51,7 +50,7 @@ class CSVAlternativesTests(unittest.TestCase):
         import ast
         tree = ast.parse((ROOT / "portakit.py").read_text(encoding="utf-8"))
         compressed_cap = next(
-            x.value.value for x in tree.body
+            x.value.left.value for x in tree.body
             if isinstance(x, ast.Assign)
             and any(isinstance(t, ast.Name) and t.id == "MAX_DOWNLOAD_BYTES"
                     for t in x.targets)

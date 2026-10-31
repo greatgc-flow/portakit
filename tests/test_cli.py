@@ -115,6 +115,68 @@ class EnvelopeTests(fixtures.Workspace):
         self.assertEqual(out, "")
         self.assertIn("not installed", err)
 
+    def test_opt_in_log_exact_json_without_install_root(self):
+        self.write_catalog([entry()])
+        log = self.base / "single-tool.log"
+        code, out, err = self.run_main("--log-file", str(log), "list")
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(log.read_text(encoding="utf-8"), out)
+        self.assertTrue(json.loads(out)["ok"])
+        self.assertFalse(self.root.exists())
+
+    def test_opt_in_log_mirrors_error_stderr(self):
+        self.root.mkdir()
+        log = self.base / "stderr.log"
+        code, out, err = self.run_main("--log-file", str(log), "remove",
+                                       "demo", json_mode=False)
+        self.assertEqual((code, out), (5, ""))
+        self.assertIn("not installed", err)
+        self.assertEqual(log.read_text(encoding="utf-8"), err)
+
+    def test_opt_in_log_captures_program_warning_and_json_in_order(self):
+        self.write_catalog([entry()])
+        log = self.base / "both-streams.log"
+
+        def fake_execute(args, downloader):
+            print("synthetic warning", file=__import__("sys").stderr)
+            return {"items": [entry()]}
+        with mock.patch.object(pk, "execute", side_effect=fake_execute):
+            code, out, err = self.run_main("--log-file", str(log), "list")
+        self.assertEqual(code, 0)
+        self.assertEqual(err, "synthetic warning\n")
+        self.assertEqual(log.read_text(encoding="utf-8"), err + out)
+
+    def test_opt_in_log_collision_or_bad_parent_blocks_before_install(self):
+        self.write_catalog([entry()])
+        log = self.base / "existing.log"
+        log.write_text("private prior evidence", encoding="utf-8")
+        for path in (log, self.base / "absent-parent" / "new.log"):
+            with self.subTest(path=path):
+                with mock.patch.object(pk, "execute",
+                                       side_effect=AssertionError("executed")):
+                    code, out, err = self.run_main("--log-file", str(path),
+                                                   "install", "demo")
+                self.assertEqual((code, err), (5, ""))
+                self.assertEqual(json.loads(out)["error"]["code"], "state")
+        self.assertEqual(log.read_text(encoding="utf-8"),
+                         "private prior evidence")
+        self.assertFalse(self.root.exists())
+
+    def test_failed_opt_in_log_write_restores_streams(self):
+        self.write_catalog([entry()])
+        log = self.base / "disk-full.log"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            with mock.patch.object(pk._ConsoleTee, "write",
+                                   side_effect=OSError("synthetic disk full")):
+                with self.assertRaisesRegex(OSError, "disk full"):
+                    pk.main(["--json", "--root", str(self.root),
+                             "--log-file", str(log), "list"])
+            # main() must restore the caller's redirect even after I/O failure.
+            self.assertIs(__import__("sys").stdout, output)
+        self.assertTrue(log.exists())
+        self.assertFalse(self.root.exists())
+
 
 class InstallTests(fixtures.InstallWorkspace):
     def test_cli_install_uses_injected_downloader(self):

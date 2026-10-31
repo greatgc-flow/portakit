@@ -1046,10 +1046,33 @@ def execute(args, downloader):
         return remove(identifier, root, state=state)
 
 
+class _ConsoleTee:
+    """Mirror this Python invocation's stream writes to a local evidence log.
+
+    Both streams use one exclusive-create file. This does not capture output
+    written by native subprocesses to OS handles or survive process crashes.
+    """
+
+    def __init__(self, displayed, evidence):
+        self.displayed = displayed
+        self.evidence = evidence
+
+    def write(self, value):
+        self.displayed.write(value)
+        self.evidence.write(value)
+        self.evidence.flush()
+
+    def flush(self):
+        self.displayed.flush()
+        self.evidence.flush()
+
+
 def main(argv=None, downloader=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     command = None
     args = None
+    original_stdout, original_stderr = sys.stdout, sys.stderr
+    evidence = None
     try:
         parser = Parser(
             description=__doc__, allow_abbrev=False,
@@ -1069,6 +1092,8 @@ def main(argv=None, downloader=None):
                             help="opt in to pinned recommended settings and plugins (install only)")
         parser.add_argument("--json", action="store_true",
                             help="emit one JSON result envelope (help stays human text)")
+        parser.add_argument("--log-file", type=Path, metavar="FILE",
+                            help="optional new-only local console transcript (stdout and stderr)")
         parser.add_argument("--root", type=Path, default=Path("portable"), metavar="DIR",
                             help="install root (default: portable in the current directory)")
         parser.add_argument("command", choices=("list", "install", "update", "configure", "remove"),
@@ -1080,6 +1105,13 @@ def main(argv=None, downloader=None):
         except SystemExit as exc:  # -h/--help: human text, no envelope
             return exc.code if isinstance(exc.code, int) else 0
         command = args.command
+        if args.log_file is not None:
+            # Fail before any command side effect if evidence cannot be
+            # created; no default log, no mkdir, no overwrite or reparse path.
+            check_links(args.log_file)
+            evidence = args.log_file.open("x", encoding="utf-8", newline="\n")
+            sys.stdout = _ConsoleTee(original_stdout, evidence)
+            sys.stderr = _ConsoleTee(original_stderr, evidence)
         if (command == "list") != (args.id is None):
             raise PortakitError("usage", "list takes no ID; other commands require ID")
         if args.recommended and command != "install":
@@ -1099,17 +1131,24 @@ def main(argv=None, downloader=None):
         result = dict(ok=False, command=command, data=None,
                       error=dict(code=name, message=str(exc)))
         code = EXIT_CODES[name]
-    if "--json" in argv:
-        print(json.dumps(result))
-    elif result["ok"]:
-        if command == "list":
-            for tool in result["data"]["items"]:
-                print(f'{tool["id"]}\t{tool["version"]}')
+    try:
+        if "--json" in argv:
+            print(json.dumps(result))
+        elif result["ok"]:
+            if command == "list":
+                for tool in result["data"]["items"]:
+                    print(f'{tool["id"]}\t{tool["version"]}')
+            else:
+                print(f"{command}: {args.id}")
         else:
-            print(f"{command}: {args.id}")
-    else:
-        print(result["error"]["message"], file=sys.stderr)
-    return code
+            print(result["error"]["message"], file=sys.stderr)
+        return code
+    finally:
+        # Restore callers\u0027 streams even when log writing fails. A partial
+        # log after an I/O error is never authoritative evidence.
+        sys.stdout, sys.stderr = original_stdout, original_stderr
+        if evidence is not None:
+            evidence.close()
 
 
 if __name__ == "__main__":

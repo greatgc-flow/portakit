@@ -323,6 +323,10 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
         return {"installed": [], "skipped": [], "failed": None}
     if any(row["status"].startswith("blocked-") for row in plan["tools"]):
         raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
+    # Preserve existing blocked-plan diagnostics first. For any runnable
+    # batch, fail closed on deletable evidence paths before mkdir, lock,
+    # download or child install; reuse the core CLI's single source of truth.
+    core.check_evidence_location(log, root, "install")
     if offline_dir is not None and recommended:
         raise ToolsetError("Offline --recommended is unsupported: editor plugins may require extra downloads")
     if offline_dir is not None:

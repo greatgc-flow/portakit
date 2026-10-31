@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — protect batch toolset evidence location (source-only)
+
+- [x] Reuse `core.check_evidence_location` during `scripts/toolsets.py apply` before root creation/locking/install, so explicit `--log-file` cannot point into managed tools, backups, cleanup-temp or arbitrary in-root directories. Preserve existing default `ROOT/.portakit-evidence/` and outside-root paths; keep install plans and selection behavior unchanged.
+- [x] Update synthetic batch tests to locate non-default evidence outside `ROOT`; add separate negative cases for managed/current/backup/temp/other in-root paths and positive case proving dedicated-root evidence survives simulated installation and equals console output.
+- [ ] Verify exact PR-head Windows Python 3.11/3.14 complete CI, any triggered archive smoke, squash merge, and independently verify merged-main CI. No real vendor or final-user enterprise acceptance assumed.
+
 ## 2026-11-01 — protect opt-in core evidence against managed directory mutation
 
 - [x] Block `--log-file` inside managed root folders that `install`, `update`, `configure` and `remove` may rename/delete, including legacy `.old` and `.portakit-*.tmp` paths. Permit explicit existing `ROOT/.portakit-evidence/` or any external path; retain `list` freedom. No automatic directory creation or file overwrite.

@@ -205,6 +205,52 @@ class ToolsetTests(unittest.TestCase):
         with self.assertRaisesRegex(toolsets.ToolsetError, "schemaVersion"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
 
+    def test_mutating_apply_rejects_log_under_managed_root_before_writes(self):
+        """No batch, lock, root mkdir or installer may run with deletable evidence."""
+        plan = self.plan(["data"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        runner = mock.Mock(side_effect=AssertionError("child started"))
+        invalid = (
+            self.root / "jq" / "audit.log",
+            self.root / "jq.old" / "audit.log",
+            self.root / ".portakit-stage-abc.tmp" / "audit.log",
+            self.root / "other" / "audit.log",
+            self.root / "audit.log",
+        )
+        for log in invalid:
+            with self.subTest(path=log):
+                with self.assertRaisesRegex(toolsets.core.PortakitError,
+                                            ".portakit-evidence"):
+                    toolsets.apply(plan, False, log, runner=runner)
+                self.assertFalse(self.root.exists())
+                self.assertFalse(log.exists())
+        runner.assert_not_called()
+
+    def test_mutating_apply_allows_explicit_reserved_evidence(self):
+        """Existing dedicated evidence path survives the simulated tool install."""
+        plan = self.plan(["data"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        folder = self.root / ".portakit-evidence"
+        folder.mkdir(parents=True)
+        log = folder / "apply.log"
+        calls = []
+
+        def success(cmd, **kwargs):
+            name = cmd[cmd.index("install") + 1]
+            calls.append(name)
+            self.mark_managed(name)
+            return subprocess.CompletedProcess(
+                cmd, 0, json.dumps({"ok": True, "command": "install",
+                                    "data": {"id": name}, "error": None}), "")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = toolsets.apply(plan, False, log, runner=success)
+        self.assertIsNone(result["failed"])
+        self.assertEqual(result["installed"], ["jq"])
+        self.assertEqual(calls, ["jq"])
+        self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
+        self.assertTrue((self.root / "jq").exists())
+
     def test_apply_installs_each_unique_id_once_and_logs_verbatim(self):
         p = self.plan(["mes-support", "developer"])
         p.update(include=[], exclude=[], manifest=self.manifest)
@@ -217,7 +263,7 @@ class ToolsetTests(unittest.TestCase):
             return subprocess.CompletedProcess(
                 cmd, 0, json.dumps({"ok": True, "command": "install",
                                     "data": {"id": app}, "error": None}), "")
-        log = self.root / "test-result.log"
+        log = self.root.parent / "test-result.log"
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             result = toolsets.apply(p, True, log, runner=runner)
@@ -242,7 +288,7 @@ class ToolsetTests(unittest.TestCase):
             return subprocess.CompletedProcess(
                 cmd, 0, json.dumps({"ok": True, "command": "install",
                                     "data": {"id": app}}), "")
-        log = self.root / "evidence.log"
+        log = self.root.parent / "evidence.log"
         with contextlib.redirect_stdout(io.StringIO()):
             result = toolsets.apply(p, False, log, runner=runner)
         self.assertEqual(calls, ["notepad++", "winmerge"])
@@ -262,7 +308,7 @@ class ToolsetTests(unittest.TestCase):
                 cmd, 0, json.dumps({"ok": True, "command": "install",
                                     "data": {"id": name}, "error": None}), "")
 
-        log = self.root / "missing-receipt.log"
+        log = self.root.parent / "missing-receipt.log"
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             result = toolsets.apply(plan, False, log, runner=fake_success)
@@ -298,7 +344,7 @@ class ToolsetTests(unittest.TestCase):
                                                 "data": {"id": "jq"},
                                                 "error": None}), "")
 
-                    log = root / "post-check.log"
+                    log = root.parent / "post-check.log"
                     with contextlib.redirect_stdout(io.StringIO()):
                         result = toolsets.apply(
                             plan, False, log, runner=fake_success)
@@ -315,7 +361,7 @@ class ToolsetTests(unittest.TestCase):
             fake = ('{"ok": false, "ok": true, "command": "install", '
                     '"data": {"id": "' + name + '"}, "error": null}')
             return subprocess.CompletedProcess(cmd, 0, fake, "")
-        log = self.root / "duplicate-installer-result.log"
+        log = self.root.parent / "duplicate-installer-result.log"
         with contextlib.redirect_stdout(io.StringIO()):
             result = toolsets.apply(plan, False, log, runner=duplicate_json)
         self.assertEqual(result["failed"], "notepad++")
@@ -331,7 +377,7 @@ class ToolsetTests(unittest.TestCase):
             payload = {"ok": True, "command": "install",
                        "data": {"id": name}, "error": {"code": "unverified"}}
             return subprocess.CompletedProcess(cmd, 0, json.dumps(payload), "")
-        log = self.root / "failed-envelope.log"
+        log = self.root.parent / "failed-envelope.log"
         with contextlib.redirect_stdout(io.StringIO()):
             result = toolsets.apply(plan, False, log, runner=fake_error)
         self.assertEqual(result["failed"], "notepad++")
@@ -345,7 +391,7 @@ class ToolsetTests(unittest.TestCase):
         def blocked(cmd, *, timeout_seconds):
             invocations.append((cmd, timeout_seconds))
             raise toolsets.bounded.BoundedProcessError("OUTPUT_LIMIT")
-        log = self.root / "bounded-error.log"
+        log = self.root.parent / "bounded-error.log"
         with mock.patch.object(toolsets.bounded, "run_bounded", side_effect=blocked):
             with contextlib.redirect_stdout(io.StringIO()):
                 result = toolsets.apply(plan, False, log, child_timeout=7)

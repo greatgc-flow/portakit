@@ -46,6 +46,8 @@ def load_ledger(path=LEDGER):
         raise ResearchError("Unsupported candidate ledger schema")
     rows = data.get("candidates")
     gates = data.get("requiredIndependentGates")
+    if (not isinstance(data.get("asOf"), str) or not data["asOf"].strip()):
+        raise ResearchError("Missing research observation date")
     if (not isinstance(rows, list) or not rows or len(rows) > 30 or
             not isinstance(gates, list) or len(gates) != 8 or
             any(not isinstance(g, str) or not g for g in gates) or
@@ -86,6 +88,7 @@ def load_ledger(path=LEDGER):
                 not item["assetName"].endswith(suffix) or
                 not isinstance(item["releaseTag"], str) or
                 not item["releaseTag"] or
+                not isinstance(item["assetURL"], str) or
                 not item["assetURL"].endswith("/" + item["assetName"]) or
                 "/download/" + item["releaseTag"] + "/" not in item["assetURL"]):
             raise ResearchError("Release URL/asset mismatch: " + ident)

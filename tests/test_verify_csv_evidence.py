@@ -258,7 +258,7 @@ class EvidenceChainTests(unittest.TestCase):
         self.build()
         self.rewrite_smoke(
             lambda doc: doc["checks"][0].update({"returnCode": 1}))
-        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
             self.verify()
 
     def test_pass_case_with_claimed_truncated_output_is_invalid(self):
@@ -266,13 +266,13 @@ class EvidenceChainTests(unittest.TestCase):
         self.rewrite_smoke(
             lambda doc: doc["checks"][1].update(
                 {"capturedOutputTruncated": True}))
-        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
             self.verify()
 
     def test_pass_case_with_missing_digest_is_invalid(self):
         self.build()
         self.rewrite_smoke(lambda doc: doc["checks"][2].pop("stdoutSha256"))
-        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
             self.verify()
 
     def test_pass_case_with_oversized_capture_is_invalid(self):
@@ -280,7 +280,7 @@ class EvidenceChainTests(unittest.TestCase):
         self.rewrite_smoke(
             lambda doc: doc["checks"][3].update(
                 {"stdoutBytes": smoke.MAX_CAPTURE + 1}))
-        with self.assertRaisesRegex(chain.EvidenceError, "PASS check contradicts"):
+        with self.assertRaisesRegex(chain.EvidenceError, "process/capture|Process record"):
             self.verify()
 
     def test_null_json_report_rejected(self):
@@ -338,6 +338,139 @@ class EvidenceChainTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaisesRegex(chain.EvidenceError, "row count"):
                     chain.expected_fixture_sha256(value)
+
+
+    def rewrite_source(self, mutate):
+        """Edit source JSON together with its canonical recorded console."""
+        path = self.source_json
+        report = json.loads(path.read_text(encoding="utf-8"))
+        mutate(report)
+        path.write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+        lines = source.display_lines(report)
+        footer = "REPORT: " + str(path)
+        path.with_suffix(".log").write_text(
+            "\n".join(lines + [footer]) + "\n",
+            encoding="utf-8", newline="\n")
+
+    def test_source_provenance_and_notice_overclaims_rejected(self):
+        baseline, _ = self.build()
+        for field, claimed in (("provenance", "PUBLISHER_VERIFIED"),
+                               ("notice", "ENTERPRISE_APPROVED"),
+                               ("candidateId", "not-xan")):
+            with self.subTest(field=field):
+                self.rewrite_source(
+                    lambda report: report.update({field: claimed}))
+                with self.assertRaisesRegex(chain.EvidenceError, "metadata"):
+                    self.verify()
+                self.rewrite_source(
+                    lambda report: report.update({field: baseline[field]}))
+
+    def test_source_zip_member_counters_rejected(self):
+        self.build()
+        self.rewrite_source(
+            lambda report: report["structure"].update({"members": 1}))
+        with self.assertRaisesRegex(chain.EvidenceError, "structure counters"):
+            self.verify()
+
+    def test_source_zip_expanded_bytes_below_executable_rejected(self):
+        self.build()
+        self.rewrite_source(lambda report:
+                            report["structure"].update({"expandedLogicalBytes": 0}))
+        with self.assertRaisesRegex(chain.EvidenceError, "structure counters"):
+            self.verify()
+
+    def test_smoke_host_attestation_overclaim_rejected(self):
+        self.build()
+        self.rewrite_smoke(
+            lambda doc: doc.update({"host": "CERTIFIED_AIRGAPPED"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "overclaims"):
+            self.verify()
+
+    def test_smoke_notice_overclaim_rejected(self):
+        self.build()
+        self.rewrite_smoke(lambda doc: doc.update({"notice": "RELEASE_APPROVED"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "overclaims"):
+            self.verify()
+
+    def test_valid_raised_runner_error_is_blocked_not_parse_error(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0] = {"tool": "miller", "case": "count",
+                                "status": "ERROR", "errorType": "ValueError"}
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        self.assertEqual(self.verify()["outcome"], "INCOMPLETE_OR_BLOCKED")
+
+    def test_invalid_runner_error_missing_error_type_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0] = {"tool": "miller", "case": "count",
+                                "status": "ERROR"}
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "ERROR record"):
+            self.verify()
+
+    def test_valid_nonzero_command_failure_remains_blocked(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({"status": "COMMAND_FAILED",
+                                     "returnCode": 9})
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        self.assertEqual(self.verify()["outcome"], "INCOMPLETE_OR_BLOCKED")
+
+    def test_command_failed_with_zero_return_code_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({"status": "COMMAND_FAILED",
+                                     "returnCode": 0})
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "COMMAND_FAILED verdict"):
+            self.verify()
+
+    def test_failed_semantic_output_with_nonzero_return_code_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({"status": "FAIL", "returnCode": 1})
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "PASS/FAIL verdict"):
+            self.verify()
+
+    def test_output_limit_without_overflow_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0]["status"] = "OUTPUT_LIMIT"
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "OUTPUT_LIMIT verdict"):
+            self.verify()
+
+    def test_negative_duration_rejected_even_when_log_matches(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({"durationMilliseconds": -1})
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "Process record"):
+            self.verify()
+
+    def test_forged_truncation_flag_without_excess_bytes_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["checks"][0].update({"capturedOutputTruncated": True})
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "Process record"):
+            self.verify()
+
+    def test_source_unchecked_note_contradiction_rejected(self):
+        self.build(bind=False)
+        self.rewrite_source(
+            lambda report: report["localExeComparison"].update(
+                {"note": "CONTENT_MATCH_ONLY_NOT_EXECUTION_OR_PUBLISHER_APPROVAL"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "Unchecked source EXE"):
+            self.verify()
 
 
 if __name__ == "__main__":

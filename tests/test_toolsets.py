@@ -30,7 +30,11 @@ class ToolsetTests(unittest.TestCase):
         catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
         pin = catalog[identifier]
         if create_directory:
-            (self.root / pin["dest"]).mkdir(parents=True, exist_ok=True)
+            target = self.root / pin["dest"]
+            target.mkdir(parents=True, exist_ok=True)
+            # Synthetic test payload only: exercise managed-directory presence
+            # without executing or copying any third-party vendor binary.
+            (target / "fixture-payload.txt").write_text("synthetic")
         state = toolsets.core.read_state(self.root)
         state[identifier] = {
             "version": pin["version"],
@@ -132,6 +136,7 @@ class ToolsetTests(unittest.TestCase):
     def test_installed_pin_no_op_and_stale_pin_blocked(self):
         self.root.mkdir()
         (self.root / "notepad++").mkdir()
+        (self.root / "notepad++" / "fixture-payload.txt").write_text("synthetic")
         catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
         t = catalog["notepad++"]
         state = {"notepad++": {"version": t["version"], "sha256": t["sha256"],
@@ -147,6 +152,28 @@ class ToolsetTests(unittest.TestCase):
             toolsets.apply(p, False, self.root / "evidence.log",
                            runner=mock.Mock())
         self.assertFalse((self.root / "evidence.log").exists())
+
+    def test_empty_managed_directory_reports_blocked_empty_without_writes(self):
+        """Receipts plus empty folders are not healthy installed applications."""
+        self.root.mkdir()
+        (self.root / "jq").mkdir()
+        pin = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)["jq"]
+        state = {"jq": {"version": pin["version"], "sha256": pin["sha256"],
+                        "dest": pin["dest"]}}
+        path = self.root / ".portakit-state.json"
+        path.write_text(json.dumps(state), encoding="utf-8")
+        before = path.read_bytes()
+        plan = self.plan(["data"])
+        self.assertEqual(plan["tools"][0]["status"], "blocked-empty")
+        self.assertEqual(path.read_bytes(), before)
+        self.assertFalse(list((self.root / "jq").iterdir()))
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        runner = mock.Mock(side_effect=AssertionError("unexpected child"))
+        log = self.root.parent / "empty-plan.log"
+        with self.assertRaisesRegex(toolsets.ToolsetError, "blocked plan"):
+            toolsets.apply(plan, False, log, runner=runner)
+        self.assertFalse(log.exists())
+        runner.assert_not_called()
 
     def test_existing_unmanaged_destination_and_backup_blocked(self):
         self.root.mkdir()
@@ -319,7 +346,7 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
 
     def test_success_json_with_mismatched_or_missing_managed_target_fails(self):
-        for kind in ("missing-directory", "wrong-pin"):
+        for kind in ("missing-directory", "wrong-pin", "empty-directory"):
             with self.subTest(kind=kind):
                 # Per-case disposable install root avoids carrying state between runs.
                 with tempfile.TemporaryDirectory() as temporary:
@@ -332,7 +359,7 @@ class ToolsetTests(unittest.TestCase):
                         pin = toolsets.core.load_catalog(
                             toolsets.core.DEFAULT_CATALOG)["jq"]
                         root.mkdir(parents=True, exist_ok=True)
-                        if kind == "wrong-pin":
+                        if kind in ("wrong-pin", "empty-directory"):
                             (root / pin["dest"]).mkdir()
                         toolsets.core.write_state(root, {"jq": {
                             "version": pin["version"], "dest": pin["dest"],

@@ -173,6 +173,11 @@ def status_of(tool, root, state):
         return "blocked-pin"
     if not install.is_dir():
         return "blocked-missing"
+    # An intact receipt plus an empty folder does not prove a managed
+    # installation; do not skip it or accept a forged child success. This is
+    # only a minimal presence check, never a vendor binary integrity claim.
+    if not any(install.iterdir()):
+        return "blocked-empty"
     return "already-installed"
 
 

@@ -220,7 +220,11 @@ class OfflineReadinessTests(unittest.TestCase):
         """Exercise actual on-disk managed pin state, not a mocked planner."""
         pin = self.pins["jq"]
         self.root.mkdir()
-        (self.root / pin["dest"]).mkdir()
+        install_dir = self.root / pin["dest"]
+        install_dir.mkdir()
+        # Synthetic installed payload marker: do not fake a healthy install
+        # with an empty directory, and never execute any vendor binary.
+        (install_dir / "synthetic-contents.txt").write_text("fixture", encoding="utf-8")
         (self.root / ".portakit-state.json").write_text(
             json.dumps({"jq": {"version": pin["version"],
                                 "sha256": pin["sha256"],
@@ -238,10 +242,33 @@ class OfflineReadinessTests(unittest.TestCase):
         self.assertEqual(report["blockers"], [])
         self.assertFalse(nonexistent.exists())
 
-    def test_mixed_real_managed_and_missing_app_requires_originals(self):
+    def test_real_empty_managed_folder_blocks_instead_of_false_noop(self):
+        """Offline readiness must inherit the same empty-directory diagnosis."""
         pin = self.pins["jq"]
         self.root.mkdir()
         (self.root / pin["dest"]).mkdir()
+        (self.root / ".portakit-state.json").write_text(
+            json.dumps({"jq": {"version": pin["version"],
+                                "sha256": pin["sha256"],
+                                "dest": pin["dest"]}}),
+            encoding="utf-8")
+        saved = ready.kit.make_kit("empty-installed", ["jq"], self.pins, self.known)
+        report = self.assess(saved=saved, folder=Path(self.tmp) / "missing-archives")
+        self.assertEqual(report["outcome"], "BLOCKED")
+        self.assertEqual(report["alreadyInstalled"], 0)
+        self.assertEqual(report["needInstall"], 0)
+        self.assertEqual(report["tools"][0]["installStatus"], "blocked-empty")
+        self.assertTrue(any("INSTALL_BLOCKED: jq / blocked-empty" in blocker
+                            for blocker in report["blockers"]))
+
+    def test_mixed_real_managed_and_missing_app_requires_originals(self):
+        pin = self.pins["jq"]
+        self.root.mkdir()
+        install_dir = self.root / pin["dest"]
+        install_dir.mkdir()
+        # Synthetic installed payload marker: do not fake a healthy install
+        # with an empty directory, and never execute any vendor binary.
+        (install_dir / "synthetic-contents.txt").write_text("fixture", encoding="utf-8")
         (self.root / ".portakit-state.json").write_text(
             json.dumps({"jq": {"version": pin["version"],
                                 "sha256": pin["sha256"],

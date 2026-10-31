@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — reject empty managed install folders in batch status
+
+- [x] Keep the existing read-only toolset status and post-install receipt check, but distinguish missing from **empty** managed directories (`blocked-missing` vs `blocked-empty`), never reporting either as `already-installed` or a completed child install. Do not guess app-specific executable locations or execute vendor code.
+- [x] Add synthetic tests for a matching receipt+empty folder in plan (no writes/child) and a zero-exit core JSON with an empty target folder (post-install STOP/PARTIAL). Update existing fake installed folders to contain an inert text marker. This is a minimal presence check, not end-user vendor integrity/EDR/license acceptance.
+- [ ] Exact PR-head Windows 3.11/3.14 tests, any triggered archive smoke, squash merge and independent post-merge main CI.
+
 ## 2026-11-01 — protect batch toolset evidence location (source-only)
 
 - [x] Reuse `core.check_evidence_location` during `scripts/toolsets.py apply` before root creation/locking/install, so explicit `--log-file` cannot point into managed tools, backups, cleanup-temp or arbitrary in-root directories. Preserve existing default `ROOT/.portakit-evidence/` and outside-root paths; keep install plans and selection behavior unchanged.

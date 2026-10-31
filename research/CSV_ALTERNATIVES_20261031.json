@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-31",
+  "authority": "Official GitHub release API snapshots and upstream COPYING references; no local vendor originals, runtime tests, EDR, corporate use or redistribution approvals. Supplemental RESEARCH_ONLY notes; catalog and canonical counts unchanged.",
+  "incumbent": {
+    "id": "miller",
+    "version": "6.22.0",
+    "alreadyPinned": true,
+    "comment": "Previously admitted approved SHA catalog baseline, do not imply competing tools outperform it."
+  },
+  "alternatives": [
+    {
+      "id": "qsv",
+      "sourceRepo": "https://github.com/dathere/qsv",
+      "release": "27.0.1",
+      "publishedAt": "2026-10-27T12:15:15Z",
+      "releaseURL": "https://github.com/dathere/qsv/releases/tag/27.0.1",
+      "archived": false,
+      "licenseSource": "https://github.com/dathere/qsv/blob/master/COPYING",
+      "licenseReported": "MIT since >v21.1.1; verify full notices and dependencies",
+      "windowsX64": [
+        {
+          "asset": "qsv-27.0.1-x86_64-pc-windows-msvc.zip",
+          "size": 402543109,
+          "sha256": "80c463318d64c630573b1d9aa040a1b139345d26d8becdaa0e259c78a0bf8c4a"
+        },
+        {
+          "asset": "qsv-27.0.1-x86_64-pc-windows-gnu.zip",
+          "size": 129287020,
+          "sha256": "3efe00909ad9bfd7fe52cf2a430d52115d327eb98dcc97c361afb09c2b78acf4"
+        }
+      ],
+      "assessment": "Both current official Windows x64 ZIP assets exceed PortaKit's 100 MiB compressed-input cap; not an ultra-light default. Do not weaken cap only to admit it. Investigate smaller variants or documented build flavors separately if needed.",
+      "missing": [
+        "vendorOriginalSHA",
+        "expandedBytes",
+        "WindowsRuntime",
+        "corporateLicense",
+        "redistribution",
+        "EDR",
+        "functionalCSVBenchmark"
+      ]
+    },
+    {
+      "id": "xan",
+      "sourceRepo": "https://github.com/medialab/xan",
+      "release": "0.61.0",
+      "publishedAt": "2026-09-11T14:42:33Z",
+      "releaseURL": "https://github.com/medialab/xan/releases/tag/0.61.0",
+      "archived": false,
+      "licenseSource": "https://github.com/medialab/xan/blob/master/COPYING",
+      "licenseReported": "MIT OR Unlicense per upstream COPYING; verify dependency notices",
+      "windowsX64": [
+        {
+          "asset": "xan-x86_64-pc-windows-msvc.zip",
+          "size": 6473075,
+          "sha256": "5f7bef4dcffbfb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54"
+        }
+      ],
+      "assessment": "Compressed ZIP is comparatively small and compatible in format with current core. Higher-priority research candidate, NOT pinned or deployable. Real offline SHA and CSV/Unicode/sorting/performance/legal checks still needed.",
+      "missing": [
+        "vendorOriginalSHA",
+        "expandedBytes",
+        "WindowsRuntime",
+        "corporateLicense",
+        "redistribution",
+        "EDR",
+        "functionalCSVBenchmark"
+      ]
+    }
+  ],
+  "gates": "Candidate family names here are supplementary only; cannot silently enter the 151 selectable or 19 SHA-pinned installations without separate reviewed admission."
+}

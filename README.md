@@ -9,6 +9,20 @@ The optional personal-kit GUI now offers a **Selected only** filter alongside ca
 Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).
 
 
+## DuckDB TAR safety preflight / CSV alternatives (2026-10-31)
+
+Optional `python -I scripts/targz_preflight.py --original LOCAL.tar.gz` reads
+an operator-supplied, separately authorized DuckDB 2.0.0 x64 original and
+checks the official research SHA, bounded TAR/gzip contents, path collisions
+and links **without extracting a file**. Optional `--out` writes only a new
+JSON and exactly mirrored console transcript. Exit 0 is a local SHA/structure
+result **only**, not permission to install, run vendor code, or transfer it.
+The core installer still rejects `tar.gz`; DuckDB remains research-only.
+The same [guide](docs/DUCKDB_TARGZ_CSV_ALTERNATIVES.md) compares GitHub
+release metadata for qsv and xan against existing pinned Miller. qsv current
+Windows x64 assets exceed the existing 100 MiB archive cap; xan is a more
+compact **research** candidate, not silently added to canonical selections.
+
 ## Lightweight candidate research gate (2026-10-31)
 
 The optional `python -I scripts/lightweight_review.py` command displays the

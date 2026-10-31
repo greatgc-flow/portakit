@@ -38,6 +38,8 @@ Only synthetic UTF-8 CSV is generated. The small file includes Korean, accented 
 
 A successful run is **FUNCTIONAL_PASS_ONLY**, with operator-local EXE SHA-256 fingerprints and exact console-mirrored evidence in result.json and console.log. Exit codes: **0 = just these four functional checks passed**, **2 = one or more observed checks blocked/failed, or read-only plan pending**, **1 = invalid usage/preconditions/local evidence I/O**. None of these values admits xan into the tool catalog or establishes a vendor binary's provenance.
 
+Output capture is checked **after** each vendor process terminates; the 256 KiB reported-output threshold is NOT a hard process memory/disk cap. The script provides a per-call timeout but **does not enforce OS memory quotas, isolate child processes or block network access**. Run only in a genuinely protected nonproduction offline Windows environment. A future separately reviewed harness may enforce stronger OS-level output/process limits if real operator evidence justifies it.
+
 The report explicitly retains vendor archive provenance, corporate EULA/OSS/EDR/transfer rights and performance ranking as **NOT_VERIFIED / NOT_ASSESSED**. The command records individual elapsed milliseconds but **one pass is not a representative benchmark**, nor CPU/RAM measurement. Manual side effects outside its local scratch directory and network isolation remain unmeasured.
 
 ## Boundaries and follow-up

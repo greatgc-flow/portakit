@@ -1,12 +1,12 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — VSG-guided Miller/xan opt-in Windows CSV smoke (candidate PR)
+## 2026-10-31 — VSG-guided Miller/xan opt-in Windows CSV smoke (merged PR #56)
 
 - [x] Reviewed [VerySimpleGuide](https://github.com/greatgc-flow/VerySimpleGuide) main `0aef4e93cbd9b746c4927f08ce9bfda685e897e4`: Very Simple fitness, separate real-world gates, no inferred observations, explicit consent, bounded operation, exact console evidence, ongoing feedback. **Guidance applied, no mandatory imported framework or claim of full conformance.**
 - [x] New independent `scripts/csv_operator_smoke.py`: default read-only `plan`, optional Windows-only `run` requires `--yes --approved-offline`, explicit local `mlr.exe/xan.exe`, new evidence directory. Fixed documented commands count/CSV select, synthetic UTF-8 Korean/comma/quotes/CRLF/multiline plus bounded bulk count, per-call timeout, output correctness, file/EXE SHA and unexpected workspace writes, new-only JSON plus exact console `.log`.
 - [x] Headless synthetic/mock-only tests for opt-in consent, function/parse errors, changed files, unexpected writes, timeouts, no overwrite, null/empty/invalid inputs and no accidental vendor calls. No real vendor downloads/launches by CI, no registry/PATH/OS changes or new pin.
-- [ ] PR Windows Python 3.11 and 3.14 CI and post-merge `main` evidence, handoff, and [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) follow-up.
-- [ ] Actual locally verified official xan ZIP SHA, live authorized offline Windows CSV/BOM/UTF-16/invalid-data/large-file smoke, repeated CPU/RAM/disk benchmarks, legal/EDR/redistribution approvals and GUI gates remain **NOT_VERIFIED**. Do not equate passing mocked CI or a single live count with admission.
+- [x] [PR #56](https://github.com/greatgc-flow/portakit/pull/56) squash-merged as `572d6f4c8832ecdb9fe49c777930e157a1b5a9c1`; [PR Windows CI](https://github.com/greatgc-flow/portakit/actions/runs/41170746060) and [post-merge code main CI](https://github.com/greatgc-flow/portakit/actions/runs/41170884529) both **514 tests PASS on Python 3.11 and 3.14**. [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) comment records exact safety/acceptance gaps; issue stays OPEN.
+- [ ] Actual locally verified official xan ZIP SHA, live authorized offline Windows CSV/BOM/UTF-16/invalid-data/large-file smoke, repeated CPU/RAM/disk benchmarks, legal/EDR/redistribution approvals and GUI gates remain **NOT_VERIFIED**. CLI's 256 KiB output threshold is evaluated **after** process completion and cannot bound malicious vendor memory/disk/network usage; test only on an approved isolated host, propose stronger bounds after observing need. Do not equate passing mocked CI or a single live count with admission.
 
 
 ## 2026-10-31 — DuckDB read-only TAR structure audit and qsv/xan investigation (merged PR #55)

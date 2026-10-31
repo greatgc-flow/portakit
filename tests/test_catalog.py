@@ -108,6 +108,67 @@ class CatalogTests(fixtures.Workspace):
         with self.assertRaisesRegex(pk.PortakitError, "dest"):
             self.load([entry(id="a", dest="Tool"), entry(id="b", dest="tool")])
 
+    def test_duplicate_catalog_root_key_is_invalid(self):
+        self.write_catalog([entry()])
+        source = self.catalog.read_text(encoding="utf-8")
+        self.catalog.write_text(source.replace(
+            '"tools":', '"tools": [], "tools":', 1), encoding="utf-8")
+        original = self.catalog.read_bytes()
+        with self.assertRaisesRegex(pk.PortakitError, "Duplicate JSON key"):
+            pk.load_catalog(self.catalog)
+        self.assertEqual(self.catalog.read_bytes(), original)
+
+    def test_duplicate_vendor_sha_pin_is_invalid(self):
+        self.write_catalog([entry()])
+        source = self.catalog.read_text(encoding="utf-8")
+        self.catalog.write_text(source.replace(
+            '"sha256":', '"sha256": "' + '0' * 64 + '", "sha256":', 1),
+            encoding="utf-8")
+        with self.assertRaisesRegex(pk.PortakitError, "Duplicate JSON key"):
+            pk.load_catalog(self.catalog)
+
+    def test_catalog_nonfinite_json_is_rejected(self):
+        self.write_catalog([entry()])
+        source = self.catalog.read_text(encoding="utf-8")
+        self.catalog.write_text(source.replace(
+            '"tools":', '"invalid": NaN, "tools":', 1), encoding="utf-8")
+        with self.assertRaisesRegex(pk.PortakitError, "Nonstandard JSON numeric"):
+            pk.load_catalog(self.catalog)
+
+    def test_installed_state_duplicate_app_id_fails_closed(self):
+        root = self.catalog.parent / "duplicate-state"
+        root.mkdir()
+        state = root / ".portakit-state.json"
+        item = {"version": "1", "sha256": "a" * 64, "dest": "demo"}
+        raw = json.dumps(item)
+        state.write_text('{"demo":' + raw + ',"demo":' + raw + '}',
+                         encoding="utf-8")
+        before = state.read_bytes()
+        with self.assertRaisesRegex(pk.PortakitError, "Duplicate JSON key"):
+            pk.read_state(root)
+        self.assertEqual(state.read_bytes(), before)
+
+    def test_installed_state_duplicate_nested_pin_fails_closed(self):
+        root = self.catalog.parent / "nested-state"
+        root.mkdir()
+        state = root / ".portakit-state.json"
+        state.write_text(
+            '{"demo":{"version":"1","dest":"demo",'
+            '"sha256":"' + '0' * 64 + '","sha256":"' + 'a' * 64 + '"}}',
+            encoding="utf-8")
+        with self.assertRaisesRegex(pk.PortakitError, "Duplicate JSON key"):
+            pk.read_state(root)
+
+    def test_installed_state_nan_not_accepted(self):
+        root = self.catalog.parent / "nonfinite-state"
+        root.mkdir()
+        (root / ".portakit-state.json").write_text(
+            '{"demo":{"version":"1","dest":"demo",'
+            '"sha256":"' + 'a' * 64 + '","unknown":NaN}}',
+            encoding="utf-8")
+        with self.assertRaisesRegex(pk.PortakitError, "Nonstandard JSON numeric"):
+            pk.read_state(root)
+
     def test_malformed_json_names_catalog(self):
         self.catalog.write_text("{", encoding="utf-8")
         with self.assertRaisesRegex(pk.PortakitError, "catalog"):

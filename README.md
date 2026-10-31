@@ -6,7 +6,11 @@
 
 ## Latest verified source CI
 
-As of this handoff baseline, merged `main` `fe2d9dddc08f8931433bc038a5cb30a306153c18` passed [Windows Python 3.11 and 3.14 CI #41214866286](https://github.com/greatgc-flow/portakit/actions/runs/41214866286), **653/653 tests each** (actual logs confirmed). The later main CI of this source-only change must be checked independently.
+Merged `main` `1647fe182c461b8370c1d01edec20ab3bf6a054b` passed [Windows Python 3.11 and 3.14 CI #41215781088](https://github.com/greatgc-flow/portakit/actions/runs/41215781088), **662/662 tests each** (individual logs verified). A later source-only PR must independently verify its new HEAD and merged-main CI.
+
+## Declarative JSON safety (2026-11-01)
+
+Personal-kit JSON, installation receipts, and immutable catalog/toolset metadata are treated as **untrusted local input**, not as approval certificates. Readers reject contradictory duplicate keys and nonstandard NaN/Infinity claims instead of silently keeping the final value. Create-only evidence output failures remain **invalid** and subject to best-effort cleanup; no user data or vendor programs are launched merely by these checks. See [final-user responsibilities](docs/END_USER_ACCEPTANCE.md).
 
 ## Latest complete handoff — 2026-10-31
 

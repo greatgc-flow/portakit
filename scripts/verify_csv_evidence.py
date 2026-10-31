@@ -8,6 +8,7 @@ import csv
 import hashlib
 import io
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -136,7 +137,11 @@ def check_source(doc, frozen):
             doc.get("sourceSHA256") == frozen["expectedSha256"] and
             doc.get("compressedBytes") == frozen["expectedBytes"] and
             doc.get("runtimeWindows") == "NOT_VERIFIED" and
-            doc.get("enterprisePermission") == "NOT_VERIFIED",
+            doc.get("enterprisePermission") == "NOT_VERIFIED" and
+            doc.get("candidateId") == "xan" and
+            doc.get("provenance") ==
+            "GITHUB_RELEASE_METADATA_SHA_NOT_PUBLISHER_SIGNATURE" and
+            doc.get("notice") == source.NOTICE,
             "Source report mismatches release metadata or unverified gates")
     structure = doc.get("structure")
     link = doc.get("localExeComparison")
@@ -148,16 +153,38 @@ def check_source(doc, frozen):
             isinstance(structure.get("xanExeSha256"), str) and
             SHA.fullmatch(structure["xanExeSha256"]) is not None,
             "Source ZIP member digest/size invalid")
+    # These counts are reported by the original ZIP inspector. Check that
+    # numbers, roots, bytes and members do not contradict each other.
+    members = structure.get("members")
+    regular = structure.get("regularFiles")
+    directories = structure.get("directories")
+    expanded = structure.get("expandedLogicalBytes")
+    roots = structure.get("rootNames")
+    require(type(members) is int and 1 <= members <= source.MAX_MEMBERS and
+            type(regular) is int and 1 <= regular <= members and
+            type(directories) is int and 0 <= directories < members and
+            regular + directories == members and
+            type(expanded) is int and
+            structure["xanExeBytes"] <= expanded <= source.MAX_EXPANDED and
+            isinstance(roots, list) and 1 <= len(roots) <= members and
+            all(isinstance(root, str) and root and root == root.casefold()
+                for root in roots) and roots == sorted(set(roots)) and
+            isinstance(structure.get("xanExeMember"), str) and
+            structure["xanExeMember"].casefold().endswith("xan.exe"),
+            "Source ZIP structure counters/roots are inconsistent")
     status = link.get("status")
     require(status in ("NOT_CHECKED", "LOCAL_EXE_MATCHES_ZIP_MEMBER"),
             "Unsupported source-to-executable comparison")
     if status == "NOT_CHECKED":
-        require(link.get("sha256") is None and link.get("bytes") is None,
+        require(link.get("sha256") is None and link.get("bytes") is None and
+                link.get("note") == "NO_EXECUTABLE_PROVIDED",
                 "Unchecked source EXE cannot claim a digest")
         return None
     require(link.get("sha256") == structure["xanExeSha256"] and
             type(link.get("bytes")) is int and
-            link["bytes"] == structure["xanExeBytes"],
+            link["bytes"] == structure["xanExeBytes"] and
+            link.get("note") ==
+            "CONTENT_MATCH_ONLY_NOT_EXECUTION_OR_PUBLISHER_APPROVAL",
             "ZIP member and local executable evidence differ")
     return link["sha256"]
 
@@ -173,7 +200,10 @@ def check_smoke(doc, folder):
             1 <= doc["timeoutSeconds"] <= smoke.MAX_TIMEOUT and
             doc.get("vendorArchiveProvenance") == "NOT_VERIFIED" and
             doc.get("companyUseEDRRedistribution") == "NOT_VERIFIED" and
-            doc.get("performanceRanking") == "NOT_ASSESSED_SINGLE_RUN",
+            doc.get("performanceRanking") == "NOT_ASSESSED_SINGLE_RUN" and
+            doc.get("host") ==
+            "OPERATOR_ATTESTED_WINDOWS_OFFLINE_NOT_VERIFIED_BY_SCRIPT" and
+            doc.get("notice") == smoke.NOTICE,
             "Smoke report invalid or overclaims verification")
     checks = doc.get("checks")
     require(isinstance(checks, list) and len(checks) == len(EXPECTED_CASES) and
@@ -182,24 +212,49 @@ def check_smoke(doc, folder):
                 row.get("status") in STATUSES
                 for key, row in zip(EXPECTED_CASES, checks)),
             "Smoke case list/order/status invalid")
-    # A case marked PASS by the original evaluator cannot also have a
-    # nonzero process exit, overflowed capture, or missing digest metadata.
-    # No raw stdout is retained, so this checks *record consistency only*.
+    # Record-level invariants are checked for BOTH passing and blocked
+    # commands. Error records produced by a raised runner exception carry
+    # only errorType; evaluated process records carry bounded size/timing.
     for row in checks:
-        if row["status"] != "PASS":
+        status = row["status"]
+        if status == "ERROR":
+            require(set(row) == {"tool", "case", "status", "errorType"} and
+                    isinstance(row.get("errorType"), str) and
+                    0 < len(row["errorType"]) <= 128 and
+                    row["errorType"].isidentifier(),
+                    "Raised-runner ERROR record has invalid fields")
             continue
-        require(type(row.get("returnCode")) is int and
-                row["returnCode"] == 0 and
-                row.get("capturedOutputTruncated") is False and
-                type(row.get("stdoutBytes")) is int and
-                0 < row["stdoutBytes"] <= smoke.MAX_CAPTURE and
-                type(row.get("stderrBytes")) is int and
-                0 <= row["stderrBytes"] <= smoke.MAX_CAPTURE and
-                isinstance(row.get("stdoutSha256"), str) and
-                SHA.fullmatch(row["stdoutSha256"]) is not None and
-                isinstance(row.get("stderrSha256"), str) and
-                SHA.fullmatch(row["stderrSha256"]) is not None,
-                "PASS check contradicts recorded process/capture data")
+        rc = row.get("returnCode")
+        elapsed = row.get("durationMilliseconds")
+        out_count = row.get("stdoutBytes")
+        err_count = row.get("stderrBytes")
+        truncated = row.get("capturedOutputTruncated")
+        require((rc is None or type(rc) is int) and
+                type(elapsed) in (int, float) and
+                math.isfinite(elapsed) and elapsed >= 0 and
+                type(out_count) is int and
+                0 <= out_count <= smoke.MAX_CAPTURE + 1 and
+                type(err_count) is int and
+                0 <= err_count <= smoke.MAX_CAPTURE + 1 and
+                type(truncated) is bool and
+                truncated == (out_count > smoke.MAX_CAPTURE or
+                              err_count > smoke.MAX_CAPTURE) and
+                all(isinstance(row.get(k), str) and SHA.fullmatch(row[k])
+                    for k in ("stdoutSha256", "stderrSha256")),
+                "Process record has invalid exit/timing/capture metadata")
+        if status in ("PASS", "FAIL"):
+            require(rc == 0 and not truncated and
+                    (status != "PASS" or out_count > 0),
+                    "PASS/FAIL verdict contradicts process/capture data")
+        elif status == "COMMAND_FAILED":
+            require(rc is not None and rc != 0 and not truncated,
+                    "COMMAND_FAILED verdict contradicts return code")
+        elif status == "OUTPUT_LIMIT":
+            require(truncated,
+                    "OUTPUT_LIMIT verdict lacks overflowed capture")
+        else:
+            require(status in ("TIMEOUT", "RUNTIME_ERROR"),
+                    "Unsupported process status")
     require(type(doc.get("inputsUnchanged")) is bool and
             type(doc.get("executablesUnchanged")) is bool and
             isinstance(doc.get("unexpectedWorkspaceEntries"), list) and

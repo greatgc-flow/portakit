@@ -8,6 +8,11 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — source and failed-case evidence consistency
+
+- [x] Cross-check original ZIP report's candidate/provenance/unverified labels, normalized roots and accounting counters, bound executable note and smoke attestation labels. Independently enforce original CSV evaluator's per-case process/timing/output schema for both PASS and BLOCKED statuses, separating valid runner exceptions, actual command failures and output-limit conditions. Synthetic-only negative/positive regression tests; no vendor process, executable download or change to default read-only operation.
+- [ ] Physical original release provenance, corporate EULA/EDR/transfer, authorized host isolation, vendor compatibility, and repeatable CPU/RAM/disk benchmarks still require human evidence. Keep Issue #25 OPEN and xan RESEARCH_ONLY.
+
 ## 2026-10-31 — deterministic synthetic fixture consistency
 
 - [x] Independently derive synthetic `edge.csv` and `bulk.csv` expected UTF-8/CRLF SHA-256 hashes from the existing fixed fixture grammar and recorded row count without generating files. Reject coordinated CSV+recorded-hash mutation or unsupported row count; include lower/upper boundary and negative tests, preserve default read-only behavior.

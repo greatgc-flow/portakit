@@ -57,7 +57,7 @@ class CSVAlternativesTests(unittest.TestCase):
         self.assertEqual(xan["release"], "0.61.0")
         self.assertEqual(xan["windowsX64"][0]["size"], 6473075)
         self.assertEqual(xan["windowsX64"][0]["sha256"],
-                         "5f7bef4dcffb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54")
+                         "5f7bef4dcffbfb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54")
         self.assertLess(xan["windowsX64"][0]["size"], 10 * 1024 * 1024)
         self.assertIn("corporateLicense", xan["missing"])
         self.assertIn("redistribution", xan["missing"])

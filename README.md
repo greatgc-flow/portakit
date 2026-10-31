@@ -6,7 +6,11 @@
 
 ## Latest verified source CI
 
-Merged `main` `b35f20d52131c367eddbd5e78dcf5f91fed71c68` passed [Windows Python 3.11 and 3.14 CI #41216414526](https://github.com/greatgc-flow/portakit/actions/runs/41216414526), **671/671 tests each** (individual job logs verified). The later source-only PR must verify its own head and merged-main CI.
+Merged `main` `93474402bad5456d0bb9cf5f42cb3f76775e7776` passed [Windows Python 3.11 and 3.14 CI #41217743395](https://github.com/greatgc-flow/portakit/actions/runs/41217743395), **686/686 tests each** (independent job logs verified). New source/docs PRs must verify their own head and merged-main CI.
+
+## Industrial protocol role research (2026-11-01)
+
+[Eight-candidate client/server/simulator role matrix](research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md) distinguishes **requesting PLC clients** from **actual virtual-device listeners**, HSMS active/passive from host/equipment, and **protocol SDKs** from complete simulators. This research-only comparison enables informed *optional future* development; it installs or enables **no** industrial listener, binary, driver or company-approved vendor tool. Any real execution and enterprise signoff remain the final user's responsibility.
 
 ## Bounded optional toolset installation (2026-11-01)
 

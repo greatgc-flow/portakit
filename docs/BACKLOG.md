@@ -1,11 +1,17 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — bounded core install subprocess in optional toolset apply (PR pending)
+## 2026-11-01 — industrial protocol client/server research source matrix (docs PR pending)
+
+- [x] Review eight report candidates (**Secs4Net, secsgem, pymcprotocol, python-snap7/Snap7 Server, cpppo, PyXGT, QModMaster and open62541**) against upstream evidence in [role matrix](../research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md). Disambiguate GEM host/equipment vs HSMS active/passive, PC PLC client vs virtual PLC server, and SDK vs runnable simulator.
+- [x] Provide safe role-based candidate guidance and fail-closed framing/timeout/memory/concurrency test criteria. **No active listener, probe, vendor download, real I/O, new pin, simulator binary, or release**. Preserve distinct final-user enterprise and live lab acceptance.
+- [ ] Verify docs-only PR-head and merged-main CI independently. Revisit exact vendor versions/runtimes and candidate admission individually if a future user chooses a concrete simulator implementation.
+
+## 2026-11-01 — bounded core install subprocess in optional toolset apply (merged PR #72)
 
 - [x] Replace default unbounded `subprocess.run(capture_output=True)` in `scripts/toolsets.py apply` with a small Windows-compatible independent `scripts/bounded_process.py`: **600s per child** (CLI `--child-timeout 1..3600`), concurrent stdout/stderr drains, **256 KiB per stream**, prompt direct-child stop on timeout/output overflow, no shell/inherited stdin.
 - [x] Fail-closed batch on launch error, TIMEOUT, OUTPUT_LIMIT, failed/invalid core result JSON (duplicate success keys or non-null error), with exact locally mirrored console failure evidence; previously managed tools never silently rolled back. The injected fake runner remains available solely to synthetic regression tests.
 - [x] Add **10 bounded-process synthetic Python child tests** + **5 batch integration negative tests**, no vendors/network/reg/driver/industrial listener. Describe that this is **not** an OS process-tree sandbox (descendants, CPU/RAM/disk/network not contained).
-- [ ] Review exact PR-head Windows Python 3.11/3.14 CI, squash merge only when both PASS, then independently verify merged-main CI. Real enterprise/human deployment acceptance stays final-user responsibility and out of CI scope.
+- [x] [PR #72](https://github.com/greatgc-flow/portakit/pull/72) squash merged `93474402bad5456d0bb9cf5f42cb3f76775e7776`. [Exact PR-head Windows CI #41217453966](https://github.com/greatgc-flow/portakit/actions/runs/41217453966) and [merged-main CI #41217743395](https://github.com/greatgc-flow/portakit/actions/runs/41217743395) each **686/686 PASS** on Python 3.11/3.14 (individual job logs verified), [pinned archives #41217453967](https://github.com/greatgc-flow/portakit/actions/runs/41217453967) SUCCESS. Real-world acceptance is final-user responsibility.
 
 ## 2026-11-01 — shared strict JSON boundary for catalog, installed state and toolsets (merged PR #71)
 

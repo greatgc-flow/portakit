@@ -90,6 +90,17 @@ class BoundedProcessTests(unittest.TestCase):
                     python_child("import time; time.sleep(15)"),
                     timeout_seconds=3)
 
+    def test_unexpected_reader_exception_fails_closed(self):
+        # A reader thread may die from a non-OSError in an unusual host
+        # environment. Never return a plausible but incomplete JSON prefix.
+        # Patch this module's os reference, not subprocess's global os module.
+        with mock.patch.object(bounded, "os") as fake_os:
+            fake_os.read.side_effect = RuntimeError("synthetic reader failure")
+            with self.assertRaisesRegex(bounded.BoundedProcessError,
+                                        "RUNTIME_ERROR"):
+                bounded.run_bounded(python_child("print('partial')"),
+                                    timeout_seconds=5)
+
     def test_exact_output_cap_is_allowed_not_overflow(self):
         result = bounded.run_bounded(python_child(
             "import sys; sys.stdout.buffer.write(b'K'*4096); sys.stdout.flush()"),

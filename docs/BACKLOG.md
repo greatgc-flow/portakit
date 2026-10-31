@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — idempotent offline editor-plugin apply (candidate PR)
+## 2026-10-31 — idempotent offline editor-plugin apply (merged PR #53)
 
 - [x] Reuse `plugin_offline.make_plan` state to SHA-check original ZIPs only for missing pinned plugins. Installed plugins are still fully rehashed against receipts, and changed/unknown/legacy entries block before any install.
 - [x] Make `--offline-dir` optional **only** for fully managed/no-op `apply`; `verify` continues requiring originals for every pinned choice. Missing items without a source folder fail closed. Dual operator consent, per-plugin rollback, locks and console-evidence behavior remain unchanged.
 - [x] Six independent synthetic regressions: installed no-source no-op, mixed missing-only preflight, missing archive non-mutation, no-directory blocking, CLI consent and research-only no-op.
-- [ ] Verify Windows Python 3.11/3.14 PR full suite and post-merge `main` CI. Preserve separate live plugin/GUI compatibility, EULA/OSS/EDR, source-transfer and public Release human gates (Issue #36).
+- [x] [PR #53](https://github.com/greatgc-flow/portakit/pull/53) merged as `ff2af0ce76f1157d7398d5c0b65a1992c4e8ca0e`; Windows Python 3.11/3.14 PR full suite **471/471 each PASS**, and [post-merge `main` CI](https://github.com/greatgc-flow/portakit/actions/runs/41161224819) **PASS**. Separate live plugin/GUI compatibility, EULA/OSS/EDR, source-transfer and public Release human gates remain open (Issue #36).
 
 
 ## 2026-10-31 — selected-only GUI and frozen research-stage safety (merged PR #52)

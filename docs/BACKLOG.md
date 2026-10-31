@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — xan original ZIP ↔ local EXE read-only identity (candidate PR)
+## 2026-10-31 — xan original ZIP ↔ local EXE read-only identity (merged PR #59)
 
 - [x] Keep the preceding [xan ZIP structural preflight](XAN_ZIP_LOCAL_PREFLIGHT.md) isolated and source-only. Stream-hash the unique `xan.exe` ZIP member during existing CRC reading (no extraction or extra decompression), report member path, bytes and SHA-256.
 - [x] Optional `--exe ABSOLUTE\\xan.exe` hashes an explicitly provided local executable twice and fails closed on byte/size mismatch, zero-size exe, missing/renamed/reparse path or mutation; re-hash the original ZIP on its same unbuffered handle after comparison. No vendor execution or automatic operator action.
 - [x] Add mock/synthetic-only positive/negative tests for wrapped ZIP, exact identity, mismatch, mutation, invalid/empty/oversized paths and bytes, command error codes, optional evidence JSON and exactly mirrored local console transcript.
-- [ ] Both Windows Python 3.11/3.14 full CI; PR merge and post-merge main CI; update Issue #25 evidence. Preserve strict no-vendor-execution CI and company approval gate.
+- [x] [PR #59](https://github.com/greatgc-flow/portakit/pull/59) merged as `8e1d87050f14d77b14b14188fd67d0c3d330d712` after [exact-head PR CI #41182344874](https://github.com/greatgc-flow/portakit/actions/runs/41182344874) **Windows Python 3.11/3.14: 554 tests each PASS**. Independently confirmed [post-merge code main CI #41182417335](https://github.com/greatgc-flow/portakit/actions/runs/41182417335) both Windows versions SUCCESS. [Issue #25](https://github.com/greatgc-flow/portakit/issues/25#issuecomment-6540847570) documents local byte identity versus remaining real-world gates. Final docs-only main CI requires separate verification.
 - [ ] **Real** official xan ZIP → approved local executable equality, corporate EULA/EDR/transfer, offline Windows CSV behavior and Miller comparative memory/performance remain **NOT_VERIFIED**; do not promote research-only xan to catalog.
 
 

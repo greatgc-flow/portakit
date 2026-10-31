@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-10-31 — DuckDB read-only TAR structure audit and qsv/xan investigation (candidate PR)
+## 2026-10-31 — DuckDB read-only TAR structure audit and qsv/xan investigation (merged PR #55)
 
 - [x] Independent `scripts/targz_preflight.py` verifies separately authorized **local original** DuckDB 2.0.0 x64 TAR SHA-256 against existing research metadata. Bounded gzip/TAR scan, Windows-safe relative paths, no links/special/PAX, case collision, parent-file conflicts, file/member/depth/expanded-stream limits, second SHA after scan. **No extraction, vendor execution, download or installation**; core `zip/exe/sfx7z` behavior unchanged.
 - [x] Optional new-only JSON plus byte-identical console log; synthetic negative/positive TAR regressions. Exit 0 means local structure only, **not** compliance, runtime or installation acceptance.
 - [x] Official GitHub release metadata: qsv 27.0.1 current Windows x64 MSVC/GNU ZIPs **402,543,109 / 129,287,020 compressed bytes**, both exceed the current 100MiB compressed limit; no automatic raising. xan 0.61.0 Windows x64 MSVC ZIP **6,473,075 compressed bytes**, compact candidate. Respect qsv's current MIT COPYING; xan MIT/Unlicense COPYING; neither company-redistribution/EDR approved. Research-only supplemental ledger and tests, no catalog or 151 selectable ID change.
-- [ ] PR Windows Python 3.11/3.14 complete suite, post-merge main CI, and Issue #25 evidence comment required.
+- [x] [PR #55](https://github.com/greatgc-flow/portakit/pull/55) merged as `570e198630e3dc71bc075f115d26ae9878cabe23`. Both Windows Python 3.11/3.14 full suites **499 tests each PASS** and [post-merge main CI](https://github.com/greatgc-flow/portakit/actions/runs/41169678506) **PASS**. [Issue #25](https://github.com/greatgc-flow/portakit/issues/25) updated with source evidence and open human gates; no candidate admitted.
 - [ ] Real DuckDB official TAR physical SHA + file layout, actual expanded footprint and safe runtime/extension/no-network policy; xan source/version Windows functional and corporate license/EDR/transfer authorization; Tailviewer real GUI remain **HUMAN_NOT_VERIFIED**.
 
 

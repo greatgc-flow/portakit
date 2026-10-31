@@ -2,6 +2,8 @@
 
 > **Status: RESEARCH INTAKE ONLY.** No binaries, vendor installers, services, drivers, network listeners/probes, privileged actions, user configurations, releases or new installation pins are enabled by this report. Source is a 31-page user-provided DOCX; only a SHA-256 fingerprint and derived public-safe metadata are committed, not the source document or its raw text.
 
+**Follow-up (2026-11-01):** The [client / server / virtual-device role matrix](INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md) checks eight specific candidates against upstream public documentation. It distinguishes HSMS active/passive from GEM host/equipment, PLC clients from actual listeners, and source-level capabilities from complete simulation. No runnable examples, vendor binaries or new catalog admissions are introduced.
+
 ## Evidence and controlled boundaries
 
 - Source title: *엔터프라이즈 포터블 엔지니어링 툴체인 및 산업용 설비 통신·시뮬레이터 딥리서치 보고서*. Uploaded DOCX file SHA-256: `1411703d56de2ace98d20d2471442bf7ecc9e44b782e6be1035740baeb48bf1d`. The input contains a **53-software-family master matrix**, spread across **10 report-specific topical domains**, and six related optional WinMerge/Notepad++ plugins (of which two are already existing explicit recommended plugin pins). A grouped entry may describe multiple executable components: matrix row counts are NOT exact individual software counts.

@@ -1,5 +1,14 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-31 — xan original ZIP ↔ local EXE read-only identity (candidate PR)
+
+- [x] Keep the preceding [xan ZIP structural preflight](XAN_ZIP_LOCAL_PREFLIGHT.md) isolated and source-only. Stream-hash the unique `xan.exe` ZIP member during existing CRC reading (no extraction or extra decompression), report member path, bytes and SHA-256.
+- [x] Optional `--exe ABSOLUTE\\xan.exe` hashes an explicitly provided local executable twice and fails closed on byte/size mismatch, zero-size exe, missing/renamed/reparse path or mutation; re-hash the original ZIP on its same unbuffered handle after comparison. No vendor execution or automatic operator action.
+- [x] Add mock/synthetic-only positive/negative tests for wrapped ZIP, exact identity, mismatch, mutation, invalid/empty/oversized paths and bytes, command error codes, optional evidence JSON and exactly mirrored local console transcript.
+- [ ] Both Windows Python 3.11/3.14 full CI; PR merge and post-merge main CI; update Issue #25 evidence. Preserve strict no-vendor-execution CI and company approval gate.
+- [ ] **Real** official xan ZIP → approved local executable equality, corporate EULA/EDR/transfer, offline Windows CSV behavior and Miller comparative memory/performance remain **NOT_VERIFIED**; do not promote research-only xan to catalog.
+
+
 ## 2026-10-31 — xan read-only local original ZIP SHA and CRC preflight (merged PR #58)
 
 - [x] Added `scripts/xan_zip_preflight.py` as independent supplemental *RESEARCH_ONLY* tool using locked official-release snapshot's xan 0.61.0 Win x64 ZIP original size and digest. It **never downloads/executes/extracts/installs**, and does not change the catalog.

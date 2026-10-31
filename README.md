@@ -1,5 +1,13 @@
 # portakit
 
+## Final-user enterprise acceptance boundary (2026-11-01)
+
+**Actual operator tests, company-use and transfer/redistribution licenses, EDR approval, isolated vendor execution, local GUI acceptance and deployment go/no-go are the responsibility of the final user or its organization.** PortaKit development supplies code, independent synthetic tests, SHA-pinned selection, read-only diagnostics and optional user-attested installation. **CI pass and catalog READY never grant corporate permission.** Real-world acceptance is **not required to complete unrelated source-only PRs**; research-only vendor binaries remain inert and there is no automatic admission, installation or release. [Responsibility matrix and final-user checklist](docs/END_USER_ACCEPTANCE.md).
+
+## Latest verified source CI
+
+As of this handoff baseline, merged `main` `fe2d9dddc08f8931433bc038a5cb30a306153c18` passed [Windows Python 3.11 and 3.14 CI #41214866286](https://github.com/greatgc-flow/portakit/actions/runs/41214866286), **653/653 tests each** (actual logs confirmed). The later main CI of this source-only change must be checked independently.
+
 ## Latest complete handoff — 2026-10-31
 
 [Final session context and verification](docs/handoff/PORTAKIT_20261031_FINAL_CLOSEOUT.md) ·

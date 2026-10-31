@@ -36,12 +36,29 @@ class KitError(Exception):
     pass
 
 
+def unique_json_members(pairs):
+    """Do not resolve ambiguous saved kit/pin fields by last-wins JSON parsing."""
+    values = {}
+    for key, value in pairs:
+        if key in values:
+            raise KitError("Duplicate JSON key: " + key)
+        values[key] = value
+    return values
+
+
+def reject_nonfinite_json(value):
+    """Python's permissive NaN/Infinity tokens are not valid kit JSON."""
+    raise KitError("Nonstandard JSON numeric token: " + value)
+
+
 def json_file(path):
     """Load data but never follow Windows junctions or symbolic links."""
     path = Path(path).absolute()
     core.check_links(path)
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"),
+                          object_pairs_hook=unique_json_members,
+                          parse_constant=reject_nonfinite_json)
     except (OSError, UnicodeError, ValueError) as exc:
         raise KitError("Cannot read JSON " + str(path) + ": " + str(exc)) from exc
 
@@ -315,25 +332,34 @@ def save_new(data, path, log_file=None):
     if target == logfile or os.path.lexists(target) or os.path.lexists(logfile):
         raise KitError("Output profile/log already exists; no overwrite allowed")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with sets.Evidence(logfile) as log:
-        try:
+    core.check_links(target)
+    core.check_links(logfile)
+    # A failed save cannot be a valid kit/evidence record. On output error
+    # attempt to remove only our own unchanged files, not other writers'.
+    kit_identity = log_identity = None
+    try:
+        with sets.Evidence(logfile) as log:
+            log_identity = sets.created_output_identity(
+                os.fstat(log.stream.fileno()))
             with target.open("x", encoding="utf-8", newline="\n") as out:
+                kit_identity = sets.created_output_identity(
+                    os.fstat(out.fileno()))
                 json.dump(data, out, indent=2, ensure_ascii=False)
                 out.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        log.emit("CREATED: " + str(target))
-        log.emit("KIT: " + data["name"])
-        log.emit("SELECTED: " + ", ".join(data["tools"]))
-        log.emit("READY_PINNED: " + str(len(data["lockedPins"])))
-        log.emit("RESEARCH_ONLY: " + str(len(data["researchOnly"])))
-        log.emit("OS_BUILTIN: " + str(len(data["osBuiltins"])))
-        if data["schemaVersion"] == 2:
-            log.emit("EDITOR_PLUGINS_METADATA_ONLY: " +
-                     ", ".join(x["id"] for x in data["pluginSelections"]))
-        log.emit("NO INSTALL / NO NETWORK / NO SYSTEM CHANGES")
+            log.emit("CREATED: " + str(target))
+            log.emit("KIT: " + data["name"])
+            log.emit("SELECTED: " + ", ".join(data["tools"]))
+            log.emit("READY_PINNED: " + str(len(data["lockedPins"])))
+            log.emit("RESEARCH_ONLY: " + str(len(data["researchOnly"])))
+            log.emit("OS_BUILTIN: " + str(len(data["osBuiltins"])))
+            if data["schemaVersion"] == 2:
+                log.emit("EDITOR_PLUGINS_METADATA_ONLY: " +
+                         ", ".join(x["id"] for x in data["pluginSelections"]))
+            log.emit("NO INSTALL / NO NETWORK / NO SYSTEM CHANGES")
+    except BaseException:
+        sets.cleanup_own_output(logfile, log_identity)
+        sets.cleanup_own_output(target, kit_identity)
+        raise
 
 
 def approved_selection(kit):

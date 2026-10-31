@@ -98,6 +98,91 @@ class KitTests(unittest.TestCase):
         with self.assertRaisesRegex(kit.KitError, "schema"):
             kit.read_kit(self.saved, self.pins, self.known)
 
+    def test_saved_kit_duplicate_top_level_key_is_rejected(self):
+        data = self.make("jq")
+        source = json.dumps(data)
+        forged = source.replace('"schemaVersion":',
+                                '"schemaVersion": 999, "schemaVersion":', 1)
+        self.saved.write_text(forged, encoding="utf-8")
+        before = self.saved.read_bytes()
+        with self.assertRaisesRegex(kit.KitError, "Duplicate JSON key"):
+            kit.read_kit(self.saved, self.pins, self.known)
+        self.assertEqual(self.saved.read_bytes(), before)
+        self.assertFalse(self.root.exists())
+
+    def test_saved_kit_duplicate_nested_pin_is_rejected(self):
+        data = self.make("jq")
+        source = json.dumps(data)
+        forged = source.replace('"sha256":', '"sha256": "FAKE", "sha256":', 1)
+        self.saved.write_text(forged, encoding="utf-8")
+        with self.assertRaisesRegex(kit.KitError, "Duplicate JSON key"):
+            kit.read_kit(self.saved, self.pins, self.known)
+        self.assertFalse(self.root.exists())
+
+    def test_saved_kit_nonfinite_token_is_rejected(self):
+        data = self.make("jq")
+        text = json.dumps(data).replace('"schemaVersion": 1',
+                                        '"schemaVersion": NaN', 1)
+        self.saved.write_text(text, encoding="utf-8")
+        with self.assertRaisesRegex(kit.KitError, "Nonstandard JSON numeric"):
+            kit.read_kit(self.saved, self.pins, self.known)
+
+    def test_saved_kit_nested_plugin_duplicate_rejected(self):
+        data = kit.make_kit("my-kit", ["notepad++"], self.pins, self.known,
+                            plugins=["compareplus"])
+        content = json.dumps(data).replace(
+            '"status": "PINNED_METADATA_ONLY"',
+            '"status": "RESEARCH_ONLY", "status": "PINNED_METADATA_ONLY"', 1)
+        self.saved.write_text(content, encoding="utf-8")
+        with self.assertRaisesRegex(kit.KitError, "Duplicate JSON key"):
+            kit.read_kit(self.saved, self.pins, self.known)
+
+    def test_save_json_failure_removes_only_own_incomplete_pair(self):
+        data = self.make("jq")
+        with mock.patch.object(kit.json, "dump",
+                               side_effect=OSError("synthetic disk full")):
+            with self.assertRaisesRegex(OSError, "disk full"):
+                kit.save_new(data, self.saved)
+        self.assertFalse(self.saved.exists())
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
+    def test_save_log_failure_removes_only_own_incomplete_pair(self):
+        data = self.make("jq")
+        def fail_log(evidence, message):
+            evidence.stream.write("incomplete\n")
+            evidence.stream.flush()
+            raise OSError("synthetic transcript failure")
+        with mock.patch.object(kit.sets.Evidence, "emit", new=fail_log):
+            with self.assertRaisesRegex(OSError, "transcript failure"):
+                kit.save_new(data, self.saved)
+        self.assertFalse(self.saved.exists())
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
+    def test_save_concurrent_foreign_kit_not_deleted(self):
+        data = self.make("jq")
+        original_init = kit.sets.Evidence.__init__
+        def collide(evidence, path):
+            self.saved.write_bytes(b"ANOTHER-USER\n")
+            original_init(evidence, path)
+        with mock.patch.object(kit.sets.Evidence, "__init__", new=collide):
+            with self.assertRaises(FileExistsError):
+                kit.save_new(data, self.saved)
+        self.assertEqual(self.saved.read_bytes(), b"ANOTHER-USER\n")
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
+    def test_save_replaced_kit_not_deleted_during_log_failure(self):
+        data = self.make("jq")
+        def replace_then_fail(evidence, message):
+            self.saved.unlink()
+            self.saved.write_bytes(b"NEW-OWNER\n")
+            raise OSError("synthetic log failure")
+        with mock.patch.object(kit.sets.Evidence, "emit",
+                               new=replace_then_fail):
+            with self.assertRaisesRegex(OSError, "log failure"):
+                kit.save_new(data, self.saved)
+        self.assertEqual(self.saved.read_bytes(), b"NEW-OWNER\n")
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
     def test_locked_pin_drift_denied_even_when_current_catalog_has_pin(self):
         data = self.make("jq")
         data["lockedPins"]["jq"]["sha256"] = "0" * 64

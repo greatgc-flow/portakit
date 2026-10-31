@@ -1,5 +1,7 @@
 # Build your own PortaKit — 개인 포터블 툴킷 (2026-10-25)
 
+**Responsibility:** real GUI, original vendor asset, company-use/license/EDR, local compatibility and deployment acceptance belong to the **final user / organization**, not GitHub CI. Source-only development and reviewed merges proceed independently; local installation still requires explicit operator consent. See [final-user checklist](END_USER_ACCEPTANCE.md).
+
 ## Optional GUI acceptance evidence (2026-10-30)
 
 `scripts\PickerAcceptance.cmd` performs a **static read-only prerequisite check** (no GUI launched; no files) and still reports GUI `NOT_VERIFIED`. On an approved Windows desktop, open `scripts\MyToolkitGUI.cmd` yourself, then run `scripts\PickerAcceptance.cmd --review --out D:\LocalEvidence\PickerReview.json` to answer guided `P/F/S` observations. It saves a **new-only private** JSON report and exactly mirrored program-produced console `.log` (no screenshots or private machine details collected). Skipped items remain unverified. This is human **self-attestation**, not an automated accessibility or corporate security pass. [Full procedure](GUI_PICKER_ACCEPTANCE_20261030.md).

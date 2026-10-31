@@ -22,7 +22,7 @@ Design reference: https://github.com/greatgc-flow/VerySimpleGuide
 ## This round — evidence I/O integrity (verify latest branch/PR/CI to confirm)
 
 - Modified `scripts/verify_csv_evidence.py`:
-  - A bounded read now compares path `stat` with opened-handle `fstat` and the final path `stat` (identity, file mode, size, mtime/ctime), plus bytes read and non-reparse checks.
+  - A bounded read now compares path `stat` with opened-handle `fstat` and the final path `stat` (identity, file mode, size and mtime across sources; ctime only within the same path/handle stat domain on Windows), plus bytes read and non-reparse checks.
   - Optional `--out` JSON and log are exclusively created. If creation/serialization/log-mirror fails, best-effort rollback targets only files created by this operation, and only while their file identity remains the same. No collateral deletion of a competing writer's file.
   - Not a transactional filesystem, Windows file-locking facility or cryptographically authenticated snapshot; metadata spoofing and post-check edits cannot be ruled out.
 - Expanded `tests/test_verify_csv_evidence.py` with simulated mutations before/during/after read; input non-modification; JSON serialization and partial-log failures; new/foreign output collision and replacement tests.

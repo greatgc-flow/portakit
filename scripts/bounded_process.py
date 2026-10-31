@@ -82,7 +82,9 @@ def run_bounded(argv, *, timeout_seconds=DEFAULT_TIMEOUT,
                     except OSError:
                         pass
                     break
-        except (OSError, ValueError):
+        except Exception:
+            # Unexpected reader failures (not only OS errors) must never
+            # allow a partial capture to masquerade as a successful install.
             pipe_failure.set()
             try:
                 child.kill()
@@ -91,8 +93,9 @@ def run_bounded(argv, *, timeout_seconds=DEFAULT_TIMEOUT,
         finally:
             try:
                 pipe.close()
-            except OSError:
-                pass
+            except Exception:
+                # Failure to close a reader is also an invalid capture.
+                pipe_failure.set()
 
     failure = None
     try:

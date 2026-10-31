@@ -1,5 +1,10 @@
 # PortaKit — current next-chat continuation (2026-10-30)
 
+## 2026-10-31 — offline plugin missing-only source follow-up (candidate)
+
+Branch `fix/plugin-apply-missing-only-archives-20261031` updates `scripts/plugin_offline.py` to require approved original ZIPs only for **missing** pinned editor plugins at apply time. Previously managed plugins must still pass full per-file SHA receipt/host-state checks and are skipped without ZIP re-acquisition. `verify` still checks all selected originals; `apply --yes --policy-approved` remains mandatory and cannot auto-install unapproved research choices. Existing/unknown/modified or legacy receipt entries fail closed. Six synthetic negative/positive tests plus docs; **treat this as a branch candidate until live PR and Windows CI, merge, and post-merge main CI are confirmed.** No claim of corporate EULA, OSS, EDR, redistribution, interactive GUI or Release approval. Latest GitHub main always supersedes dated SHA notes.
+
+
 ## 2026-10-31 — selected-only GUI and historical research-stage guard
 
 [PR #52](https://github.com/greatgc-flow/portakit/pull/52) merged as `1f14b505af63e10c6ce784d14d7dc5cf0fed442a` after Windows Python 3.11/3.14 PR matrices each ran **465 passing tests**. The optional Tk personal-kit picker now provides a `Selected only` search/category/status filter and divides crowded filter controls into two rows. Saved historical `RESEARCH_ONLY` selections remain `PENDING (locked)` and are excluded from `READY` filters after future catalog pin promotion, until explicitly removed/reselected. No install, update, download, catalog pin, GUI build button, privilege, registry or network changes. This is **headless regression proof**, not real desktop contrast/IME/DPI/screen-reader or enterprise acceptance. [Post-merge main CI](https://github.com/greatgc-flow/portakit/actions/runs/41159957752). [Issue #27](https://github.com/greatgc-flow/portakit/issues/27) stays open for human GUI evidence, #36 for license/plugin approval, #25 for research and #51 for optional branch protection. Use the current GitHub `main` SHA as SSOT over all dated notes.

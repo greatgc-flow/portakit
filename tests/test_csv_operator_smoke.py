@@ -264,7 +264,7 @@ class CSVOperatorTests(fixtures.Workspace):
             result = smoke.call_vendor(
                 [sys.executable, "-c", code], self.base, 5)
         self.assertEqual((result[0], result[1], result[2], result[4]),
-                         (0, b"count\\n1\\n", b"synthetic warning", None))
+                         (0, b"count\n1\n", b"synthetic warning", None))
         self.assertEqual(smoke.evaluate("miller", "count", result, 1)["status"],
                          "PASS")
 
@@ -312,7 +312,7 @@ class CSVOperatorTests(fixtures.Workspace):
         self.assertEqual(evaluation["stdoutBytes"], smoke.MAX_CAPTURE + 1)
         self.assertEqual(evaluation["status"], "OUTPUT_LIMIT")
         self.assertFalse(smoke.evaluate(
-            "xan", "count", (0, b"1\\n", b"", 1.0, None), 1
+            "xan", "count", (0, b"1\n", b"", 1.0, None), 1
         )["capturedOutputTruncated"])
 
     def test_vendor_cmds_from_current_upstream_documented_usage(self):

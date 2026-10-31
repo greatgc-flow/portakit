@@ -146,7 +146,19 @@ class XanSourceTests(fixtures.Workspace):
                      "CON.txt", "xan.exe:stream", "folder\\xan.exe",
                      "xan.exe.", "xan.exe ", "folder//xan.exe"):
             with self.subTest(path=path):
-                self.use_zip(build_zip([(path, b"synthetic")]))
+                if "\\" in path:
+                    # Python ZipInfo normalizes backslashes WHEN WRITING on
+                    # Windows. Mutate BOTH raw ZIP header filename fields
+                    # instead, with equal-length bytes and unchanged CRC
+                    # (CRC covers member body, not the filename header).
+                    raw = build_zip([(path.replace("\\", "/"), b"synthetic")])
+                    payload = raw.replace(path.replace("\\", "/").encode("ascii"),
+                                          path.encode("ascii"))
+                    self.assertNotEqual(payload, raw)
+                    self.assertEqual(len(payload), len(raw))
+                    self.use_zip(payload)
+                else:
+                    self.use_zip(build_zip([(path, b"synthetic")]))
                 with self.assertRaises(auditor.XanPreflightError):
                     auditor.inspect(self.source, self.metadata)
 

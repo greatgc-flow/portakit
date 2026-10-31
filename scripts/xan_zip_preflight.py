@@ -88,6 +88,9 @@ def inspect_members(stream):
     parents = set()
     roots = set()
     regular = directories = expanded = executables = 0
+    executable_digest = None
+    executable_size = None
+    executable_member = None
     with zipfile.ZipFile(stream, mode="r") as archive:
         members = archive.infolist()
         if not members or len(members) > MAX_MEMBERS:
@@ -133,9 +136,11 @@ def inspect_members(stream):
                 directories += 1
                 continue
             regular += 1
-            if parts[-1].casefold() == "xan.exe":
+            is_executable = parts[-1].casefold() == "xan.exe"
+            if is_executable:
                 executables += 1
             count = 0
+            digest = hashlib.sha256() if is_executable else None
             with archive.open(entry, "r") as src:
                 while True:
                     block = src.read(CHUNK)
@@ -144,8 +149,14 @@ def inspect_members(stream):
                     count += len(block)
                     if count > entry.file_size:
                         raise XanPreflightError("ZIP member exceeds declared expanded size")
+                    if digest is not None:
+                        digest.update(block)
             if count != entry.file_size:
                 raise XanPreflightError("ZIP member shorter than declared expanded size")
+            if digest is not None:
+                executable_digest = digest.hexdigest()
+                executable_size = count
+                executable_member = name
             # zipfile verifies per-member CRC when its stream reaches EOF.
     if not regular or not executables:
         raise XanPreflightError("Archive has no regular files or no xan.exe")
@@ -155,11 +166,71 @@ def inspect_members(stream):
         raise XanPreflightError("ZIP regular file used as parent directory")
     return {"members": len(entries), "regularFiles": regular,
             "directories": directories, "expandedLogicalBytes": expanded,
-            "xanExeCount": executables, "rootNames": sorted(roots)}
+            "xanExeCount": executables, "rootNames": sorted(roots),
+            "xanExeMember": executable_member,
+            "xanExeBytes": executable_size,
+            "xanExeSha256": executable_digest}
 
 
-def inspect(original, metadata):
-    """Audit a single local original twice on the SAME open file handle."""
+def hash_local_exe(path):
+    """Hash one explicitly provided local EXE read-only; reject links and bounds.
+
+    No PATH lookup, execution, extraction or auto-discovery. This deliberately
+    does not imply the local executable is authorized by its publisher.
+    """
+    if path is None or not isinstance(path, (str, Path)) or not str(path).strip():
+        raise XanPreflightError("Executable path must be a nonempty absolute path")
+    source = Path(path)
+    if not source.is_absolute() or source.name.casefold() != "xan.exe":
+        raise XanPreflightError("Expected absolute path to local xan.exe")
+    kit.core.check_links(source)
+    if not source.is_file():
+        raise XanPreflightError("Local xan.exe file not found")
+    size = source.stat().st_size
+    if not 0 < size <= MAX_EXPANDED:
+        raise XanPreflightError("Local xan.exe size outside bounded source limit")
+    with source.open("rb", buffering=0) as stream:
+        digest = hashlib.sha256()
+        count = 0
+        while True:
+            block = stream.read(CHUNK)
+            if not block:
+                break
+            count += len(block)
+            if count > MAX_EXPANDED:
+                raise XanPreflightError("Local xan.exe exceeds byte limit")
+            digest.update(block)
+    if count != size:
+        raise XanPreflightError("Local xan.exe changed during read")
+    return digest.hexdigest(), count
+
+
+def compare_local_executable(path, structure):
+    """Bind a manually supplied local executable to the inspected ZIP member.
+
+    Caller must inspect source structure FIRST and hash the original again
+    AFTER this check. Matching bytes is not signing / enterprise approval.
+    """
+    expected_hash = structure.get("xanExeSha256")
+    expected_size = structure.get("xanExeBytes")
+    if (not isinstance(expected_hash, str) or
+            not re.fullmatch(r"[0-9a-f]{64}", expected_hash) or
+            type(expected_size) is not int or expected_size <= 0 or
+            expected_size > MAX_EXPANDED):
+        raise XanPreflightError("ZIP's xan.exe digest or size invalid")
+    before, before_size = hash_local_exe(path)
+    if (before != expected_hash or before_size != expected_size):
+        raise XanPreflightError("Local xan.exe does not match original ZIP member")
+    after, after_size = hash_local_exe(path)
+    if before != after or before_size != after_size:
+        raise XanPreflightError("Local xan.exe changed during source comparison")
+    return {"status": "LOCAL_EXE_MATCHES_ZIP_MEMBER",
+            "sha256": before, "bytes": before_size,
+            "note": "CONTENT_MATCH_ONLY_NOT_EXECUTION_OR_PUBLISHER_APPROVAL"}
+
+
+def inspect(original, metadata, exe=None):
+    """Audit the same original handle twice and optionally compare a local EXE."""
     if not isinstance(metadata, dict):
         raise XanPreflightError("Source metadata missing")
     expected_name = metadata.get("assetName")
@@ -191,6 +262,10 @@ def inspect(original, metadata):
                 raise XanPreflightError("Local original SHA-256 mismatch")
             stream.seek(0)
             structure = inspect_members(stream)
+            bound_exe = (compare_local_executable(exe, structure)
+                         if exe is not None else
+                         {"status": "NOT_CHECKED", "sha256": None, "bytes": None,
+                          "note": "NO_EXECUTABLE_PROVIDED"})
             after, final_size = hash_original(stream)
             if before != after or final_size != count:
                 raise XanPreflightError("Local original changed during read-only audit")
@@ -201,7 +276,8 @@ def inspect(original, metadata):
             "release": metadata.get("version", "UNKNOWN"),
             "outcome": "LOCAL_ORIGINAL_STRUCTURE_PASS",
             "sourceSHA256": before, "compressedBytes": count,
-            "structure": structure, "provenance": "GITHUB_RELEASE_METADATA_SHA_NOT_PUBLISHER_SIGNATURE",
+            "structure": structure, "localExeComparison": bound_exe,
+            "provenance": "GITHUB_RELEASE_METADATA_SHA_NOT_PUBLISHER_SIGNATURE",
             "runtimeWindows": "NOT_VERIFIED",
             "enterprisePermission": "NOT_VERIFIED",
             "notice": NOTICE}
@@ -219,6 +295,10 @@ def display_lines(result):
         "EXPANDED LOGICAL BYTES: " + str(s["expandedLogicalBytes"]),
         "ROOT NAMES: " + ", ".join(s["rootNames"]),
         "XAN.EXE MEMBERS: " + str(s["xanExeCount"]),
+        "XAN.EXE ZIP MEMBER: " + s["xanExeMember"],
+        "XAN.EXE MEMBER BYTES: " + str(s["xanExeBytes"]),
+        "XAN.EXE MEMBER SHA256: " + s["xanExeSha256"],
+        "LOCAL EXE COMPARISON: " + result["localExeComparison"]["status"],
         "RESULT: " + result["outcome"],
         "WINDOWS RUNTIME: " + result["runtimeWindows"],
         "ENTERPRISE APPROVAL: " + result["enterprisePermission"],
@@ -259,10 +339,11 @@ def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--original", required=True,
                         help="previously authorized LOCAL xan 0.61.0 x64 MSVC ZIP")
+    parser.add_argument("--exe", help="optional absolute LOCAL xan.exe to compare by SHA, never execute")
     parser.add_argument("--out", help="optional NEW JSON plus exact local console log")
     args = parser.parse_args(argv)
     try:
-        result = inspect(args.original, official_record())
+        result = inspect(args.original, official_record(), exe=args.exe)
         emit(result, args.out)
         return 0  # SOURCE/STRUCTURE ONLY, not software release approval.
     except (XanPreflightError, kit.KitError, kit.core.PortakitError,

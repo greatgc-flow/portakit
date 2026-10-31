@@ -308,10 +308,19 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
                if row["status"].startswith("blocked-")]
     if blocked:
         raise PluginDeployError("Host/plugin state blocked: " + ", ".join(blocked))
-    archives = verify_all(selected, archive_dir)
+    # Original vendor archives are needed only for plugins not yet installed.
+    # Reused managed plugins have already been checked in make_plan against
+    # their per-file SHA receipts; do not require re-acquisition of ZIP files.
+    to_install = [(item, host, pin) for item, host, pin in selected
+                  if next(row for row in items if row["id"] == item["id"])
+                  ["status"] == "install"]
     if not selected:
         evidence.emit("NO_OP: no SHA-pinned plugins selected")
         return
+    if to_install and archive_dir is None:
+        raise PluginDeployError(
+            "Missing plugins require --offline-dir with original vendor archives")
+    archives = verify_all(to_install, archive_dir) if to_install else {}
     # Both locks avoid interleaving with either category apply or core direct installs.
     with kit.sets.BatchLock(root), kit.core.RootLock(root):
         refreshed, _ = make_plan(saved, pins, root)
@@ -372,7 +381,9 @@ def run(argv=None):
         p.add_argument("--kit", required=True)
         p.add_argument("--root", default="portable")
         if command in ("verify", "apply"):
-            p.add_argument("--offline-dir", required=True)
+            p.add_argument("--offline-dir", required=(command == "verify"),
+                           help=("Original vendor ZIP directory: mandatory for "
+                                 "verify and for apply when plugins are missing"))
         if command == "apply":
             p.add_argument("--yes", action="store_true")
             p.add_argument("--policy-approved", action="store_true",

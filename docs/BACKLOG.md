@@ -8,6 +8,12 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — read integrity and safe partial-output cleanup
+
+- [x] Strengthen the existing read-only CSV evidence checker: bounded regular file read with reparse checks plus path/handle metadata comparisons before, during, and after read (file identity, size, timestamps, mode). Distinguish detected mutations without claiming an atomic snapshot.
+- [x] Protect output evidence from collision and rollback errors: exclusive-create JSON/log, cleanup only invocation-created files whose identity still matches, do not unlink a foreign log or target on an intervening collision, handle JSON serialization / log emission exceptions. Unit tests cover each mutation/failure boundary and input non-modification.
+- [ ] Genuine Windows physical vendor/enterprise/airgap approval is still NOT_VERIFIED; human acceptance gate #25 remains open, and xan stays RESEARCH_ONLY.
+
 ## 2026-10-31 — original ZIP member path and evidence log safety
 
 - [x] Reject path-traversing, spoofed-suffix, Windows-device, backslash and control-character member/root names in xan source reports using the shared core ZIP path validator. Also validate blocked-case unexpected workspace paths and bound historical REPORT console-footer text; preserve the authentic scan-error sentinel and legitimate copied evidence. New synthetic-only positive/negative regression tests.

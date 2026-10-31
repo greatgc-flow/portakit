@@ -12,6 +12,7 @@ import math
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 
 HERE = Path(__file__).resolve().parent
@@ -40,16 +41,60 @@ def require(condition, message):
         raise EvidenceError(message)
 
 
+def file_signature(info):
+    """Portable cross-source identity: path stat vs handle fstat on Windows.
+
+    Windows can expose different st_ctime_ns semantics for Path.stat and
+    os.fstat even for the SAME unchanged file. Compare ctime only within
+    one stat source, never across path-vs-handle boundaries.
+    """
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_size,
+            info.st_mtime_ns)
+
+
+def created_identity(info):
+    """Minimal identity for cautious cleanup of OUR newly created outputs."""
+    return (info.st_dev, info.st_ino)
+
+
+def cleanup_created(path, identity):
+    """Only unlink our own new regular file, never a later/foreign replacement."""
+    if identity is None:
+        return
+    try:
+        source.kit.core.check_links(path)
+        info = path.stat()
+        if stat.S_ISREG(info.st_mode) and created_identity(info) == identity:
+            path.unlink()
+    except (OSError, source.kit.core.PortakitError):
+        pass
+
+
 def read_file(path, bound):
-    """Read one existing bounded regular file, rejecting links/reparse paths."""
+    """Read one bounded regular file; fail closed on detectable replacement."""
     target = Path(path).absolute()
     source.kit.core.check_links(target)
     require(target.is_file(), "Missing evidence file: " + target.name)
-    size = target.stat().st_size
-    require(0 < size <= bound, "Evidence file byte limit: " + target.name)
+    before = target.stat()
+    require(stat.S_ISREG(before.st_mode), "Evidence input is not a regular file")
+    require(0 < before.st_size <= bound,
+            "Evidence file byte limit: " + target.name)
     with target.open("rb", buffering=0) as handle:
+        opened = os.fstat(handle.fileno())
+        require(file_signature(before) == file_signature(opened),
+                "Evidence file changed before open: " + target.name)
         data = handle.read(bound + 1)
-    require(len(data) == size, "Evidence file changed while reading: " + target.name)
+        after = os.fstat(handle.fileno())
+        require(file_signature(opened) == file_signature(after) and
+                opened.st_ctime_ns == after.st_ctime_ns,
+                "Evidence file changed during read: " + target.name)
+    require(len(data) == opened.st_size,
+            "Evidence file changed while reading: " + target.name)
+    source.kit.core.check_links(target)
+    final = target.stat()
+    require(file_signature(after) == file_signature(final) and
+            before.st_ctime_ns == final.st_ctime_ns,
+            "Evidence file replaced after read: " + target.name)
     return data
 
 
@@ -386,17 +431,24 @@ def emit(result, out=None):
             target != log and not os.path.lexists(target) and
             not os.path.lexists(log), "Choose a NEW JSON/log output pair")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with source.kit.sets.Evidence(log) as evidence:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as handle:
-                json.dump(result, handle, ensure_ascii=False, indent=2)
-                handle.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            evidence.emit(line)
+    source.kit.core.check_links(target)
+    source.kit.core.check_links(log)
+    # Exclusive file creation followed by conservative cleanup if a write fails.
+    # In particular, a log collision must NEVER unlink that other writer's log.
+    json_identity = log_identity = None
+    try:
+        with target.open("x", encoding="utf-8", newline="\n") as handle:
+            json_identity = created_identity(os.fstat(handle.fileno()))
+            json.dump(result, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+        with source.kit.sets.Evidence(log) as evidence:
+            log_identity = created_identity(os.fstat(evidence.stream.fileno()))
+            for line in lines:
+                evidence.emit(line)
+    except BaseException:
+        cleanup_created(log, log_identity)
+        cleanup_created(target, json_identity)
+        raise
 
 
 def run(argv=None):

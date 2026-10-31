@@ -1,18 +1,27 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — original ZIP and CSV smoke producer output I/O (PR pending)
+## 2026-11-01 — independent editor-plugin receipt and health-evidence hardening (PR pending)
+
+- [x] Make `scripts/plugin_offline.py` **fail closed on duplicate JSON keys** at every nesting level in persistent plugin receipts; reject NaN/Infinity and malformed/noncanonical host:plugin receipt identifiers. Do not silently trust last-wins source/hash fields or rewrite affected evidence.
+- [x] Align `scripts/plugin_health.py` with invocation-owned, guarded best-effort JSON/console-log rollback; respect existing or replaced output files. No plugin installation, vendor process, download, network listener, registry or default behavior change.
+- [x] Add **10 source-only negative tests** (duplicated receipt ID/lock/file hash, NaN, unsafe keys; JSON/log failures, competing/replaced output and existing log), plus explicit operator guidance and limitations.
+- [ ] Verify exact-head Windows Python 3.11/3.14 PR CI, fix any regressions, squash merge only when green, and verify exact merged-main CI. Record provenance-safe results on Issue #36.
+- [ ] Actual company-use/EULA/EDR/transfer approval, local real original plugin archives, Notepad++ desktop load/compatibility, negative GUI tests and final release signoff remain **NOT_VERIFIED**. Keep issue #36 open.
+
+
+## 2026-11-01 — original ZIP and CSV smoke producer output I/O (merged PR #68)
 
 - [x] Harden both **independent** report producers (`scripts/xan_zip_preflight.py` and `scripts/csv_operator_smoke.py`) against partial JSON/log writes. Reuse one identity-guarded best-effort helper in `scripts/toolsets.py`: cleanup only regular output files still matching IDs captured from this invocation's open handles; preserve any foreign/existing/replaced file on collision/failure.
 - [x] Add 9 synthetic, vendor-free regression tests covering JSON serialization failure, log emission failure, concurrent JSON collision, replaced foreign JSON preservation, and a directory replacement guard. Both producers must preserve exact console-mirrored log on success, with no implicit vendor execution.
-- [x] [PR #68](https://github.com/greatgc-flow/portakit/pull/68) Windows PR CI [#41213874077](https://github.com/greatgc-flow/portakit/actions/runs/41213874077), tested code HEAD `1d198dd2647eb8b29ed107b5b4c6c3ca341891ac`, **643/643 PASS** per Python 3.11 and 3.14 (both job logs inspected). This backlog update changes PR HEAD; verify final exact-head CI again, then squash merge and validate post-merge main CI.
+- [x] [PR #68](https://github.com/greatgc-flow/portakit/pull/68) Windows PR CI [#41213874077](https://github.com/greatgc-flow/portakit/actions/runs/41213874077), tested code HEAD `1d198dd2647eb8b29ed107b5b4c6c3ca341891ac`, **643/643 PASS** per Python 3.11 and 3.14 (both job logs inspected). Final docs-inclusive PR CI #41214000258 and post-merge main CI #41214103529 both independently SUCCESS, 643/643 per Windows Python version; squash-merged as `853ffe86f735ab30ac4afc7531f7603c55ba7fa3`.
 - [ ] Real original publisher identity, corporate EULA/EDR/transfer approval, isolated Windows CSV behavior, negative compatibility, performance and release signoff remain **NOT_VERIFIED**. Keep xan RESEARCH_ONLY and Issue #25 open.
 - **Limit:** best-effort failure cleanup is not an atomic filesystem transaction, a guarantee across power loss/process kill, or authenticated evidence; failed output must never be interpreted as a completed record.
 
-## 2026-10-31 — CSV evidence schema-v1 claim boundary (Draft PR #67, NOT MERGED)
+## 2026-10-31 — CSV evidence schema-v1 claim boundary (merged PR #67)
 
 - [x] Source-only fix in [Draft PR #67](https://github.com/greatgc-flow/portakit/pull/67): reject unknown keys in the exact version-1 source/smoke report contracts, including nested member/EXE/hash maps and evaluated process records. This blocks silent, unrecognized approval claims in coordinated JSON/log rewrites.
 - [x] Verify the SHA-256 of an exactly zero-byte stdout/stderr record and align blocked-workspace arrays with the producer's sorted/unique and isolated scan-error sentinel rule. Add 12 negative synthetic regression tests and document compatible version evolution.
-- [x] **PR-head Windows Python 3.11 and 3.14 full CI:** [run #41212654463](https://github.com/greatgc-flow/portakit/actions/runs/41212654463), tested commit `1510b2610ef550402ccb96270a9a0a7547e35bc3`, both Windows versions **634/634 PASS**, individual job logs reviewed. Earlier red runs reflect a corrected outdated test diagnostic assertion. This documentation update advances the branch HEAD, so verify the newer exact-head CI independently before treating the final PR state as green. Historical main 622/622 PASS is separate.
+- [x] **PR-head Windows Python 3.11 and 3.14 full CI:** [run #41212654463](https://github.com/greatgc-flow/portakit/actions/runs/41212654463), tested commit `1510b2610ef550402ccb96270a9a0a7547e35bc3`, both Windows versions **634/634 PASS**, individual job logs reviewed. Earlier red runs reflect a corrected outdated test diagnostic assertion. Final docs-inclusive PR CI #41212878514 and merged-main CI #41213461562 SUCCESS, 634/634 per version; squash-merged as `6cd5ae06f02d291e9a916043f401e2dfd05899d7`. Historical main 622/622 PASS is separate.
 - [ ] User instruction: **do not merge PR #67 or any branch into main in this session**, even after a green PR CI.
 - [ ] Real vendor ZIP/exe provenance, corporate legal/EDR/transfer, genuinely isolated Windows smoke, compatibility, performance and release acceptance remain NOT_VERIFIED. Keep Issue #25 OPEN and xan RESEARCH_ONLY.
 

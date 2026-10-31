@@ -153,6 +153,36 @@ class ToolsetTests(unittest.TestCase):
         with self.assertRaisesRegex(toolsets.ToolsetError, "duplicate member"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
 
+    def test_duplicate_manifest_schema_claim_is_rejected(self):
+        source = self.manifest.read_text(encoding="utf-8")
+        p = self.root.parent / "duplicate-v2.json"
+        p.write_text(source.replace('"schemaVersion": 2',
+                                    '"schemaVersion": 1, "schemaVersion": 2', 1),
+                     encoding="utf-8")
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        with self.assertRaisesRegex(toolsets.ToolsetError, "Duplicate JSON key"):
+            toolsets.load_manifest(p, catalog)
+
+    def test_duplicate_nested_toolset_field_is_rejected(self):
+        source = self.manifest.read_text(encoding="utf-8")
+        p = self.root.parent / "duplicate-category.json"
+        p.write_text(source.replace('"tools":', '"tools": [], "tools":', 1),
+                     encoding="utf-8")
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        with self.assertRaisesRegex(toolsets.ToolsetError, "Duplicate JSON key"):
+            toolsets.load_manifest(p, catalog)
+
+    def test_nonfinite_manifest_extra_field_is_rejected(self):
+        source = self.manifest.read_text(encoding="utf-8")
+        p = self.root.parent / "nonfinite-manifest.json"
+        p.write_text(source.replace('"schemaVersion": 2',
+                                    '"unused": Infinity, "schemaVersion": 2', 1),
+                     encoding="utf-8")
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        with self.assertRaisesRegex(toolsets.ToolsetError,
+                                    "Nonstandard JSON numeric"):
+            toolsets.load_manifest(p, catalog)
+
     def test_unsupported_manifest_version_rejected(self):
         data = json.loads(self.manifest.read_text(encoding="utf-8"))
         data["schemaVersion"] = 999

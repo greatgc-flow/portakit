@@ -36,29 +36,12 @@ class KitError(Exception):
     pass
 
 
-def unique_json_members(pairs):
-    """Do not resolve ambiguous saved kit/pin fields by last-wins JSON parsing."""
-    values = {}
-    for key, value in pairs:
-        if key in values:
-            raise KitError("Duplicate JSON key: " + key)
-        values[key] = value
-    return values
-
-
-def reject_nonfinite_json(value):
-    """Python's permissive NaN/Infinity tokens are not valid kit JSON."""
-    raise KitError("Nonstandard JSON numeric token: " + value)
-
-
 def json_file(path):
     """Load data but never follow Windows junctions or symbolic links."""
     path = Path(path).absolute()
     core.check_links(path)
     try:
-        return json.loads(path.read_text(encoding="utf-8"),
-                          object_pairs_hook=unique_json_members,
-                          parse_constant=reject_nonfinite_json)
+        return core.strict_json_loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
         raise KitError("Cannot read JSON " + str(path) + ": " + str(exc)) from exc
 

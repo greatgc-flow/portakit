@@ -46,7 +46,7 @@ def load_manifest(path, catalog):
     """
     core.check_links(Path(path))
     try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        data = core.strict_json_loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ToolsetError("Cannot read toolsets manifest: " + str(exc)) from exc
     if not isinstance(data, dict) or data.get("schemaVersion") not in (1, 2):

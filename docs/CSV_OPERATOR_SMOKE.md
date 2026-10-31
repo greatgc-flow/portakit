@@ -46,11 +46,14 @@ The report explicitly retains vendor archive provenance, corporate EULA/OSS/EDR/
 
 Before any separately authorized runtime smoke, an operator may use the
 [read-only xan ZIP original preflight](XAN_ZIP_LOCAL_PREFLIGHT.md) against
-the approved local official release archive. It validates a local original's
-release-metadata SHA, size, CRC and safe ZIP structure. **It does not unpack
-or authenticate the `xan.exe` file intended for execution**, nor permit
-execution under enterprise rules. Preserve this distinction and check the
-actual executable provenance separately before the manual opt-in smoke.
+the approved local official release archive. It validates a local original's release-metadata SHA, size, CRC and safe ZIP
+structure; its **optional `--exe ABSOLUTE_PATH`** checks that a separately
+supplied local `xan.exe` is byte-for-byte identical to the verified ZIP
+member, **without extracting or running it**. This is a meaningful local
+chain-of-custody check, but NOT independent publisher authentication,
+execution authorization, enterprise EULA/EDR approval, malware assurance,
+or a sandbox. Do not run a vendor executable until separate operator and
+security approvals exist.
 
 ## Boundaries and follow-up
 

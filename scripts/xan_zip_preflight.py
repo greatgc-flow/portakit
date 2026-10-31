@@ -40,7 +40,7 @@ def official_record(path=LEDGER):
         doc = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
         raise XanPreflightError("Research source metadata unreadable: " + str(exc)) from exc
-    if not isinstance(doc, dict) or doc.get("schemaVersion") != 1:
+    if not isinstance(doc, dict) or type(doc.get("schemaVersion")) is not int or doc["schemaVersion"] != 1:
         raise XanPreflightError("Research ledger schema unsupported")
     rows = doc.get("alternatives")
     if not isinstance(rows, list):
@@ -95,10 +95,13 @@ def inspect_members(stream):
         for entry in members:
             filename = entry.filename
             directory = entry.is_dir()
+            # ZipInfo.filename may be normalized by Python on Windows;
+            # orig_filename retains the decoded pre-normalized ZIP name.
+            raw_name = getattr(entry, "orig_filename", filename)
+            if (not isinstance(raw_name, str) or raw_name != filename or
+                    "\\" in raw_name or "\x00" in raw_name):
+                raise XanPreflightError("Ambiguous or backslash ZIP member name")
             # The normal core archive path contract is intentionally reused.
-            # Reject separator ambiguity rather than accepting alternate spellings.
-            if "\\" in filename:
-                raise XanPreflightError("Backslash in ZIP member name")
             name = filename[:-1] if directory else filename
             try:
                 parts = kit.core.path_parts(name, "ZIP member", "archive")
@@ -179,7 +182,10 @@ def inspect(original, metadata):
     if source.stat().st_size != expected_size:
         raise XanPreflightError("Original compressed bytes disagree with release metadata")
     try:
-        with source.open("rb") as stream:
+        # An unbuffered handle is deliberate: a small ZIP can fit entirely
+        # in Python's buffered-reader cache. Re-seeking that same buffered
+        # handle would otherwise miss an external in-place mutation on Windows.
+        with source.open("rb", buffering=0) as stream:
             before, count = hash_original(stream)
             if count != expected_size or before != expected_hash:
                 raise XanPreflightError("Local original SHA-256 mismatch")

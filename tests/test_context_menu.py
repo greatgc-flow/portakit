@@ -151,8 +151,37 @@ class ContextMenuTests(unittest.TestCase):
     def test_removed_app_still_has_reversible_context_menu(self):
         self.run_menu("install", "notepad++")
         (self.root / "notepad++/notepad++.exe").unlink()
-        self.assertEqual(self.run_menu("status", "notepad++")["items"][0]["state"], "owned")
+        before = dict(self.registry.keys)
+        report = self.run_menu("status", "notepad++")
+        self.assertFalse(report["changed"])
+        self.assertEqual(report["items"][0]["state"], "stale")
+        self.assertEqual(self.registry.keys, before)
         self.assertTrue(self.run_menu("remove", "notepad++")["changed"])
+        self.assertFalse(self.registry.keys)
+
+    def test_missing_managed_receipt_is_stale_not_foreign_and_removable(self):
+        self.run_menu("install", "notepad++")
+        (self.root / ".portakit-state.json").unlink()
+        state = self.run_menu("status", "notepad++")
+        self.assertEqual(state["items"][0]["state"], "stale")
+        self.assertFalse(state["changed"])
+        self.assertTrue(self.run_menu("remove", "notepad++")["changed"])
+
+    def test_moved_root_reports_stale_without_registry_mutation(self):
+        self.run_menu("install", "winmerge")
+        other_root = self.dir / "moved-root"
+        (other_root / "winmerge").mkdir(parents=True)
+        (other_root / "winmerge" / menu.EXES["winmerge"]).write_bytes(b"EXE")
+        (other_root / ".portakit-state.json").write_bytes(
+            (self.root / ".portakit-state.json").read_bytes())
+        before = {key: dict(value) for key, value in self.registry.keys.items()}
+        report = menu.perform("status", "winmerge", other_root, self.repo,
+                              self.registry)
+        self.assertEqual([x["state"] for x in report["items"]],
+                         ["stale", "stale"])
+        self.assertFalse(report["changed"])
+        self.assertEqual(self.registry.keys, before)
+        self.assertTrue(self.run_menu("remove", "winmerge")["changed"])
 
     def test_unmanaged_or_missing_app_never_registers(self):
         state = self.root / ".portakit-state.json"

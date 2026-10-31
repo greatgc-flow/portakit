@@ -139,6 +139,8 @@ def inspect_members(stream):
             is_executable = parts[-1].casefold() == "xan.exe"
             if is_executable:
                 executables += 1
+                if entry.file_size <= 0:
+                    raise XanPreflightError("ZIP xan.exe member is empty")
             count = 0
             digest = hashlib.sha256() if is_executable else None
             with archive.open(entry, "r") as src:

@@ -98,6 +98,13 @@ def same_console(path, expected, source_log=False):
                 footer.endswith("\n") and footer.count("\n") == 1 and
                 "\r" not in footer and len(footer) > len("REPORT: \n"),
                 "Source console report footer absent or invalid")
+        # The report footer is an archival label, not a filesystem lookup.
+        # No terminal-control characters may hide or spoof evidence lines.
+        historical_path = footer[len("REPORT: "):-1]
+        require(len(historical_path) <= 4096 and
+                all(ord(character) >= 32 and ord(character) != 127
+                    for character in historical_path),
+                "Source console report footer contains control characters")
     else:
         require(observed == canonical,
                 "Console transcript contradicts evidence JSON")
@@ -172,6 +179,25 @@ def check_source(doc, frozen):
             isinstance(structure.get("xanExeMember"), str) and
             structure["xanExeMember"].casefold().endswith("xan.exe"),
             "Source ZIP structure counters/roots are inconsistent")
+    # The producer has already checked each ZIP path with the shared
+    # archive path rules. Verify those rules against the stored member text:
+    # a string merely ending in 'xan.exe' is not a safe ZIP member path.
+    member = structure["xanExeMember"]
+    try:
+        segments = source.kit.core.path_parts(
+            member, "xan ZIP executable member", "archive")
+        for root in roots:
+            root_segments = source.kit.core.path_parts(
+                root, "ZIP root name", "archive")
+            require(len(root_segments) == 1,
+                    "Source ZIP root is not one path component")
+    except source.kit.core.PortakitError as exc:
+        raise EvidenceError("Source ZIP member/root path unsafe") from exc
+    require("\\" not in member and
+            1 <= len(segments) <= source.MAX_DEPTH and
+            segments[-1].casefold() == "xan.exe" and
+            segments[0].casefold() in roots,
+            "Source ZIP member path does not match archive structure")
     status = link.get("status")
     require(status in ("NOT_CHECKED", "LOCAL_EXE_MATCHES_ZIP_MEMBER"),
             "Unsupported source-to-executable comparison")
@@ -260,6 +286,20 @@ def check_smoke(doc, folder):
             isinstance(doc.get("unexpectedWorkspaceEntries"), list) and
             all(isinstance(x, str) for x in doc["unexpectedWorkspaceEntries"]),
             "Smoke consistency flags absent")
+    # Workspace names are rendered in the original operator console log.
+    # Prevent a forged JSON/log pair from smuggling control characters,
+    # parent traversal or Windows-unsafe path segments into that transcript.
+    for workspace_name in doc["unexpectedWorkspaceEntries"]:
+        if workspace_name == "UNKNOWN_SCAN_ERROR":
+            continue  # Original producer's scan-error sentinel, BLOCKED only.
+        try:
+            parts = source.kit.core.path_parts(
+                workspace_name, "unexpected smoke workspace entry", "archive")
+        except source.kit.core.PortakitError as exc:
+            raise EvidenceError("Unsafe unexpected workspace entry path") from exc
+        require("\\" not in workspace_name and
+                1 <= len(parts) <= source.MAX_DEPTH,
+                "Unsafe unexpected workspace entry path")
     hashes = doc.get("exeSha256Local")
     fixtures = doc.get("syntheticInputSha256")
     require(isinstance(hashes, dict) and isinstance(fixtures, dict) and

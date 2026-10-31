@@ -8,6 +8,11 @@
 - [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
 
 
+## 2026-10-31 — original ZIP member path and evidence log safety
+
+- [x] Reject path-traversing, spoofed-suffix, Windows-device, backslash and control-character member/root names in xan source reports using the shared core ZIP path validator. Also validate blocked-case unexpected workspace paths and bound historical REPORT console-footer text; preserve the authentic scan-error sentinel and legitimate copied evidence. New synthetic-only positive/negative regression tests.
+- [ ] Source metadata and cross-reports are still mutable text; authentic original ZIP, enterprise legal/EDR/transfer, physical nonproduction Windows approval, vendor runtime and repeatable performance remain NOT_VERIFIED. Keep xan RESEARCH_ONLY and Issue #25 open.
+
 ## 2026-10-31 — source and failed-case evidence consistency
 
 - [x] Cross-check original ZIP report's candidate/provenance/unverified labels, normalized roots and accounting counters, bound executable note and smoke attestation labels. Independently enforce original CSV evaluator's per-case process/timing/output schema for both PASS and BLOCKED statuses, separating valid runner exceptions, actual command failures and output-limit conditions. Synthetic-only negative/positive regression tests; no vendor process, executable download or change to default read-only operation.

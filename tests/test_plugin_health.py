@@ -167,6 +167,64 @@ class PluginHealthTests(unittest.TestCase):
         self.assertEqual(self.report_file.read_text("utf-8"), "ORIGINAL")
         self.assertFalse(self.report_file.with_suffix(".log").exists())
 
+    def test_report_json_error_rolls_back_only_owned_files(self):
+        report = health.inspect(self.saved, self.pins, self.root)
+        with mock.patch.object(health.json, "dump",
+                               side_effect=OSError("simulated full disk")):
+            with self.assertRaisesRegex(OSError, "full disk"):
+                health.emit(report, self.report_file)
+        self.assertFalse(self.report_file.exists())
+        self.assertFalse(self.report_file.with_suffix(".log").exists())
+
+    def test_report_log_error_rolls_back_only_owned_files(self):
+        report = health.inspect(self.saved, self.pins, self.root)
+        def failed_log(evidence, line):
+            evidence.stream.write("partial\n")
+            evidence.stream.flush()
+            raise OSError("simulated log failure")
+        with mock.patch.object(health.kit.sets.Evidence, "emit", new=failed_log):
+            with self.assertRaisesRegex(OSError, "log failure"):
+                health.emit(report, self.report_file)
+        self.assertFalse(self.report_file.exists())
+        self.assertFalse(self.report_file.with_suffix(".log").exists())
+
+    def test_concurrent_json_collision_keeps_foreign_evidence(self):
+        report = health.inspect(self.saved, self.pins, self.root)
+        target = self.report_file
+        init = health.kit.sets.Evidence.__init__
+        def collided(evidence, path):
+            target.write_bytes(b"FOREIGN-REPORT\n")
+            init(evidence, path)
+        with mock.patch.object(health.kit.sets.Evidence,
+                               "__init__", new=collided):
+            with self.assertRaises(FileExistsError):
+                health.emit(report, target)
+        self.assertEqual(target.read_bytes(), b"FOREIGN-REPORT\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_replaced_json_during_log_error_is_not_deleted(self):
+        report = health.inspect(self.saved, self.pins, self.root)
+        target = self.report_file
+        def replace_then_fail(evidence, line):
+            target.unlink()
+            target.write_bytes(b"NEW-OWNER\n")
+            raise OSError("simulated output interruption")
+        with mock.patch.object(health.kit.sets.Evidence,
+                               "emit", new=replace_then_fail):
+            with self.assertRaisesRegex(OSError, "output interruption"):
+                health.emit(report, target)
+        self.assertEqual(target.read_bytes(), b"NEW-OWNER\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_existing_health_log_survives_preflight_rejection(self):
+        report = health.inspect(self.saved, self.pins, self.root)
+        log = self.report_file.with_suffix(".log")
+        log.write_bytes(b"PREEXISTING-LOG\n")
+        with self.assertRaisesRegex(health.HealthError, "already exists"):
+            health.emit(report, self.report_file)
+        self.assertEqual(log.read_bytes(), b"PREEXISTING-LOG\n")
+        self.assertFalse(self.report_file.exists())
+
     def test_cli_incomplete_exit_2_and_read_only(self):
         original_pins, _, _, original_known = health.kit.inventory()
         v2 = health.kit.make_kit("public-safe", ["notepad++"], original_pins,

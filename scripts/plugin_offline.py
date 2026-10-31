@@ -58,6 +58,25 @@ def validate_hashes(hashes):
         seen.add(name.casefold())
 
 
+def unique_receipt_pairs(pairs):
+    """Reject duplicate JSON object keys at every nesting depth.
+
+    json.loads otherwise keeps the last value, allowing a locally edited
+    receipt to hide a conflicting SHA, version or file-hash assertion.
+    """
+    result = {}
+    for name, value in pairs:
+        if name in result:
+            raise PluginDeployError("Duplicate plugin receipt JSON key: " + name)
+        result[name] = value
+    return result
+
+
+def reject_receipt_constant(value):
+    """A receipt must be strict JSON, not Python's NaN/Infinity extensions."""
+    raise PluginDeployError("Invalid non-finite plugin receipt value: " + value)
+
+
 def read_receipts(root):
     path = receipt_path(root)
     kit.core.check_links(path)
@@ -66,14 +85,20 @@ def read_receipts(root):
     try:
         if path.stat().st_size > MAX_RECEIPT_BYTES:
             raise PluginDeployError("Plugin receipt state too large")
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8"),
+                           object_pairs_hook=unique_receipt_pairs,
+                           parse_constant=reject_receipt_constant)
     except (OSError, ValueError, UnicodeError) as exc:
         raise PluginDeployError("Cannot read plugin receipt state: " + str(exc)) from exc
     if not isinstance(value, dict):
         raise PluginDeployError("Plugin receipts must be a JSON object")
     for ident, record in value.items():
-        if (not isinstance(ident, str) or ":" not in ident
-                or not isinstance(record, dict) or
+        # Exact two-part normalized ID; never accept control/path tokens or
+        # hidden/unbounded selectors in a persisted receipt key.
+        if (not isinstance(ident, str) or
+                re.fullmatch(r"[a-z0-9][a-z0-9._+-]*:[a-z0-9][a-z0-9._+-]*",
+                             ident) is None or
+                not isinstance(record, dict) or
                 set(record) not in (BASE_RECEIPT_FIELDS,
                                    BASE_RECEIPT_FIELDS | {"fileHashes"}) or
                 any(not isinstance(record.get(k), str)

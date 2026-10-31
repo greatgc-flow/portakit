@@ -82,6 +82,151 @@ class XanSourceTests(fixtures.Workspace):
         self.assertEqual(before, self.source.read_bytes())
         self.assertEqual(list(self.base.iterdir()), [self.source])
 
+    def test_archive_exe_digest_is_reported_without_extraction(self):
+        report = auditor.inspect(self.source, self.metadata)
+        expected = b"SYNTHETIC-NOT-REAL-EXE"
+        self.assertEqual(report["structure"]["xanExeMember"], "xan.exe")
+        self.assertEqual(report["structure"]["xanExeBytes"], len(expected))
+        self.assertEqual(report["structure"]["xanExeSha256"],
+                         hashlib.sha256(expected).hexdigest())
+        self.assertEqual(report["localExeComparison"]["status"], "NOT_CHECKED")
+        self.assertIsNone(report["localExeComparison"]["sha256"])
+        self.assertEqual(list(self.base.iterdir()), [self.source])
+
+    def test_explicit_local_exe_proves_only_file_identity(self):
+        local = self.base / "xan.exe"
+        local.write_bytes(b"SYNTHETIC-NOT-REAL-EXE")
+        report = auditor.inspect(self.source, self.metadata, exe=local)
+        identity = report["localExeComparison"]
+        self.assertEqual(identity["status"], "LOCAL_EXE_MATCHES_ZIP_MEMBER")
+        self.assertEqual(identity["sha256"], report["structure"]["xanExeSha256"])
+        self.assertEqual(identity["bytes"], report["structure"]["xanExeBytes"])
+        self.assertIn("NOT_EXECUTION", identity["note"])
+        self.assertEqual(report["runtimeWindows"], "NOT_VERIFIED")
+        self.assertEqual(report["enterprisePermission"], "NOT_VERIFIED")
+        self.assertEqual(self.source.read_bytes(), self.data)
+        self.assertEqual(local.read_bytes(), b"SYNTHETIC-NOT-REAL-EXE")
+
+    def test_wrapped_and_deflated_member_matches_local_exe(self):
+        payload = b"synthetic source bytes" * 500
+        self.use_zip(build_zip([
+            ("xan-0.61.0/", b""),
+            ("xan-0.61.0/xan.exe", payload),
+            ("xan-0.61.0/COPYING", b"license")],
+            zipfile.ZIP_DEFLATED))
+        local = self.base / "xan.exe"
+        local.write_bytes(payload)
+        result = auditor.inspect(self.source, self.metadata, exe=local)
+        self.assertEqual(result["structure"]["xanExeMember"],
+                         "xan-0.61.0/xan.exe")
+        self.assertEqual(result["localExeComparison"]["status"],
+                         "LOCAL_EXE_MATCHES_ZIP_MEMBER")
+
+    def test_mismatched_exe_never_claims_identity_or_writes_report(self):
+        wrong = self.base / "xan.exe"
+        wrong.write_bytes(b"ANOTHER-SYNTHETIC-EXE")
+        with self.assertRaisesRegex(auditor.XanPreflightError,
+                                    "does not match original ZIP"):
+            auditor.inspect(self.source, self.metadata, exe=wrong)
+        self.assertFalse(self.evidence.exists())
+        self.assertEqual(self.source.read_bytes(), self.data)
+
+    def test_path_types_invalid_missing_or_wrong_named_exe_denied(self):
+        local = self.base / "xan.exe"
+        for path in (None, "", [], {}, "xan.exe",
+                     self.base / "not-xan.exe", local):
+            with self.subTest(path=repr(path)):
+                with self.assertRaises(auditor.XanPreflightError):
+                    auditor.hash_local_exe(path)
+        self.assertFalse(self.evidence.exists())
+
+    def test_zero_byte_exe_in_zip_and_local_is_rejected(self):
+        self.use_zip(build_zip([("xan.exe", b""), ("COPYING", b"notice")]))
+        with self.assertRaisesRegex(auditor.XanPreflightError, "member is empty"):
+            auditor.inspect(self.source, self.metadata)
+        self.use_zip(build_zip())
+        local = self.base / "xan.exe"
+        local.write_bytes(b"")
+        with self.assertRaisesRegex(auditor.XanPreflightError,
+                                    "outside bounded source limit"):
+            auditor.inspect(self.source, self.metadata, exe=local)
+
+    def test_exe_local_size_limit_and_reparse_check_fail_closed(self):
+        local = self.base / "xan.exe"
+        local.write_bytes(b"SYNTHETIC-NOT-REAL-EXE")
+        with mock.patch.object(auditor, "MAX_EXPANDED", 4):
+            with self.assertRaisesRegex(auditor.XanPreflightError,
+                                        "outside bounded source limit"):
+                auditor.hash_local_exe(local)
+        error = auditor.kit.core.PortakitError("state", "reparse denied")
+        with mock.patch.object(auditor.kit.core, "check_links",
+                               side_effect=error):
+            with self.assertRaisesRegex(auditor.kit.core.PortakitError,
+                                        "reparse denied"):
+                auditor.hash_local_exe(local)
+
+    def test_exe_mutated_between_two_reads_denied(self):
+        local = self.base / "xan.exe"
+        local.write_bytes(b"SYNTHETIC-NOT-REAL-EXE")
+        actual = auditor.hash_local_exe
+        reads = []
+        def mutate_once(path):
+            value = actual(path)
+            reads.append(value)
+            if len(reads) == 1:
+                local.write_bytes(b"MODIFIED-BY-TEST")
+            return value
+        with mock.patch.object(auditor, "hash_local_exe",
+                               side_effect=mutate_once):
+            with self.assertRaisesRegex(auditor.XanPreflightError,
+                                        "changed during source comparison"):
+                auditor.inspect(self.source, self.metadata, exe=local)
+        self.assertEqual(len(reads), 2)
+
+    def test_cli_optional_exe_is_readonly_and_never_launches_vendor(self):
+        local = self.base / "xan.exe"
+        local.write_bytes(b"SYNTHETIC-NOT-REAL-EXE")
+        out = io.StringIO()
+        with mock.patch.object(auditor, "official_record",
+                               return_value=self.metadata):
+            with mock.patch("subprocess.Popen",
+                            side_effect=AssertionError("no vendor execution")):
+                with contextlib.redirect_stdout(out):
+                    rc = auditor.run(["--original", str(self.source),
+                                      "--exe", str(local)])
+        self.assertEqual(rc, 0)
+        self.assertIn("LOCAL EXE COMPARISON: LOCAL_EXE_MATCHES_ZIP_MEMBER",
+                      out.getvalue())
+        self.assertFalse(self.evidence.exists())
+        self.assertEqual(set(self.base.iterdir()), {self.source, local})
+
+    def test_cli_wrong_exe_exit_two_and_no_report(self):
+        wrong = self.base / "xan.exe"
+        wrong.write_bytes(b"ANOTHER-SYNTHETIC-EXE")
+        with mock.patch.object(auditor, "official_record",
+                               return_value=self.metadata):
+            with contextlib.redirect_stderr(io.StringIO()) as errors:
+                rc = auditor.run(["--original", str(self.source),
+                                  "--exe", str(wrong),
+                                  "--out", str(self.evidence)])
+        self.assertEqual(rc, 2)
+        self.assertIn("does not match original ZIP", errors.getvalue())
+        self.assertFalse(self.evidence.exists())
+
+    def test_matched_exe_json_and_console_are_exact(self):
+        local = self.base / "xan.exe"
+        local.write_bytes(b"SYNTHETIC-NOT-REAL-EXE")
+        report = auditor.inspect(self.source, self.metadata, exe=local)
+        capture = io.StringIO()
+        with contextlib.redirect_stdout(capture):
+            auditor.emit(report, self.evidence)
+        transcript = self.evidence.with_suffix(".log").read_text(encoding="utf-8")
+        self.assertEqual(transcript, capture.getvalue())
+        written = json.loads(self.evidence.read_text(encoding="utf-8"))
+        self.assertEqual(written["localExeComparison"], report["localExeComparison"])
+        self.assertEqual(written["structure"]["xanExeSha256"],
+                         hashlib.sha256(local.read_bytes()).hexdigest())
+
     def test_deflated_and_wrapped_zip_supported(self):
         self.use_zip(build_zip([
             ("xan-0.61.0/", b""),

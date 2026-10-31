@@ -12,6 +12,20 @@ Only after obtaining the official asset through an authorized method, preserving
 python -I scripts/xan_zip_preflight.py --original D:\ApprovedVendorArchives\xan-x86_64-pc-windows-msvc.zip
 ~~~
 
+Optional **read-only local executable identity cross-check**, without executing it:
+
+~~~cmd
+python -I scripts/xan_zip_preflight.py --original D:\ApprovedVendorArchives\xan-x86_64-pc-windows-msvc.zip --exe D:\ApprovedTools\xan\xan.exe
+~~~
+
+This computes the SHA-256 of `xan.exe` while reading its ZIP member to EOF,
+then hashes the explicitly supplied local executable **twice** and compares
+both digest and byte count. A mismatch, renamed/missing executable, reparse
+path, empty member or changed file rejects the audit. The entire ZIP is
+rehashed from the same unbuffered handle afterward. Without `--exe` the
+result reports `NOT_CHECKED`; do not infer executable identity from a
+source-only ZIP result.
+
 Optional separately approved **NEW** evidence JSON and byte-identical console log:
 
 ~~~cmd
@@ -25,15 +39,17 @@ python -I scripts/xan_zip_preflight.py --original D:\ApprovedVendorArchives\xan-
 ## What this inspects
 
 - Official release API snapshot for **xan 0.61.0** Windows x64 MSVC ZIP (xan-x86_64-pc-windows-msvc.zip): expected **6,473,075 compressed bytes** and SHA-256 **5f7bef4dcffbfb3a3a937ac180ed76cdf966cb13647251beffddb84d01c1ae54**. The original size, filename and full SHA must match before the ZIP is opened.
-- Re-read the **same open file handle** after inspection and reject changed digest/size.
+- Re-read the **same unbuffered open file handle** after inspection and reject changed digest/size. If provided, compare the local file's SHA/size to the streamed ZIP member hash **before** the final source check.
 - ZIP members limited by existing core archive settings to **4,096 members** and **512 MiB total declared expanded data**; member depth maximum 32, normal ZIP STORED/DEFLATED only.
 - Normalize and reject unsafe Windows relative paths including parent traversal, absolute/drive/ADS, empty segments, Windows reserved names, trailing dot/space, backslash separators, duplicate/case-colliding names and file-as-parent conflicts.
-- Reject encryption, reparse/symlink/special file modes, zero data files, and multiple/absent xan.exe targets.
+- Reject encryption, reparse/symlink/special file modes, zero-byte xan.exe files, zero data files, and multiple/absent xan.exe targets.
 - **Stream every regular member to EOF without extracting**. Verify ZIP CRC and declared expanded size on the data read, bounded by those archive limits.
 
-Results include archive member count, root names, expanded logical bytes, xan EXE member count, original digest, local check outcome and explicitly pending real-world gates.
+Results include archive member count, root names, expanded logical bytes, the **ZIP-internal xan.exe member path, size and SHA-256**, archive SHA-256, optional local EXE comparison (`NOT_CHECKED` or `LOCAL_EXE_MATCHES_ZIP_MEMBER`), and explicitly pending real-world gates.
 
 **Limitations:** The release SHA is a *GitHub release metadata value*; a matching locally provided file is **not** independent publisher authentication, a signed supply-chain attestation or virus/EDR assurance. This source audit cannot prove the actual vendor binary starts on an authorized Windows host, uses no network, writes only inside a sandbox, or meets company OSS/EULA/redistribution requirements. It does **not** execute xan, Miller or anything else from the archive.
+
+A local ZIP/EXE hash match establishes **byte equality at the time of reading only**. It does not prove the ZIP came from the publisher, that any transfer/redistribution is licensed, that the binary is safe to run or that the actual Windows runtime works. No process or network isolation is provided. Do not substitute it for independent version, publisher signature, dependency, EDR or approved offline execution checks.
 
 Headless CI only uses **fabricated ZIP archives** and dummy bytes called xan.exe; even passing thousands of synthetic cases cannot certify the actual official ZIP or runtime. Actual original-file inspection remains operator-side **NOT_VERIFIED** until a permitted Windows original is supplied.
 

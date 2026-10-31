@@ -18,6 +18,11 @@ extracting or running vendor programs. Default is **read-only** (no writes);
 optional `--out NEW.json` creates an exact console-mirrored `.log`.
 Exit 0 is **local source/structure only**, not publisher authentication,
 company use/license/EDR approval, GUI/CPU benchmark or installer permission.
+An optional `--exe ABSOLUTE\\xan.exe` additionally compares the SHA-256
+of that **operator-supplied local executable** with the single ZIP member's
+streamed SHA-256, without extracting or starting the program. A match means
+**file-byte identity only**, not publisher authentication, execution safety,
+or corporate approval. Default remains read-only and vendor-free.
 The canonical catalog and installable IDs are unchanged.
 [One-command operator guide](docs/XAN_ZIP_LOCAL_PREFLIGHT.md).
 

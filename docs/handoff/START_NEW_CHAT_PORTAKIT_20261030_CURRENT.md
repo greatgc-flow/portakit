@@ -1,3 +1,5 @@
+> **2026-10-31 CLOSEOUT / NEW CHAT AUTHORITY:** Start with [PORTAKIT_20261031_FINAL_CLOSEOUT.md](PORTAKIT_20261031_FINAL_CLOSEOUT.md) and [START_NEW_CHAT_PORTAKIT_20261031.md](START_NEW_CHAT_PORTAKIT_20261031.md). This dated 2026-10-30 document is retained for history. Latest remote main supersedes its old SHA and older queued CI descriptions.
+
 # PortaKit — current next-chat continuation (2026-10-30)
 
 ## 2026-10-31 — read-only xan ZIP ↔ local executable identity (merged PR #59)

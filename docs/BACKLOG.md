@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-31 — session-closeout SSOT
+
+- [x] Preserve merged #57–#59 code / docs, original-source security test failures and fixes, exact main/PR Windows 554-test evidence, VSG goals and independent enterprise reality gates in [final closeout](handoff/PORTAKIT_20261031_FINAL_CLOSEOUT.md).
+- [x] Provide [single new-chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261031.md) and update older handoff pointer; do not copy personal chat content/vendor binaries into a public repository.
+- [ ] Independently verify **final closeout/docs-only main commit** on both Windows matrices (older main CI #41182533046 passed, but applies only to old HEAD).
+- [ ] Keep issue #25, #27, #36, #51 gates open until specific real-world proof/owner approvals.
+
+
 ## 2026-10-31 — xan original ZIP ↔ local EXE read-only identity (merged PR #59)
 
 - [x] Keep the preceding [xan ZIP structural preflight](XAN_ZIP_LOCAL_PREFLIGHT.md) isolated and source-only. Stream-hash the unique `xan.exe` ZIP member during existing CRC reading (no extraction or extra decompression), report member path, bytes and SHA-256.

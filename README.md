@@ -1,5 +1,12 @@
 # portakit
 
+## Latest complete handoff — 2026-10-31
+
+[Final session context and verification](docs/handoff/PORTAKIT_20261031_FINAL_CLOSEOUT.md) ·
+[Start a new chat](docs/handoff/START_NEW_CHAT_PORTAKIT_20261031.md).
+Latest pre-closeout verified main Windows 3.11/3.14 CI ran **554 tests each PASS**; confirm the closeout/docs-only commit's exact current main CI separately. Real xan original/runtime/corporate approval **NOT_VERIFIED**.
+
+
 ## Selected-only picker and consent-safe pending status (2026-10-31)
 
 The optional personal-kit GUI now offers a **Selected only** filter alongside category, search and approval state. Imported choices that were `RESEARCH_ONLY` when saved remain visibly pending even if a newer catalog has pinned them; they do **not** appear under `READY` until a person explicitly removes and reselects the item. Filters never change kit contents, install tools or approve vendor/legal/EDR use. Live Windows Tk display, Korean IME, scaling and accessibility still require the approved workstation checks in [GUI acceptance](docs/GUI_PICKER_ACCEPTANCE_20261030.md).

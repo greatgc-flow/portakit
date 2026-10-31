@@ -1,5 +1,14 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-10-31 — evidence-only three-tool lightweight research (candidate PR)
+
+- [x] Check official GitHub 2026-10-31 release API and vendor docs for DuckDB CLI v2.0.0, xsv 0.13.0 and Tailviewer v1.0.0-rc1; record actual asset filenames, official compressed byte counts and **metadata-only** SHA availability without downloading any binary.
+- [x] Distinguish DuckDB `tar.gz` (not accepted by current `zip/exe/sfx7z` installer), Windows VC++ runtime, automatic extension/network permissions from approved offline smoke. xsv upstream archived in 2025; author recommends qsv/xan. Tailviewer has 2022 portable ZIP and .NET Framework 4.7.1+ prerequisite.
+- [x] Add machine-readable supplemental research ledger and optional read-only `lightweight_review.py` audit with eight open enterprise/runtime/size gates, no auto-promotion, new-only local JSON+console evidence and headless regressions. Three IDs stay `RESEARCH_ONLY`; no actual binary downloaded or used.
+- [ ] Windows Python 3.11/3.14 PR and post-merge main CI must pass; record PR number, results and issue #25 comment.
+- [ ] Independent live vendor-original SHA, safe extraction, expanded bytes, Windows execution/performance, corporate EULA/OSS/EDR/redistribution approvals remain unverified. Never claim automatic admission or public Release.
+
+
 ## 2026-10-31 — idempotent offline editor-plugin apply (merged PR #53)
 
 - [x] Reuse `plugin_offline.make_plan` state to SHA-check original ZIPs only for missing pinned plugins. Installed plugins are still fully rehashed against receipts, and changed/unknown/legacy entries block before any install.

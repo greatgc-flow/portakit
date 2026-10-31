@@ -576,7 +576,12 @@ class TempFileTests(fixtures.InstallWorkspace):
 class UpdateByPinTests(fixtures.InstallWorkspace):
     def test_identical_pin_is_noop_with_changed_false(self):
         previous = self.installed()
-        tool, _ = self.package()
+        # Reuse the exact installed pin. A freshly constructed ZIP fixture
+        # may include a different DOS timestamp if the clock ticks over,
+        # creating a different archive SHA despite identical file contents.
+        installed = pk.read_state(self.root)["demo"]
+        tool = entry(version=installed["version"], sha256=installed["sha256"],
+                     dest=installed["dest"])
         download = mock.Mock(side_effect=AssertionError("download"))
         result = pk.update(tool, self.root, download)
         self.assertFalse(result["changed"])

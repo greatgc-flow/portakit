@@ -332,11 +332,11 @@ def emit(report, output=None):
         with kit.sets.Evidence(transcript) as evidence:
             log_identity = kit.sets.created_output_identity(
                 os.fstat(evidence.stream.fileno()))
-            with target.open("x", encoding="utf-8", newline="\\n") as stream:
+            with target.open("x", encoding="utf-8", newline="\n") as stream:
                 json_identity = kit.sets.created_output_identity(
                     os.fstat(stream.fileno()))
                 json.dump(report, stream, ensure_ascii=False, indent=2)
-                stream.write("\\n")
+                stream.write("\n")
             for line in lines:
                 evidence.emit(line)
             evidence.emit("REPORT: " + str(target))

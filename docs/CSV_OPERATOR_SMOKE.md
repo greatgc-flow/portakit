@@ -67,3 +67,7 @@ No automatic download, installation, network connection, privileged driver, regi
 ## Optional operator acceptance sequence
 
 For the exact local-source SHA/ZIP member vs separately approved isolated Windows xan/Miller functional evidence workflow, follow the [operator acceptance package](CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md). It keeps legal/EDR, actual binary runtime, real network isolation and performance as independent NOT_VERIFIED gates. No vendor runs are started by this guide.
+
+## Post-run read-only chain check
+
+For existing approved operator evidence, [verify source ZIP ↔ executable ↔ CSV smoke records](CSV_EVIDENCE_CROSSCHECK.md) without starting new vendor processes or changing files by default. This is an internal-consistency check, not runtime/enterprise release approval.

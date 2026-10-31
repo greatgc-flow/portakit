@@ -47,16 +47,8 @@ class CSVAlternativesTests(unittest.TestCase):
         expected = [402543109, 129287020]
         self.assertEqual([a["size"] for a in qsv["windowsX64"]], expected)
         # Contract also guards against quietly broadening existing core limit.
-        import ast
-        tree = ast.parse((ROOT / "portakit.py").read_text(encoding="utf-8"))
-        compressed_cap = next(
-            x.value.left.value for x in tree.body
-            if isinstance(x, ast.Assign)
-            and any(isinstance(t, ast.Name) and t.id == "MAX_DOWNLOAD_BYTES"
-                    for t in x.targets)
-            and isinstance(x.value, ast.BinOp)
-        )  # first 100 in "100 * 1024 * 1024"
-        self.assertEqual(compressed_cap, 100)
+        core_source = (ROOT / "portakit.py").read_text(encoding="utf-8")
+        self.assertIn("MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024", core_source)
         self.assertTrue(all(a["size"] > 100 * 1024 * 1024
                             for a in qsv["windowsX64"]))
 

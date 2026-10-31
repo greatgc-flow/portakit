@@ -9,6 +9,16 @@ The optional personal-kit GUI now offers a **Selected only** filter alongside ca
 Run `scripts\KitDoctor.cmd --kit MyKit.json --root D:\PortableApps` to combine existing read-only offline source/SHA readiness, installed logical-byte footprint and selected editor-plugin file integrity checks. Optional `--archive-dir`, `--skip-pending`, `--max-mib`, `--out` remain explicit. Overall `LOCAL_CHECKS_PASS` applies **only** to fully measured, already-installed pinned apps with no pending/OS/plugin selections; it **never certifies company license, EDR, vendor authenticity, GUI or source-transfer rights**. Output is either console-only (no files) or new JSON plus byte-identical console log. [Guide](docs/KIT_DOCTOR.md).
 
 
+## Lightweight candidate research gate (2026-10-31)
+
+The optional `python -I scripts/lightweight_review.py` command displays the
+**research-only** source/compatibility blockers for DuckDB CLI, archived xsv,
+and Tailviewer. It makes **no downloads, installs or runtime claims**, and
+always exits 2 when valid candidates are not admitted. Optional `--id` and
+`--out` select a subset and create new-only JSON plus an exact console log.
+Pinned catalog entries, software counts and default toolkits are unchanged.
+[Source ledger and operator checklist](docs/LIGHTWEIGHT_CANDIDATES.md).
+
 ## Idempotent offline editor-plugin apply (2026-10-31)
 
 For validated v2 personal kits, `scripts/plugin_offline.py apply` now checks

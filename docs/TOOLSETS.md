@@ -1,8 +1,24 @@
 # Optional toolsets — generic MECE primary taxonomy and composable work profiles
 
-> **Current state 2026-10-30:** 19 installable SHA-pinned tools (adds Sysinternals TCPView 4.19 and PsPing 2.13, see DECISIONS), 108 research entries (19 pinned / 27 Windows built-ins / 62 research-only). See the [2026-10-22 handoff and evidence map](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md). Historical phase-specific counts below are not current catalog totals.
+> **Current state 2026-10-30:** 19 SHA-pinned installable tools in the current catalog, with 151 selectable software entries overall (19 pinned / 27 OS built-ins / 105 research-only), plus six independently selectable editor-plugin metadata options. See the [2026-10-22 handoff and evidence map](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md). Historical phase-specific counts below are not current catalog totals.
 
 **2026-10-20 — schema v2.** This is a **Windows x64 air-gapped corporate** tool selection, intentionally not a platform/industry-specific scheme. It separates **what software fundamentally does** from **which task/role combines it**, and from **how it is packaged or approved**.
+
+## Bounded core child execution — 2026-11-01
+
+An explicitly consented `apply --yes` now invokes **only PortaKit's own `portakit.py --json install ID`** via an argument array (`shell=False`). The immediate child has **600 seconds per install** by default, with an optional `--child-timeout SECONDS` (1–3600) for slow/offline equipment. Its stdout and stderr are drained **concurrently** and held to **256 KiB per stream**; exceeding the cap terminates the direct child and records `OUTPUT_LIMIT`. A stalled child records `TIMEOUT`. Launch/read failure is a separate failed status. On any failure, the batch stops at that tool; previously installed items remain managed rather than silently rolled back.
+
+```cmd
+:: Source-only planning, no vendor process or download
+python -I scripts/toolsets.py plan minimal --root D:\PortableApps
+
+:: Existing opt-in install flow, configurable per-child runtime limit
+python -I scripts/toolsets.py apply minimal --root D:\PortableApps --yes --child-timeout 900
+```
+
+**Bounds are not an OS sandbox.** The direct child is killed on overflow or timeout; descendants that independently inherit handles may survive. CPU, RAM, network and disk writes by authorized installer code are not sandboxed, and the 256 KiB bounds apply to captured text rather than all child allocations. Run only after the **final user/organization** approves the target environment and tool licenses, and do not connect to live manufacturing equipment as part of synthetic tests. The child JSON success result must be valid, unique-key strict JSON with `ok: true`, matching `command/id` and no error object; invalid, contradictory or truncated output is a failed install result. The console-to-local evidence log reports the selected timeout and output cap and stops on the first failing item.
+
+This is a **source-level reliability improvement**; no vendor binaries are executed by CI. It does not change default approved pins, existing v1/v2 toolset selection, EULA/EDR checks or the separate final-user approval boundary in [END_USER_ACCEPTANCE.md](END_USER_ACCEPTANCE.md).
 
 ## Three independent axes (MECE within each axis, intentionally many-to-many across axes)
 

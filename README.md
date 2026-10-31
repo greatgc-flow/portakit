@@ -1,12 +1,16 @@
 # portakit
 
+## Latest verified handoff — 2026-11-01
+
+[**Resume PortaKit source development**](docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md): latest merged-code/doc checkpoint, full PR/CI evidence, public-safe remaining backlog, **final-user acceptance ownership**, and a copyable new-chat prompt. Use current GitHub `main` over historic SHAs.
+
 ## Final-user enterprise acceptance boundary (2026-11-01)
 
 **Actual operator tests, company-use and transfer/redistribution licenses, EDR approval, isolated vendor execution, local GUI acceptance and deployment go/no-go are the responsibility of the final user or its organization.** PortaKit development supplies code, independent synthetic tests, SHA-pinned selection, read-only diagnostics and optional user-attested installation. **CI pass and catalog READY never grant corporate permission.** Real-world acceptance is **not required to complete unrelated source-only PRs**; research-only vendor binaries remain inert and there is no automatic admission, installation or release. [Responsibility matrix and final-user checklist](docs/END_USER_ACCEPTANCE.md).
 
 ## Latest verified source CI
 
-Merged `main` `93474402bad5456d0bb9cf5f42cb3f76775e7776` passed [Windows Python 3.11 and 3.14 CI #41217743395](https://github.com/greatgc-flow/portakit/actions/runs/41217743395), **686/686 tests each** (independent job logs verified). New source/docs PRs must verify their own head and merged-main CI.
+Merged `main` `769860bf9042ff1c0e09fbf0febf7701b9507e2a` passed [Windows Python 3.11 and 3.14 CI #41218229391](https://github.com/greatgc-flow/portakit/actions/runs/41218229391), **686/686 tests each** (independent job logs verified). The subsequent docs-only handoff PR must verify its own head and merged-main CI.
 
 ## Industrial protocol role research (2026-11-01)
 
@@ -20,11 +24,11 @@ Merged `main` `93474402bad5456d0bb9cf5f42cb3f76775e7776` passed [Windows Python 
 
 Personal-kit JSON, installation receipts, and immutable catalog/toolset metadata are treated as **untrusted local input**, not as approval certificates. Readers reject contradictory duplicate keys and nonstandard NaN/Infinity claims instead of silently keeping the final value. Create-only evidence output failures remain **invalid** and subject to best-effort cleanup; no user data or vendor programs are launched merely by these checks. See [final-user responsibilities](docs/END_USER_ACCEPTANCE.md).
 
-## Latest complete handoff — 2026-10-31
+## Historical prior handoff — 2026-10-31
 
 [Final session context and verification](docs/handoff/PORTAKIT_20261031_FINAL_CLOSEOUT.md) ·
 [Start a new chat](docs/handoff/START_NEW_CHAT_PORTAKIT_20261031.md).
-Latest pre-closeout verified main Windows 3.11/3.14 CI ran **554 tests each PASS**; confirm the closeout/docs-only commit's exact current main CI separately. Real xan original/runtime/corporate approval **NOT_VERIFIED**.
+Historical 2026-10-31 baseline: Windows Python 3.11/3.14 **554/554 PASS**. See the 2026-11-01 handoff above for actual newer verified code/CI. Real xan runtime and company approval remain **final-user-owned and NOT_VERIFIED**.
 
 
 ## Selected-only picker and consent-safe pending status (2026-10-31)

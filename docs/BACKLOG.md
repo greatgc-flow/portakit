@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — safe read-only Explorer stale-link diagnosis
+
+- [x] Extend existing `scripts/context_menu.py status` only: exact PortaKit-owned menu keys are `STALE` when the target executable moved/vanished, the saved root no longer matches `--root`, or the managed receipt is absent. Keep `OWNED`, `FOREIGN`, `MODIFIED`, `ABSENT` distinct and preserve exact file-mirrored console messages.
+- [x] Regression-test removed executable, missing receipt and moved managed root with mock registry; verify `status` makes no registry changes and explicit `remove` remains reversible. No Windows 11 shell COM, services, admin, registry mutation during source-only CI.
+- [ ] Verify exact PR-head Windows Python 3.11/3.14 CI and independent post-squash `main` CI. Real Explorer GUI/EDR/enterprise approval remains final-user-owned.
+
 ## 2026-11-01 — toolset post-install state verification (source-only)
 
 - [x] Inspect `scripts/toolsets.py` batch apply: a zero-exit core JSON success had been counted as installed without reopening the managed state receipt and verifying the destination exists under the pinned catalog. Close the false-complete evidence path with `status_of` and `core.read_state` **after each child response**; stop on missing/mismatched receipt or directory; preserve previously completed tools and exact mirrored evidence.

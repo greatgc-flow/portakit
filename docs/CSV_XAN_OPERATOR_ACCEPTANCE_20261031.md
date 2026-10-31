@@ -73,6 +73,12 @@ Record the following for **each** case privately: exact commands, version and EX
 
 Do not introduce unapproved process monitors, network probes, drivers, services, new installations, or production connectivity just to collect performance observations.
 
+## Evidence producer write failures (source-only safety)
+
+Both opt-in report producers (the local ZIP preflight and the approved-host CSV smoke) use **exclusive-create** JSON/console-log outputs. A new synthetic-tested guard now attempts to remove **only** report files opened by that invocation if JSON serialization or log emission fails. It records the original regular-file identity on the open handle before cleanup; an existing or replacement file from another writer is left untouched. The smoke's previously generated `edge.csv` and `bulk.csv` are never deleted by this report cleanup.
+
+This is **best-effort failure rollback, not transactional or atomic evidence persistence**. A process kill/power failure, a reused file ID, or a path race may still leave a partial file, and some console lines may already have been shown before a write error. Treat any reported failure as **invalid/incomplete evidence**; choose a fresh output name/run folder, review it locally, and never promote a partially written record. No vendor binaries are downloaded or executed by source-only CI.
+
 ## 6. Decision / feedback closure
 
 **Keep Issue #25 open.** After a human gate owner reviews the real authorized local evidence, record a sanitized summary, the independently observed failures or limitations, the explicitly accepted residual risks, the next owner and action, and whether to **retain Miller**, **continue xan research**, or **start a separate catalog-admission PR**.

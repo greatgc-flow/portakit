@@ -140,10 +140,35 @@ def validate_recommended(config):
         destinations.add(parts[1].lower())
 
 
+def strict_json_pairs(pairs):
+    """Reject duplicate members anywhere in trusted-selection JSON.
+
+    Standard json.loads silently chooses the last value, allowing shadowed
+    SHA pins, aliases and per-tool state to be interpreted differently.
+    """
+    values = {}
+    for name, value in pairs:
+        if name in values:
+            raise ValueError("Duplicate JSON key: " + name)
+        values[name] = value
+    return values
+
+
+def reject_nonfinite_json(value):
+    """Python accepts NaN/Infinity by default; these are invalid JSON."""
+    raise ValueError("Nonstandard JSON numeric token: " + value)
+
+
+def strict_json_loads(text):
+    """Single source of truth for fail-closed declarative JSON parsing."""
+    return json.loads(text, object_pairs_hook=strict_json_pairs,
+                      parse_constant=reject_nonfinite_json)
+
+
 def load_catalog(path):
     check_links(path)
     try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        data = strict_json_loads(Path(path).read_text(encoding="utf-8"))
     except OSError as exc:
         raise PortakitError("state", f"catalog: {exc}") from exc
     except ValueError as exc:
@@ -475,7 +500,7 @@ def read_state(root):
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = strict_json_loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             raise ValueError("expected an object")
         destinations = set()

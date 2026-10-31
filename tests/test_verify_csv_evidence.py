@@ -473,5 +473,106 @@ class EvidenceChainTests(unittest.TestCase):
             self.verify()
 
 
+    def test_member_parent_traversal_rejected_even_with_matching_log(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"xanExeMember": "../xan.exe"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member/root path unsafe"):
+            self.verify()
+
+    def test_member_suffix_spoof_rejected(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"xanExeMember": "notxan.exe"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member path does not match"):
+            self.verify()
+
+    def test_member_backslash_rejected(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"xanExeMember": "folder\\xan.exe"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member path does not match"):
+            self.verify()
+
+    def test_member_control_character_rejected(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"xanExeMember": "forged\n/xan.exe"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member/root path unsafe"):
+            self.verify()
+
+    def test_member_root_must_be_in_original_root_names(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"xanExeMember": "invented/xan.exe"}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member path does not match"):
+            self.verify()
+
+    def test_invalid_source_root_device_name_rejected(self):
+        self.build()
+        self.rewrite_source(
+            lambda doc: doc["structure"].update(
+                {"rootNames": ["con"]}))
+        with self.assertRaisesRegex(chain.EvidenceError, "member/root path unsafe"):
+            self.verify()
+
+    def test_blocked_workspace_with_safe_relative_path_allowed(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["extra/output.txt"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        self.assertEqual(self.verify()["outcome"], "INCOMPLETE_OR_BLOCKED")
+
+    def test_blocked_workspace_with_parent_escape_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["../escaped.txt"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "Unsafe unexpected"):
+            self.verify()
+
+    def test_blocked_workspace_log_injection_rejected(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["report\nRESULT: PASS"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        with self.assertRaisesRegex(chain.EvidenceError, "Unsafe unexpected"):
+            self.verify()
+
+    def test_scan_error_sentinel_stays_blocked(self):
+        self.build()
+        def edit(doc):
+            doc["unexpectedWorkspaceEntries"] = ["UNKNOWN_SCAN_ERROR"]
+            doc["outcome"] = "BLOCKED"
+        self.rewrite_smoke(edit)
+        self.assertEqual(self.verify()["outcome"], "INCOMPLETE_OR_BLOCKED")
+
+    def test_source_log_footer_control_code_rejected(self):
+        self.build()
+        path = self.source_json.with_suffix(".log")
+        path.write_bytes(path.read_bytes().replace(
+            b"REPORT: ", b"REPORT: \x1b", 1))
+        with self.assertRaisesRegex(chain.EvidenceError, "control characters"):
+            self.verify()
+
+    def test_copied_source_footer_original_path_still_allowed(self):
+        self.build()
+        path = self.source_json.with_suffix(".log")
+        raw = path.read_bytes()
+        suffix = b"REPORT: " + str(self.source_json).encode("utf-8") + b"\n"
+        self.assertTrue(raw.endswith(suffix))
+        path.write_bytes(raw[:-len(suffix)] +
+                         b"REPORT: X:/PreviouslyApproved/source.json\n")
+        self.assertEqual(self.verify()["outcome"], "EVIDENCE_CROSSCHECK_ONLY")
+
+
 if __name__ == "__main__":
     unittest.main()

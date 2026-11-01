@@ -126,6 +126,43 @@ def audit(saved, root, *, budget_mib=None):
     }
 
 
+
+def confirm_readiness_alignment(readiness, measured):
+    """Reject a contradictory pair of independent point-in-time diagnostics.
+
+    Readiness and footprint read the same managed files independently, so a
+    concurrent change could otherwise produce a misleading combined report.
+    Require exact root, ordered pinned IDs, and per-tool install status.
+    Empty pinned-tool selections are valid when both lists are empty; this
+    check does not make the underlying filesystem snapshots atomic.
+    """
+    if not isinstance(readiness, dict) or not isinstance(measured, dict):
+        raise FootprintError("Invalid readiness/footprint report")
+    first, second = readiness.get("tools"), measured.get("tools")
+    if not isinstance(first, list) or not isinstance(second, list):
+        raise FootprintError("Invalid readiness/footprint rows")
+    if len(first) != len(second):
+        raise FootprintError("Readiness/footprint tool ID mismatch")
+    for ready_row, size_row in zip(first, second):
+        if not isinstance(ready_row, dict) or not isinstance(size_row, dict):
+            raise FootprintError("Invalid readiness/footprint tool row")
+        ident = ready_row.get("id")
+        if (not isinstance(ident, str)
+                or ident != size_row.get("id")):
+            raise FootprintError("Readiness/footprint tool ID mismatch")
+        if (not isinstance(ready_row.get("installStatus"), str)
+                or not isinstance(size_row.get("status"), str)
+                or ready_row["installStatus"] != size_row["status"]):
+            raise FootprintError(
+                "Readiness/footprint install status changed during inspection: "
+                + ident)
+    if (not isinstance(readiness.get("root"), str)
+            or not isinstance(measured.get("root"), str)
+            or readiness["root"] != measured["root"]):
+        raise FootprintError("Readiness/footprint root mismatch")
+
+
+
 def lines(data):
     """Single source for displayed text and matching stored evidence."""
     result = ["KIT: " + data["kitName"],

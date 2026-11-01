@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — fail closed on mismatched GUI/KitDoctor diagnostics (Issue #87, in review)
+
+- [x] Inspect `PickerModel.inspect_readiness`, GUI `overview_lines` and `KitDoctor.inspect`: independently read readiness/footprint reports could be combined after managed status drift. Original Doctor checked ordered IDs only; GUI checked missing IDs only.
+- [x] Reuse one pure `kit_footprint.confirm_readiness_alignment` for matching diagnostic root, ordered ID rows, and exact per-tool managed install status; empty lists valid. Reject mismatched/malformed combinations without claiming atomic snapshots or changing CLI/GUI installation privileges.
+- [x] Add headless synthetic tests for matched/empty, mismatched ID/root/status, invalid/null report, unchanged GUI selection and absence of vendor execution.
+- [ ] Check exact PR-head Windows Python 3.11/3.14 CI; only merge on PASS, then independently verify new main CI. Keep final-user-owned operational GUI/company acceptance separate from source verification.
+
+
 ## 2026-11-01 — report/evidence ownership and collision safety (Issue #87, verified)
 
 - [x] Compare actual JSON + console/log creation in `offline_ready.py`, `kit_footprint.py`, `kit_doctor.py` and `plugin_health.py` against [VerySimpleGuide scoped review](review/2026-11-01_TARGETED_REFACTOR.md). Found the first three may delete an unrelated target on creation race or leave partial owned files on later log failure; plugin health already had identity-safe cleanup.

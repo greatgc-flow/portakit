@@ -109,6 +109,24 @@ class DoctorTests(unittest.TestCase):
             with self.assertRaisesRegex(doctor.DoctorError, "ID mismatch"):
                 doctor.inspect(self.saved("jq"), self.pins, self.root)
 
+    def test_reject_changed_status_and_root_between_independent_diagnostics(self):
+        self.install()
+        original_audit = doctor.sizes.audit
+        for name, mutation, expected in (
+            ("status", lambda r: dict(r, tools=[
+                dict(r["tools"][0], status="install")]), "status changed"),
+            ("root", lambda r: dict(r, root="another-managed-root"),
+             "root mismatch"),
+        ):
+            with self.subTest(name=name):
+                def divergent(*args, **kwargs):
+                    return mutation(original_audit(*args, **kwargs))
+                with mock.patch.object(doctor.sizes, "audit",
+                                       side_effect=divergent):
+                    with self.assertRaisesRegex(doctor.DoctorError, expected):
+                        doctor.inspect(self.saved("jq"), self.pins, self.root)
+        self.assertFalse(self.output.exists())
+
     def test_report_writes_new_only_and_console_mirrors_log(self):
         self.install()
         report = doctor.inspect(self.saved("jq"), self.pins, self.root)

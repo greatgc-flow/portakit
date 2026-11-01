@@ -57,6 +57,14 @@
 - Squash merged source `b7e0cee2ee35f181c93558f3b759b82f2aea59c2`: independent [main Windows CI #41262904434](https://github.com/greatgc-flow/portakit/actions/runs/41262904434) 718/718 PASS each, both job logs checked.
 - Archive smoke **not triggered** for these read-only report sources; no validation claim beyond actually executed checks. Defect and negative fixtures documented above. Operator/company approval and original vendor execution **NOT_EVALUATED**.
 
+## Candidate #2/#3 — cross-diagnostic alignment at GUI and KitDoctor boundary (in review)
+
+**Observed source gap:** `PickerModel.inspect_readiness` independently computed offline readiness and installed footprint and returned both without reconciling their observed install statuses or root. `overview_lines` only checked for missing tool IDs; it could combine an `install` status with a stale `already-installed` footprint if managed state changed between reads. `KitDoctor.inspect` checked ordered IDs but not statuses/roots.
+
+**Narrow correction:** `kit_footprint.confirm_readiness_alignment(readiness, measured)` enforces matching normalized root, ordered tool IDs and each `installStatus` / `status` pair (including empty selection). This pure cross-report check is called by both GUI preview and direct GUI projection, and by KitDoctor; KitDoctor translates its error into its existing `DoctorError` boundary. No changes to selection model, Tk controls, saved kit schema, catalogs, read-only command flags, output message format for matching snapshots, or vendor execution.
+
+**Negative evidence:** new headless tests inject status/root/ID drift, empty selections, and null/malformed rows and verify no kit/output writes or selection mutation. Existing Windows CI must confirm all legacy tests unchanged on both Python 3.11 and 3.14. This detects discrepancies between two reads; it is not an atomic snapshot or protection against changes after the check. Operators still own real GUI/company acceptance.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

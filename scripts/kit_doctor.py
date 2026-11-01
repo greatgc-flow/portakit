@@ -41,8 +41,12 @@ def inspect(saved, pins, root, *, archive_dir=None, skip_pending=False,
         raise DoctorError("max_mib must be a nonnegative integer")
     ready = sources.assess(saved, pins, root, archive_dir, skip_pending)
     measured = sizes.audit(saved, root, budget_mib=max_mib)
-    if [r["id"] for r in ready["tools"]] != [r["id"] for r in measured["tools"]]:
-        raise DoctorError("Readiness/footprint tool ID mismatch")
+    # Separate filesystem reads must agree before a single outcome is shown.
+    # Preserve DoctorError as this command's public error boundary.
+    try:
+        sizes.confirm_readiness_alignment(ready, measured)
+    except sizes.FootprintError as exc:
+        raise DoctorError(str(exc)) from exc
     health = (plugins.inspect(saved, pins, root)
               if saved.get("pluginSelections") else None)
     plugin_state = health["outcome"] if health is not None else "NOT_SELECTED"

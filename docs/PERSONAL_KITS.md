@@ -2,6 +2,12 @@
 
 **Responsibility:** real GUI, original vendor asset, company-use/license/EDR, local compatibility and deployment acceptance belong to the **final user / organization**, not GitHub CI. Source-only development and reviewed merges proceed independently; local installation still requires explicit operator consent. See [final-user checklist](END_USER_ACCEPTANCE.md).
 
+## Optional pinned-profile browse filter (2026-11-01)
+
+The optional picker now has a **Profile (pinned)** dropdown in its filter row. Select `all` for every known tool, or choose a current non-legacy role preset (for example `essentials` or `mes-support`) to **browse the pinned tool IDs in that preset without selecting them**. This filter composes with name/ID search, primary domain, stage and **Selected only**; it does not change any saved choice when its visible rows change. **Add filtered** is still an explicit click that selects *only currently visible IDs*; **Add preset** is a separate explicit action that adds the full preset. Empty profiles produce zero visible rows rather than an error. The pure API also supports older legacy alias names.
+
+Profiles come from the existing validated `toolsets.json`, not a new list or broad research-candidate mapping. They contain **pinned install-capable IDs only**; OS built-ins and research-only items do not appear under a selected profile. Imported pending selections stay inert and do not become READY through the filter. A pinned tool saved as pending through an older snapshot remains visibly `RESEARCH_ONLY / PENDING (locked)` until manually removed and reselected. Filtering never launches Tk/vendor tools in automated tests, downloads binaries or grants enterprise permission. Actual DPI/IME/mouse/keyboard acceptance remains [final-user-only](GUI_PICKER_ACCEPTANCE_20261030.md).
+
 ## Optional GUI acceptance evidence (2026-10-30)
 
 `scripts\PickerAcceptance.cmd` performs a **static read-only prerequisite check** (no GUI launched; no files) and still reports GUI `NOT_VERIFIED`. On an approved Windows desktop, open `scripts\MyToolkitGUI.cmd` yourself, then run `scripts\PickerAcceptance.cmd --review --out D:\LocalEvidence\PickerReview.json` to answer guided `P/F/S` observations. It saves a **new-only private** JSON report and exactly mirrored program-produced console `.log` (no screenshots or private machine details collected). Skipped items remain unverified. This is human **self-attestation**, not an automated accessibility or corporate security pass. [Full procedure](GUI_PICKER_ACCEPTANCE_20261030.md).

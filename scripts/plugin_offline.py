@@ -367,6 +367,7 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
                                              "plugin dest", "state")
             key = item["host"] + ":" + item["id"]
             moved = False
+            receipt_committed = False
             try:
                 verified_local_snapshot(archives[item["id"]], local_archive,
                                         pin["sha256"])
@@ -385,11 +386,18 @@ def apply(saved, pins, root, archive_dir, *, skip_pending=False, evidence):
                 moved = True
                 receipt = receipt_record(host, pin, deployed_hashes)
                 write_receipts(root, dict(receipts, **{key: receipt}))
+                # Receipt persistence is the commit point for this plugin.
+                # A later evidence I/O failure must not strand a receipt by
+                # deleting its corresponding managed directory.
+                receipt_committed = True
                 receipts[key] = receipt
                 evidence.emit("INSTALLED: " + item["id"] + " version=" + pin["version"] +
                               " SHA256=" + pin["sha256"] + " (host restart may be needed)")
             except BaseException:
-                if moved:
+                # Roll back only uncommitted installs. After receipt commit,
+                # incomplete evidence is an error, but managed state remains
+                # consistent and can be verified again without vendor files.
+                if moved and not receipt_committed:
                     kit.core.remove_tree(destination)
                 raise
             finally:

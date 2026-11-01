@@ -1,10 +1,12 @@
-# Open work
+# Open work — archived history
 
-## Latest R2 continuation pointer (2026-10-23)
+> **This file is historical, not the active handoff.** Start with [current handoff and new-chat instructions](handoff/START_NEW_CHAT_PORTAKIT_20261101.md), [README](../README.md), [BACKLOG](BACKLOG.md) and the actual GitHub [main](https://github.com/greatgc-flow/portakit/tree/main) / [Windows CI](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml). The evidence below belongs to the dates shown; it must not be presented as current source/CI status or company acceptance.
 
-Follow [2026-10-23 R2 handoff](handoff/PORTAKIT_HANDOFF_20261023_R2.md) and the [recursive MECE audit](review/2026-10-23_RECURSIVE_MECE_AUDIT.md) for current scope. All dated SHA/count statements below are history, not live-current authority. Verify GitHub main, Windows CI and PR status again before claiming completed work.
+## Historical R2 continuation (2026-10-23)
 
-> **CURRENT PORTAKIT HANDOFF — 2026-10-22:** [Complete chat-to-Git handoff](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) and [START NEW CHAT](handoff/START_NEW_CHAT_PORTAKIT_20261022.md). This original document retains historical rounds, some stale counts, and earlier decisions. Do **not** treat older snapshots as the latest source of truth. Check live main/code/pins/tests first.
+Archived [2026-10-23 R2 handoff](handoff/PORTAKIT_HANDOFF_20261023_R2.md) and [recursive MECE audit](review/2026-10-23_RECURSIVE_MECE_AUDIT.md) are earlier scope/evidence only. Always verify the live remote state first.
+
+> **Historical 2026-10-22 checkpoint:** [Complete chat-to-Git handoff](handoff/PORTAKIT_COMPLETE_HANDOFF_20261022.md) and [dated new-chat prompt](handoff/START_NEW_CHAT_PORTAKIT_20261022.md) retain earlier decisions and now-superseded counts.
 
 Status checked 2026-10-20. The MVP contract remains [SPEC](SPEC.md). The optional recommended profile adds new behavior without changing ordinary install/update/remove semantics.
 

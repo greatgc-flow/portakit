@@ -3,13 +3,13 @@
 > **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
-## 2026-11-01 — prospective personal KIT.json preview (Issue #27, in review)
+## 2026-11-01 — prospective personal KIT.json preview (Issue #27, source verified)
 
 - [x] Verify outstanding UX requirement: prior GUI showed summary counts/approval stage and could inspect readiness, but did not expose the exact schema-v1/v2 kit and pinned version/SHA snapshot **before save**.
 - [x] Add pure `PickerModel.preview_json(name)` backed by existing `draft` and the same UTF-8 JSON format used by `save_new`. Invalid name/empty selection use existing `KitError`; no new parser or install authority.
 - [x] Add compact local read-only JSON preview dialog with bidirectional scrolling and no explicit installer/save path. Leave original create-only JSON+mirrored .log and separate consented CLI installation unchanged.
 - [x] Add headless tests for preview-to-next-save byte identity when unchanged, v2 plugin/pending/OS/SHA fields, null/invalid names, imported pending locked consent, no preview file writes and GUI source no installer path.
-- [ ] Exact PR head Windows Python 3.11/3.14 full CI green; squash merge and independent main CI; separately document acceptance and next-chat checkpoint. Real GUI/IME/DPI/company/vendor approvals remain final-user-only.
+- [x] [PR #100](https://github.com/greatgc-flow/portakit/pull/100) squash merged source `f940851059a9aa96943779cfcfb14ab596b11be2`. Exact [PR-head Windows CI #41276830271](https://github.com/greatgc-flow/portakit/actions/runs/41276830271) **738/738 PASS each** on Python 3.11/3.14; independent [merged-main CI #41276948135](https://github.com/greatgc-flow/portakit/actions/runs/41276948135) **738/738 PASS each**; four job logs inspected. CI 734→738 per version, four new headless regressions. Final-user-owned real GUI, DPI/IME, original vendor files, EULA/OSS/EDR and distribution/runtime approval remain **NOT_VERIFIED**.
 
 ## 2026-11-01 — optional pinned profile filtering in existing GUI (Issue #27, source verified)
 

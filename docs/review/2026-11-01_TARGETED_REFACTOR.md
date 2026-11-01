@@ -65,6 +65,13 @@
 
 **Negative evidence:** new headless tests inject status/root/ID drift, empty selections, and null/malformed rows and verify no kit/output writes or selection mutation. Existing Windows CI must confirm all legacy tests unchanged on both Python 3.11 and 3.14. This detects discrepancies between two reads; it is not an atomic snapshot or protection against changes after the check. Operators still own real GUI/company acceptance.
 
+## Verified GUI/Doctor report alignment — PR #91
+
+- [PR #91](https://github.com/greatgc-flow/portakit/pull/91), final exact head `73b490951fd119ebd431ac9400f29c9538409099`: [Windows CI #41263772358](https://github.com/greatgc-flow/portakit/actions/runs/41263772358) **723/723 PASS** on each of Python 3.11 and 3.14; separate job logs examined.
+- Source squash merged `acbd6e97838347130ebf798bebec95a563c153b8`: independent [source-main Windows CI #41263859072](https://github.com/greatgc-flow/portakit/actions/runs/41263859072) **723/723 PASS** each; individual logs checked.
+- **Regression red-to-green evidence:** an earlier candidate [Windows CI #41263655133](https://github.com/greatgc-flow/portakit/actions/runs/41263655133) exposed legacy `test_gui_readiness` missing-row error wording regression. Existing error behavior restored; full CI passed on exact revised head. This is not a release certification or actual live Tk GUI verification.
+- Remaining issue #87 topics are opt-in and only justified by reproduced defects or measurable cost improvements.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

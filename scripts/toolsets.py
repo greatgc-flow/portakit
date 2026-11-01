@@ -328,6 +328,11 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
         return {"installed": [], "skipped": [], "failed": None}
     if any(row["status"].startswith("blocked-") for row in plan["tools"]):
         raise ToolsetError("Cannot apply blocked plan; first resolve pins, backups or unmanaged paths")
+    # Pin the exact operator-selected order and immutable catalog claims from
+    # initial planning. Status may legitimately change while waiting for a
+    # lock; membership/order/pins must not change unnoticed.
+    expected_pins = [(row["id"], row["version"], row["sha256"])
+                     for row in plan["tools"]]
     # Preserve existing blocked-plan diagnostics first. For any runnable
     # batch, fail closed on deletable evidence paths before mkdir, lock,
     # download or child install; reuse the core CLI's single source of truth.
@@ -341,6 +346,11 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
         # Preflight again under batch lock, before downloading anything.
         current = create_plan(plan["selected"], plan["include"], plan["exclude"],
                               root, plan["manifest"])
+        observed_pins = [(row["id"], row["version"], row["sha256"])
+                         for row in current["tools"]]
+        if observed_pins != expected_pins:
+            raise ToolsetError("Toolset selection or catalog pin changed since plan; "
+                               "review selection and retry apply")
         if any(row["status"].startswith("blocked-") for row in current["tools"]):
             raise ToolsetError("Blocked during apply preflight; no new tool downloaded")
         offline_assets = (verify_offline_assets(current["tools"], offline_dir)

@@ -278,6 +278,62 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
         self.assertTrue((self.root / "jq").exists())
 
+    def test_apply_rejects_changed_selection_before_child_or_evidence(self):
+        """A valid edited manifest cannot silently add, remove, or reorder tools.
+
+        The first plan represents operator consent. The replan under batch
+        lock can change installed status, not tool membership or pinned order.
+        Only local JSON test data is changed; no vendor is launched.
+        """
+        source = json.loads(self.manifest.read_text(encoding="utf-8"))
+        manifest = self.root.parent / "mutable-toolsets.json"
+        for variation in ("added", "removed", "reordered"):
+            with self.subTest(variation=variation):
+                manifest.write_text(json.dumps(source), encoding="utf-8")
+                plan = toolsets.create_plan(
+                    ["minimal"], (), (), self.root, manifest)
+                plan.update(include=[], exclude=[], manifest=manifest)
+                self.assertEqual([item["id"] for item in plan["tools"]],
+                                 ["notepad++", "winmerge"])
+                edited = json.loads(manifest.read_text(encoding="utf-8"))
+                profile = next(x for x in edited["profiles"]
+                               if x["id"] == "minimal")
+                if variation == "added":
+                    profile["tools"].append("jq")
+                elif variation == "removed":
+                    profile["tools"].pop()
+                else:
+                    profile["tools"].reverse()
+                manifest.write_text(json.dumps(edited), encoding="utf-8")
+                log = self.root.parent / ("drift-" + variation + ".log")
+                runner = mock.Mock(
+                    side_effect=AssertionError("unexpected child execution"))
+                with self.assertRaisesRegex(toolsets.ToolsetError,
+                                            "selection or catalog pin changed"):
+                    toolsets.apply(plan, False, log, runner=runner)
+                runner.assert_not_called()
+                self.assertFalse(log.exists())
+                self.assertFalse((self.root / "notepad++").exists())
+                self.assertFalse((self.root / "winmerge").exists())
+                self.assertFalse((self.root / "jq").exists())
+
+    def test_apply_allows_status_change_without_selection_or_pin_drift(self):
+        """An independent matching install between plan and lock is skipped."""
+        plan = self.plan(["data"])
+        plan.update(include=[], exclude=[], manifest=self.manifest)
+        self.mark_managed("jq")
+        runner = mock.Mock(
+            side_effect=AssertionError("already-installed must be skipped"))
+        log = self.root.parent / "status-changed.log"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = toolsets.apply(plan, False, log, runner=runner)
+        self.assertEqual(result, {"installed": [], "skipped": ["jq"],
+                                  "failed": None})
+        runner.assert_not_called()
+        self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
+        self.assertIn("SKIP: jq", output.getvalue())
+
     def test_apply_installs_each_unique_id_once_and_logs_verbatim(self):
         p = self.plan(["mes-support", "developer"])
         p.update(include=[], exclude=[], manifest=self.manifest)

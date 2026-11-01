@@ -85,6 +85,19 @@ class PickerModel:
                                 locked_pending=is_frozen))
         return sorted(results, key=lambda x: (x["primary"], x["id"]))
 
+    def _checked_selection(self, ids):
+        """Validate a prospective selection before changing the picker state.
+
+        Reuse the saved-kit builder's 256-tool limit and pin checks instead of
+        maintaining a second GUI-only limit. Empty in-memory selection is valid.
+        """
+        if not ids:
+            return []
+        ordered = kit.requested_ids(ids, [], [], [], self.pins,
+                                    self.categories, self.profiles, self.known)
+        kit.make_kit("preview", ordered, self.pins, self.known)
+        return ordered
+
     def add(self, ids):
         if not isinstance(ids, (list, tuple)):
             raise kit.KitError("Selections must be a list")
@@ -94,14 +107,11 @@ class PickerModel:
                 raise kit.KitError("Unknown tool: " + str(ident))
         if not ids:
             return list(self.selected)
+        candidate = list(self.selected)
         for ident in ids:
-            if ident not in self.selected:
-                self.selected.append(ident)
-        # 7zr is the manually selected prerequisite for 7zip. Existing
-        # builder is still responsible for validating installed state.
-        self.selected = kit.requested_ids(self.selected, [], [], [],
-                                          self.pins, self.categories,
-                                          self.profiles, self.known)
+            if ident not in candidate:
+                candidate.append(ident)
+        self.selected = self._checked_selection(candidate)
         return list(self.selected)
 
     def remove(self, ids):
@@ -129,8 +139,14 @@ class PickerModel:
             raise kit.KitError("Unknown tool in toggle selection")
         unique = list(dict.fromkeys(ids))
         previous = set(self.selected)
-        self.remove([x for x in unique if x in previous])
-        self.add([x for x in unique if x not in previous])
+        removed = [x for x in unique if x in previous]
+        candidate = [x for x in self.selected if x not in removed]
+        candidate.extend(x for x in unique if x not in previous)
+        # Fail before removing frozen consent or host-dependent plugin choices.
+        checked = self._checked_selection(candidate)
+        if removed:
+            self.remove(removed)
+        self.selected = checked
         return list(self.selected)
 
     def clear(self):
@@ -185,8 +201,11 @@ class PickerModel:
         self.frozen_plugin_choices.pop(ident, None)
 
     def set_approved_only(self):
+        # An oversized future catalog must not erase the existing kit first.
+        checked = self._checked_selection(
+            [x["id"] for x in self.rows(status="READY")])
         self.clear()
-        self.add([x["id"] for x in self.rows(status="READY")])
+        self.selected = checked
 
     def add_preset(self, profile):
         if not isinstance(profile, str) or profile not in self.profiles:

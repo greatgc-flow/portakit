@@ -322,6 +322,58 @@ class PickerTests(unittest.TestCase):
             self.model.add(["ripgrep", "not-existing"])
         self.assertEqual(self.model.selected, before)
 
+    def _future_inventory_picker(self, *, pinned=False):
+        """Synthetic catalog growth; does not modify any real catalog/pins."""
+        source = "jq" if pinned else "cmd"
+        known = dict(self.model.known)
+        pins = dict(self.model.pins)
+        for index in range(260):
+            ident = "future{:03d}".format(index)
+            known[ident] = dict(known[source], id=ident, name=ident)
+            if pinned:
+                pins[ident] = dict(pins["jq"], dest=ident)
+        return picker.PickerModel(inventories=(
+            pins, self.model.categories, self.model.profiles, known))
+
+    def test_future_inventory_limit_rejects_add_and_toggle_atomically(self):
+        model = self._future_inventory_picker()
+        tools = ["future{:03d}".format(index) for index in range(260)]
+        model.add(["jq"])
+        model.frozen_pending.add("jq")
+        model.add(tools[:255])
+        self.assertEqual(len(model.draft("cap")["tools"]), 256)
+        before = list(model.selected)
+        with self.assertRaisesRegex(picker.kit.KitError,
+                                    "at most 256 tools"):
+            model.add(tools[255:257])
+        self.assertEqual(model.selected, before)
+        self.assertEqual(model.frozen_pending, {"jq"})
+        with self.assertRaisesRegex(picker.kit.KitError,
+                                    "at most 256 tools"):
+            model.toggle(["jq", tools[255], tools[256]])
+        self.assertEqual(model.selected, before)
+        self.assertEqual(model.frozen_pending, {"jq"})
+        self.assertEqual(len(model.draft("cap")["tools"]), 256)
+        model.toggle(["jq"])
+        self.assertNotIn("jq", model.frozen_pending)
+        model.add([tools[255]])
+        self.assertEqual(len(model.selected), 256)
+        self.assertFalse(self.saved.exists())
+
+    def test_oversized_ready_catalog_does_not_clear_existing_kit(self):
+        model = self._future_inventory_picker(pinned=True)
+        model.add(["notepad++", "duckdb-cli"])
+        model.add_plugin("compareplus")
+        model.frozen_pending.add("duckdb-cli")
+        original = model.draft("unchanged")
+        with self.assertRaisesRegex(picker.kit.KitError,
+                                    "at most 256 tools"):
+            model.set_approved_only()
+        self.assertEqual(model.draft("unchanged"), original)
+        self.assertEqual(model.selected_plugins, ["compareplus"])
+        self.assertEqual(model.frozen_pending, {"duckdb-cli"})
+        self.assertFalse(self.saved.exists())
+
     def test_batch_toggle_preserves_unique_selection(self):
         self.model.add(["jq", "cmd"])
         self.assertEqual(self.model.toggle(["jq", "ripgrep", "ripgrep"]),

@@ -40,6 +40,31 @@ class KitTests(unittest.TestCase):
             result = kit.run(argv)
         return result, out.getvalue(), err.getvalue()
 
+    def test_make_kit_rejects_malformed_direct_selection_before_side_effects(self):
+        """Guard direct API consumers, not just the validated CLI selectors."""
+        bad = (None, "jq", 3, {}, ["jq", None], [["jq"]], ["absent"],
+               ["jq", "jq"], ["jq"] * 257)
+        for selected in bad:
+            with self.subTest(selected=str(selected)[:48]):
+                with self.assertRaises(kit.KitError):
+                    kit.make_kit("valid-kit", selected, self.pins, self.known)
+                self.assertFalse(self.saved.exists())
+                self.assertFalse(self.saved.with_suffix(".log").exists())
+                self.assertFalse(self.root.exists())
+
+    def test_make_kit_preserves_in_memory_empty_and_canonicalizes_tuple(self):
+        """Empty models remain inspectable; valid persisted data uses JSON lists."""
+        preview = kit.make_kit("preview", [], self.pins, self.known)
+        self.assertEqual(preview["tools"], [])
+        self.assertEqual(preview["lockedPins"], {})
+        pair = ("jq", "cmd")
+        built = kit.make_kit("tuple-source", pair, self.pins, self.known)
+        self.assertIsInstance(built["tools"], list)
+        self.assertEqual(built["tools"], ["jq", "cmd"])
+        self.assertEqual(built["osBuiltins"], ["cmd"])
+        self.save(built)
+        self.assertEqual(kit.read_kit(self.saved, self.pins, self.known), built)
+
     def test_all_tools_available_for_selection_but_not_for_install(self):
         self.assertEqual(len(self.known), 151)
         statuses = [x["admission"] for x in self.known.values()]

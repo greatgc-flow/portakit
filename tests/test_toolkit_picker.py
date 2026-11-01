@@ -46,6 +46,63 @@ class PickerTests(unittest.TestCase):
         with self.assertRaisesRegex(picker.kit.KitError, "Unknown status"):
             self.model.rows(status="INSTALL_ME")
 
+    def test_profile_filter_is_read_only_and_matches_known_pinned_scope(self):
+        """Profile filtering browses an existing group; it does not add it."""
+        self.model.add(["jq", "duckdb-cli", "cmd", "ripgrep"])
+        before = self.model.draft("unchanged")
+        filtered = self.model.rows(profile="essentials")
+        self.assertEqual({row["id"] for row in filtered},
+                         {"notepad++", "winmerge", "jq"})
+        self.assertTrue(all(row["status"] == "READY" for row in filtered))
+        self.assertEqual([row["id"] for row in self.model.rows(
+            profile="essentials", selected_only=True)], ["jq"])
+        self.assertEqual([row["id"] for row in self.model.rows(
+            profile="essentials", status="READY", search="JQ")], ["jq"])
+        self.assertEqual(self.model.rows(
+            profile="essentials", category="network"), [])
+        self.assertEqual(self.model.rows(
+            profile="essentials", status="RESEARCH_ONLY"), [])
+        # The legacy NW alias has no pinned IDs; an empty filter is valid.
+        self.assertEqual(self.model.rows(profile="nw"), [])
+        self.assertEqual(self.model.draft("unchanged"), before)
+        self.assertFalse(self.saved.exists())
+
+    def test_profile_filter_refuses_bad_types_without_mutation(self):
+        self.model.add(["jq", "duckdb-cli"])
+        before = self.model.draft("unchanged")
+        for bad in (None, [], {}, ["essentials"], 1, True, "nonexistent"):
+            with self.subTest(profile=repr(bad)):
+                with self.assertRaisesRegex(picker.kit.KitError,
+                                            "Unknown preset filter"):
+                    self.model.rows(profile=bad)
+                self.assertEqual(self.model.draft("unchanged"), before)
+        self.assertFalse(self.saved.exists())
+
+    def test_profile_filter_preserves_imported_pending_consent(self):
+        self.model.add(["jq"])
+        self.model.frozen_pending.add("jq")
+        rows = self.model.rows(profile="essentials", selected_only=True)
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["locked_pending"])
+        self.assertEqual(rows[0]["status"], "RESEARCH_ONLY")
+        self.assertEqual(self.model.rows(profile="essentials",
+                                         selected_only=True, status="READY"), [])
+        self.assertEqual(self.model.selected, ["jq"])
+        self.assertFalse(self.saved.exists())
+
+    def test_profile_filter_is_wired_to_gui_without_install_permissions(self):
+        import ast
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        ast.parse(source)
+        self.assertIn('profile_filter = tk.StringVar(value="all")', source)
+        self.assertIn('text="Profile (pinned)"', source)
+        self.assertIn('profile=profile_filter.get()', source)
+        self.assertIn(
+            'for var in (search, domain, status, selected_filter, profile_filter)',
+            source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn(".apply(", source)
+
     def test_multiselect_dedup_and_noninstalled_research(self):
         self.model.add(["jq", "jq", "duckdb-cli", "cmd"])
         self.model.add(["jq", "ripgrep"])

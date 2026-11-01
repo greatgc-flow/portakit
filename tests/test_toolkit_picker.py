@@ -402,9 +402,15 @@ class PickerTests(unittest.TestCase):
             picker.overview_lines(checked, dict(measured, root="different"))
         changed = dict(measured, tools=[
             dict(measured["tools"][0], id="ripgrep")])
+        # Existing missing-row public error remains intact.
+        with self.assertRaisesRegex(picker.kit.KitError,
+                                    "Missing footprint row"):
+            picker.overview_lines(checked, changed)
+        extra = dict(measured, tools=measured["tools"] + [
+            dict(measured["tools"][0], id="ripgrep")])
         with self.assertRaisesRegex(picker.footprint.FootprintError,
                                     "tool ID mismatch"):
-            picker.overview_lines(checked, changed)
+            picker.overview_lines(checked, extra)
         self.assertFalse(self.saved.exists())
 
     def test_gui_selected_filter_is_read_only_and_has_no_install_path(self):

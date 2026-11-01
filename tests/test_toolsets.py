@@ -334,6 +334,54 @@ class ToolsetTests(unittest.TestCase):
         self.assertEqual(log.read_text(encoding="utf-8"), output.getvalue())
         self.assertIn("SKIP: jq", output.getvalue())
 
+    def test_core_install_envelope_parser_without_running_installer(self):
+        """A successful process exit must not replace strict envelope checks."""
+        good = {"ok": True, "command": "install",
+                "data": {"id": "jq"}, "error": None}
+        payload = json.dumps(good)
+        self.assertEqual(
+            toolsets.parse_core_install_result(payload, "jq"), good)
+        # Extra metadata has historically been allowed: keep compatibility.
+        self.assertEqual(
+            toolsets.parse_core_install_result(
+                json.dumps(dict(good, extra="future")), "jq")["extra"],
+            "future")
+        invalid = (
+            "",
+            "null",
+            "[]",
+            "NaN",
+            '{"ok":false,"ok":true,"command":"install",'
+            '"data":{"id":"jq"},"error":null}',
+            json.dumps(dict(good, error={"code": "blocked"})),
+            json.dumps(dict(good, data={"id": "other"})),
+            json.dumps(dict(good, command="update")),
+        )
+        for item in invalid:
+            with self.subTest(payload=item):
+                with self.assertRaises((ValueError, TypeError)):
+                    toolsets.parse_core_install_result(item, "jq")
+
+    def test_managed_postcheck_is_separate_from_core_json(self):
+        """A valid child envelope never substitutes for persisted state."""
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        row = self.plan(["data"])["tools"][0]
+        with self.assertRaisesRegex(toolsets.ToolsetError,
+                                    "managed install not confirmed: install"):
+            toolsets.verify_managed_install(row, catalog, self.root)
+        self.mark_managed("jq")
+        self.assertIsNone(
+            toolsets.verify_managed_install(row, catalog, self.root))
+        changed_pin = dict(row, sha256="f" * 64)
+        with self.assertRaisesRegex(toolsets.ToolsetError,
+                                    "catalog pin changed since preflight"):
+            toolsets.verify_managed_install(changed_pin, catalog, self.root)
+        # A receipt without a populated folder cannot pass the check.
+        target = self.root / catalog["jq"]["dest"] / "fixture-payload.txt"
+        target.unlink()
+        with self.assertRaisesRegex(toolsets.ToolsetError, "blocked-empty"):
+            toolsets.verify_managed_install(row, catalog, self.root)
+
     def test_apply_installs_each_unique_id_once_and_logs_verbatim(self):
         p = self.plan(["mes-support", "developer"])
         p.update(include=[], exclude=[], manifest=self.manifest)

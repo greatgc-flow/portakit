@@ -414,6 +414,56 @@ class OfflinePluginTests(unittest.TestCase):
         self.assertFalse((host / "plugins/ComparePlus").exists())
         self.assertFalse(self.receipt.exists())
 
+    def test_late_evidence_error_keeps_committed_directory_and_receipt(self):
+        """Trace failure must not corrupt an already committed plugin install."""
+        host = self.make_host()
+
+        class FailedEvidence:
+            def emit(self, line):
+                if line.startswith("INSTALLED:"):
+                    raise OSError("synthetic evidence disk full")
+                raise AssertionError("unexpected evidence line")
+
+        with self.assertRaisesRegex(OSError, "synthetic evidence disk full"):
+            plugins.apply(self.saved, self.pins, self.root, self.originals,
+                          evidence=FailedEvidence())
+        target = host / "plugins/ComparePlus/ComparePlus.dll"
+        self.assertEqual(target.read_bytes(), b"fake-dll-bytes-no-execution")
+        self.assertIn("notepad++:compareplus", plugins.read_receipts(self.root))
+        self.assertEqual(plugins.make_plan(self.saved, self.pins, self.root)[0][0]["status"],
+                         "already-installed")
+        # A fresh evidence attempt requires neither archive nor reinstall.
+        self.source_path.unlink()
+        with plugins.kit.sets.Evidence(self.tmp / "retry.log") as evidence:
+            plugins.apply(self.saved, self.pins, self.root, None, evidence=evidence)
+        self.assertIn("SKIP: compareplus",
+                      (self.tmp / "retry.log").read_text("utf-8"))
+
+    def test_second_plugin_late_evidence_error_retains_both_receipts(self):
+        """Batch recovery preserves the first and just-committed installs."""
+        host = self.make_host()
+        self.add_jsontools()
+        emitted = []
+
+        class FailedOnSecond:
+            def emit(self, line):
+                emitted.append(line)
+                if line.startswith("INSTALLED: jsontools-npp"):
+                    raise OSError("synthetic second trace failure")
+
+        with self.assertRaisesRegex(OSError, "synthetic second trace failure"):
+            plugins.apply(self.saved, self.pins, self.root, self.originals,
+                          evidence=FailedOnSecond())
+        self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").is_file())
+        self.assertTrue((host / "plugins/JsonTools/JsonTools.dll").is_file())
+        self.assertEqual(set(plugins.read_receipts(self.root)), {
+            "notepad++:compareplus", "notepad++:jsontools-npp"})
+        self.assertEqual([r["status"] for r in plugins.make_plan(
+            self.saved, self.pins, self.root)[0]],
+            ["already-installed", "already-installed"])
+        self.assertEqual(len([line for line in emitted
+                              if line.startswith("INSTALLED:")]), 2)
+
     def test_bad_receipt_state_blocks(self):
         self.make_host()
         self.receipt.write_text('{"bad": "thing"}', "utf-8")

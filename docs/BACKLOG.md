@@ -3,13 +3,13 @@
 > **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
-## 2026-11-01 — strict manifest version + single current handoff route (Issue #87, in review)
+## 2026-11-01 — strict manifest version + single current handoff route (Issue #87, verified)
 
 - [x] Reproduce manifest schema input bug: `schemaVersion: true` and `1.0`/`2.0` could pass Python equality checks and be interpreted as integer v1/v2. Require exact built-in `int` 1/2, reuse strict JSON parser, preserve `ToolsetError` envelope.
 - [x] Add synthetic no-write negative case against bool, float, string, null, collection schema versions and valid current v2 control.
 - [x] Resolve contradictory "latest/current" labels across archived `docs/HANDOFF.md`, historical README source CI sections and current handoff prompt. Keep historical evidence and PR links intact but make new-chat prompt dynamically query live main/Actions.
 - [x] Add two navigation regressions for single current handoff and no pinned stale SHA/test count in copyable prompt.
-- [ ] Exact-head Windows Python 3.11+3.14 CI PASS, squash merge, verify independent main CI, then close out this item with source/CI evidence. Final-user enterprise acceptance remains separate.
+- [x] [PR #96](https://github.com/greatgc-flow/portakit/pull/96) squash merged source `b7e0bce301897189ecaadf128b54b6394f256749`. Exact [PR-head Windows #41271532294](https://github.com/greatgc-flow/portakit/actions/runs/41271532294): **730/730 PASS each** on Python 3.11 and 3.14; [live archive smoke #41271532127](https://github.com/greatgc-flow/portakit/actions/runs/41271532127) **SUCCESS**. Independently [merged-main Windows #41271622068](https://github.com/greatgc-flow/portakit/actions/runs/41271622068): **730/730 PASS each**, both job logs checked. Final-user enterprise approval and actual field GUI/binary acceptance separate; no new vendor promotion or release.
 
 ## 2026-11-01 — direct config/picker selector input boundaries (Issue #87, verified)
 

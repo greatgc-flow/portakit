@@ -162,6 +162,78 @@ class PickerTests(unittest.TestCase):
         data = self.model.draft("zip")
         self.assertEqual(list(data["lockedPins"]), ["7zr", "7zip"])
 
+    def test_preview_json_matches_next_save_and_mirrors_pinned_locks(self):
+        """Preview is a pure projection of the exact same JSON save format."""
+        self.model.add(["notepad++", "jq", "duckdb-cli", "cmd"])
+        self.model.add_plugin("compareplus")
+        prior = self.model.draft("inspection")
+        with mock.patch.object(self.model, "save",
+                               side_effect=AssertionError("unexpected write")):
+            with mock.patch.object(
+                    picker.readiness, "assess",
+                    side_effect=AssertionError("unexpected inspection")):
+                payload = self.model.preview_json("inspection")
+        self.assertTrue(payload.endswith("\n"))
+        self.assertEqual(json.loads(payload), prior)
+        self.assertEqual(json.loads(payload)["schemaVersion"], 2)
+        self.assertEqual(json.loads(payload)["researchOnly"], ["duckdb-cli"])
+        self.assertEqual(json.loads(payload)["osBuiltins"], ["cmd"])
+        self.assertIn("jq", json.loads(payload)["lockedPins"])
+        self.assertEqual(json.loads(payload)["pluginSelections"][0]["id"],
+                         "compareplus")
+        self.assertFalse(self.saved.exists())
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("inspection", self.saved)
+        self.assertEqual(self.saved.read_text(encoding="utf-8"), payload)
+        self.assertEqual(self.model.draft("inspection"), prior)
+
+    def test_preview_json_rejects_invalid_name_or_empty_selection_without_writes(self):
+        self.model.add(["jq"])
+        original = self.model.draft("valid")
+        for name in ("", "Invalid Name", None, "x" * 65):
+            with self.subTest(name=repr(name)):
+                with self.assertRaisesRegex(picker.kit.KitError, "Kit name"):
+                    self.model.preview_json(name)
+                self.assertEqual(self.model.draft("valid"), original)
+        self.model.clear()
+        with self.assertRaisesRegex(picker.kit.KitError, "Select at least one"):
+            self.model.preview_json("empty")
+        self.assertFalse(self.saved.exists())
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
+    def test_preview_json_preserves_imported_research_consent(self):
+        """A newer pinned catalog must not turn a saved pending choice READY."""
+        self.model.add(["duckdb-cli", "jq"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("prior", self.saved)
+        new_pins = dict(self.model.pins)
+        new_pins["duckdb-cli"] = {
+            "version": "9.9", "sha256": "a" * 64, "dest": "duckdb-cli"}
+        new_known = dict(self.model.known)
+        new_known["duckdb-cli"] = dict(new_known["duckdb-cli"],
+                                       admission="PINNED_CATALOG")
+        later = picker.PickerModel(inventories=(
+            new_pins, self.model.categories, self.model.profiles, new_known))
+        later.load_existing(self.saved)
+        before = later.draft("still-locked")
+        rendered = json.loads(later.preview_json("still-locked"))
+        self.assertEqual(rendered, before)
+        self.assertIn("duckdb-cli", rendered["researchOnly"])
+        self.assertNotIn("duckdb-cli", rendered["lockedPins"])
+        self.assertEqual(later.draft("still-locked"), before)
+
+    def test_preview_button_source_is_read_only_and_has_no_install_path(self):
+        import ast
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        ast.parse(source)
+        self.assertIn("def preview_kit():", source)
+        self.assertIn('text="Preview KIT.json (read-only)"', source)
+        self.assertIn('viewer.configure(state="disabled")', source)
+        self.assertIn('payload = model.preview_json(name.get().strip())', source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn(".apply(", source)
+
     def test_save_creates_json_and_exact_local_console_evidence(self):
         self.model.add(["jq", "duckdb-cli", "cmd"])
         with contextlib.redirect_stdout(io.StringIO()) as stdout:

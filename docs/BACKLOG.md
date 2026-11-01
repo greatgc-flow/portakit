@@ -1,5 +1,8 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+> **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
+
+
 ## 2026-11-01 — direct config/picker selector input boundaries (Issue #87, verified)
 
 - [x] Reconfirm SSOT strict saved-kit JSON and plugin-receipt checks; avoid merging domain-specific trust readers into a new generic abstraction.

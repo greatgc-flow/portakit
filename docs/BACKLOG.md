@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — fail closed on mismatched GUI/KitDoctor diagnostics (Issue #87, in review)
+## 2026-11-01 — fail closed on mismatched GUI/KitDoctor diagnostics (Issue #87, verified)
 
 - [x] Inspect `PickerModel.inspect_readiness`, GUI `overview_lines` and `KitDoctor.inspect`: independently read readiness/footprint reports could be combined after managed status drift. Original Doctor checked ordered IDs only; GUI checked missing IDs only.
 - [x] Reuse one pure `kit_footprint.confirm_readiness_alignment` for matching diagnostic root, ordered ID rows, and exact per-tool managed install status; empty lists valid. Reject mismatched/malformed combinations without claiming atomic snapshots or changing CLI/GUI installation privileges.
 - [x] Add headless synthetic tests for matched/empty, mismatched ID/root/status, invalid/null report, unchanged GUI selection and absence of vendor execution.
-- [ ] Check exact PR-head Windows Python 3.11/3.14 CI; only merge on PASS, then independently verify new main CI. Keep final-user-owned operational GUI/company acceptance separate from source verification.
+- [x] [PR #91](https://github.com/greatgc-flow/portakit/pull/91) squash merged source `acbd6e97838347130ebf798bebec95a563c153b8`; exact PR-head [Windows CI #41263772358](https://github.com/greatgc-flow/portakit/actions/runs/41263772358) **723/723 PASS** each on Python 3.11 and 3.14, independent source-main [CI #41263859072](https://github.com/greatgc-flow/portakit/actions/runs/41263859072) **723/723 PASS** each; job logs checked. An earlier candidate failed one legacy GUI error-message test (run #41263655133); restored compatibility before merging. Keep final-user-owned operational GUI/company acceptance separate from source verification.
 
 
 ## 2026-11-01 — report/evidence ownership and collision safety (Issue #87, verified)

@@ -94,6 +94,14 @@ The small fix retains original ordering, duplicate collapse, plugin metadata and
 - [PR #94](https://github.com/greatgc-flow/portakit/pull/94) exact head `02a9ff54c6147a2e1c2fa7049b9f65c6190d0df3`: [Windows CI #41265472711](https://github.com/greatgc-flow/portakit/actions/runs/41265472711) **727/727 PASS** each. Squash source `67da8b7e52144d8c61b2301d035e3a716300b1a3`: independent [main CI #41265563813](https://github.com/greatgc-flow/portakit/actions/runs/41265563813) **727/727 PASS** each. All four logs inspected.
 - Negative test evidence applies to synthetic API inputs and headless model state only. No original vendor binaries, permission gates, download/install network path, Tk GUI field use, licensed distribution or end-user organization approval was carried out. Remaining refactor candidates optional under Issue #87.
 
+## Final candidate — strict manifest schema and documentation SSOT (in review)
+
+**Actual source defect:** `toolsets.load_manifest` used `data.get("schemaVersion") in (1, 2)`, so Python accepted `true` as schema version 1 and accepted `1.0`/`2.0` as integer versions. This was inconsistent with saved personal-kit `read_kit` which already requires `type(schemaVersion) is int`. The minimal fix reuses the existing strict declarative JSON reader, requires an actual JSON integer of exactly 1 or 2 and preserves the existing `ToolsetError` message. One no-vendor negative test covers booleans, floats, strings, null and collection values while verifying a valid v2 manifest and no side effects.
+
+**Documentation navigation defect:** The historical `docs/HANDOFF.md` called its 2026-10-23 R2 pointer "Latest" and its 2026-10-22 handoff "CURRENT"; the 2026-11-01 handoff's reusable **new-chat prompt still asserted an old 706/706 and PR #82-era SHA**, while README repeated PR #84's 708-test checkpoint under a "Latest" heading. These source-correct historical checkpoints could be mistaken for current validation by the next session.
+
+**Narrow fix:** declare the actual GitHub `main`/Windows Actions/PRs/Issues as current authority; make `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md` the single dated handoff and updated next-chat entrypoint; label all prior sections as archive; remove fixed SHA/count from the copyable prompt only. Preserve links, recorded PR SHAs, historical counts and business approval limitations. Add two small documentation navigation regressions: archived pointers route to the one handoff; copyable prompt cannot hard-code stale SHA or PASS count. Do not generate a new framework, rewrite history or infer real vendor/enterprise approval from CI.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

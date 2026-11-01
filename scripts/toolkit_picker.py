@@ -189,6 +189,10 @@ class PickerModel:
         host = self.plugin_catalog[ident]["host"]
         if host not in self.selected or host not in self.pins:
             raise kit.KitError("Select pinned plugin host first: " + host)
+        # Imported research-only hosts must not silently gain plugin consent
+        # when the current catalog later pins them.
+        if host in self.frozen_pending:
+            raise kit.KitError("Remove and reselect pending plugin host first: " + host)
         if ident not in self.selected_plugins:
             self.selected_plugins.append(ident)
             # Only a true remove/reselect clears historical research status.
@@ -482,7 +486,9 @@ def launch():
         if current:
             state = ("Pinned source metadata only" if current["status"] ==
                      "PINNED_METADATA_ONLY" else "Research only - not approved")
-            host = ("host selected" if current["hostSelected"] else
+            host = ("remove/reselect pending host"
+                    if current["host"] in model.frozen_pending else
+                    "host selected" if current["hostSelected"] else
                     "select host first")
             plugin_choice_text.set(
                 "{} | {} | {} | {} | no automatic plugin install".format(

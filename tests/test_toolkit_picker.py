@@ -458,6 +458,68 @@ class PickerTests(unittest.TestCase):
         self.assertNotIn("subprocess.run(", script)
         self.assertNotIn(".apply(", script)
 
+    def _load_frozen_plugin_host_from_legacy_v1(self):
+        """Valid old v1 kit where a now-pinned plugin host was research-only."""
+        self.model.add(["notepad++", "jq"])
+        legacy = self.model.draft("legacy-host")
+        legacy["researchOnly"].append("notepad++")
+        del legacy["lockedPins"]["notepad++"]
+        self.saved.write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+        self.model.clear()
+        self.assertEqual(self.model.load_existing(self.saved), legacy)
+        self.assertEqual(self.model.frozen_pending, {"notepad++"})
+        return legacy
+
+    def test_frozen_legacy_host_rejects_new_plugins_without_mutation(self):
+        """Host membership must not upgrade historical pending consent."""
+        legacy = self._load_frozen_plugin_host_from_legacy_v1()
+        original = self.saved.read_bytes()
+        host_row = next(x for x in self.model.plugin_rows()
+                        if x["id"] == "compareplus")
+        self.assertTrue(host_row["hostSelected"])  # selected, but pending
+        for plugin in ("compareplus", "jsontools-npp"):
+            with self.subTest(plugin=plugin):
+                with self.assertRaisesRegex(
+                        picker.kit.KitError,
+                        "Remove and reselect pending plugin host first"):
+                    self.model.add_plugin(plugin)
+                self.assertEqual(self.model.draft("legacy-host"), legacy)
+                self.assertEqual(self.model.selected_plugins, [])
+                self.assertEqual(self.model.frozen_pending, {"notepad++"})
+                self.assertEqual(self.saved.read_bytes(), original)
+                self.assertFalse(self.saved.with_suffix(".log").exists())
+        self.assertNotIn("pluginSelections", self.model.draft("legacy-host"))
+
+    def test_frozen_host_and_active_host_can_coexist_until_explicit_reselect(self):
+        """A different pinned host can still accept inert plugin intent."""
+        self._load_frozen_plugin_host_from_legacy_v1()
+        self.model.add(["winmerge"])
+        self.model.add_plugin("xdocdiff")
+        pending = self.model.draft("mixed-hosts")
+        self.assertEqual(pending["schemaVersion"], 2)
+        self.assertIn("notepad++", pending["researchOnly"])
+        self.assertNotIn("notepad++", pending["lockedPins"])
+        self.assertEqual(pending["pluginSelections"][0]["host"], "winmerge")
+        mixed_file = Path(self.temp) / "mixed-hosts.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("mixed-hosts", mixed_file)
+        self.assertEqual(picker.kit.read_kit(
+            mixed_file, self.model.pins, self.model.known), pending)
+
+        self.model.remove(["notepad++"])
+        self.model.add(["notepad++"])
+        self.model.add_plugin("compareplus")
+        upgraded = self.model.draft("reselected-host")
+        self.assertIn("notepad++", upgraded["lockedPins"])
+        self.assertNotIn("notepad++", upgraded["researchOnly"])
+        self.assertEqual(set(self.model.selected_plugins),
+                         {"xdocdiff", "compareplus"})
+        upgraded_file = Path(self.temp) / "reselected-host.json"
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("reselected-host", upgraded_file)
+        self.assertEqual(picker.kit.read_kit(
+            upgraded_file, self.model.pins, self.model.known), upgraded)
+
     def test_plugin_catalog_labels_and_individual_selection_visibility(self):
         rows = self.model.plugin_rows()
         self.assertEqual(len(rows), 6)

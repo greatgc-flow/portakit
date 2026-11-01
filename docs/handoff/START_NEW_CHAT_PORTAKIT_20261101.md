@@ -2,6 +2,13 @@
 
 > **Public-safe source-of-truth checkpoint.** A newer GitHub `main` HEAD/CI/PR always supersedes the listed snapshot. No company network addresses, credentials, privately collected vendor files, legal attestations, host inventory or customer data are contained here.
 
+## 0a. Latest targeted-refactor source checkpoint — PR #86 (supersedes PR #84 code)
+
+- Functional-source `main` squash HEAD: `1888db2dc2c98fb00a57a7e22555e0217aee0962`; [PR #86](https://github.com/greatgc-flow/portakit/pull/86) merged. Exact [PR-head CI #41261968622](https://github.com/greatgc-flow/portakit/actions/runs/41261968622): **710/710 PASS** on Windows Python 3.11 and 3.14, each job log examined. [Windows archive smoke #41261968600](https://github.com/greatgc-flow/portakit/actions/runs/41261968600): **SUCCESS**. Independent [merged-main CI #41262060770](https://github.com/greatgc-flow/portakit/actions/runs/41262060770): **710/710 PASS** each, both job logs examined.
+- Refactored existing `scripts/toolsets.py apply` into the minimal named seams `run_core_child`, `parse_core_install_result`, `verify_managed_install`; kept commands, console/evidence, pins and failure semantics unchanged. Added two synthetic no-vendor test methods, not new installation features.
+- [Scoped recursive-MECE review](../review/2026-11-01_TARGETED_REFACTOR.md) and [follow-up Issue #87](https://github.com/greatgc-flow/portakit/issues/87) distinguish verified refactor from optional future candidates. No general-purpose framework or rewriting of unrelated modules.
+- A documentation-only closeout merge has a **different `main` SHA and new CI**; verify independently. No vendor binaries, live equipment network tests or enterprise runtime/EULA/OSS/EDR approval were performed. Final user owns operational acceptance. Existing Issues #25/#27/#36/#51 remain independently tracked.
+
 ## 0. Later verified engineering checkpoint — PR #84 (supersedes older source SHA below)
 
 - Functional-source `main` squash HEAD: `01c7559b31cb1d9dd88fe83e0b2e43a4826cb060`; [PR #84](https://github.com/greatgc-flow/portakit/pull/84) merged. **Windows Python 3.11 and 3.14: 708/708 PASS each**, independently verified from the [merged-main run #41260317503](https://github.com/greatgc-flow/portakit/actions/runs/41260317503) job logs. [PR-head run #41260210938](https://github.com/greatgc-flow/portakit/actions/runs/41260210938) also returned **708/708 PASS** per version; [archive smoke #41260210900](https://github.com/greatgc-flow/portakit/actions/runs/41260210900) **SUCCESS**.

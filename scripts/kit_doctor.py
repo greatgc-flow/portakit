@@ -5,8 +5,6 @@ integrity engines. No vendor executable, installer, downloader or GUI starts.
 A local SHA match never establishes corporate EULA/EDR/legal approval.
 """
 import argparse
-import json
-import os
 from pathlib import Path
 import sys
 
@@ -17,6 +15,7 @@ import my_toolkit as kit  # noqa: E402
 import offline_ready as sources  # noqa: E402
 import kit_footprint as sizes  # noqa: E402
 import plugin_health as plugins  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 SCHEMA_VERSION = 1
 NOTICE = ("LOCAL CHECKS ONLY: NOT company approval, vendor authenticity, "
@@ -111,25 +110,9 @@ def emit(report, output=None):
         for line in content:
             print(line)
         return
-    target = Path(output).absolute()
-    transcript = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(transcript)
-    if target == transcript or os.path.lexists(target) or os.path.lexists(transcript):
-        raise DoctorError("Report/log already exists; no overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(transcript) as evidence:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(report, stream, indent=2, ensure_ascii=False)
-                stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in content:
-            evidence.emit(line)
-        evidence.emit("REPORT: " + str(target))
+    evidence_io.emit_json_report(
+        report, content, output, error_type=DoctorError,
+        collision_message="Report/log already exists; no overwrite")
 
 
 def run(argv=None):

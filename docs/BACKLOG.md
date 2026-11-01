@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — report/evidence ownership and collision safety (Issue #87, in review)
+
+- [x] Compare actual JSON + console/log creation in `offline_ready.py`, `kit_footprint.py`, `kit_doctor.py` and `plugin_health.py` against [VerySimpleGuide scoped review](review/2026-11-01_TARGETED_REFACTOR.md). Found the first three may delete an unrelated target on creation race or leave partial owned files on later log failure; plugin health already had identity-safe cleanup.
+- [x] Deduplicate only the verified invariant (create-only JSON + identical stdout/log with guarded ownership rollback) in `scripts/report_evidence.py`. Preserve each CLI's report schema, outputs, failure strings and separate `.json` extension rule.
+- [x] Add cross-consumer positive and failure/collision/replacement tests using synthetic data, never vendor binaries.
+- [ ] Verify exact PR-head Windows Python 3.11 / 3.14 and archive CI, then merge and reverify new `main`. Real workstation, vendor provenance and enterprise acceptance stay user-owned.
+
+
 ## 2026-11-01 — VerySimpleGuide-inspired focused refactor (verified)
 
 - [x] Inspect current source responsibility map against the guide's minimal abstraction, one-authority, evidence, optional extension and regression contracts. Document the scoped audit and candidate follow-ups in [targeted refactor review](review/2026-11-01_TARGETED_REFACTOR.md).

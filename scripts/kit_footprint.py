@@ -5,7 +5,6 @@ only currently managed, exact catalog-pinned folders and refuses symlink/junctio
 trees. Report values are logical file bytes, NOT physical allocated disk usage.
 """
 import argparse
-import json
 import os
 from pathlib import Path
 import stat
@@ -15,6 +14,7 @@ HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 SCHEMA = 1
 MAX_ENTRIES = 100000
@@ -148,25 +148,9 @@ def lines(data):
 
 def create_report(data, outfile):
     """New-only local JSON report + exact byte-mirrored console transcript."""
-    target = Path(outfile).absolute()
-    log = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(log)
-    if target == log or os.path.lexists(target) or os.path.lexists(log):
-        raise FootprintError("Report/evidence already exists; no overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(log) as evidence:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(data, stream, indent=2, ensure_ascii=False)
-                stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines(data):
-            evidence.emit(line)
-        evidence.emit("REPORT: " + str(target))
+    evidence_io.emit_json_report(
+        data, lines(data), outfile, error_type=FootprintError,
+        collision_message="Report/evidence already exists; no overwrite")
 
 
 def run(argv=None):

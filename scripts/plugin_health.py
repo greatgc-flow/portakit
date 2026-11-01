@@ -7,7 +7,6 @@ No plugin binary, app, downloader, installer, registry or network is invoked.
 import argparse
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import sys
 
@@ -16,6 +15,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
 import plugin_offline as offline  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 SCHEMA_VERSION = 1
 NOTICE = ("READ_ONLY_INTEGRITY_SNAPSHOT: NOT vendor signature, EDR approval, "
@@ -96,34 +96,9 @@ def emit(report, output=None):
         for line in lines:
             print(line)
         return
-    target = Path(output).absolute()
-    log = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(log)
-    if target == log or os.path.lexists(target) or os.path.lexists(log):
-        raise HealthError("Report/log already exists; refusing overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    kit.core.check_links(target)
-    kit.core.check_links(log)
-    # Create-only pair; a partial JSON/log is invalid evidence. Roll back
-    # only regular output files still matching our opened file identities.
-    json_identity = log_identity = None
-    try:
-        with kit.sets.Evidence(log) as transcript:
-            log_identity = kit.sets.created_output_identity(
-                os.fstat(transcript.stream.fileno()))
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json_identity = kit.sets.created_output_identity(
-                    os.fstat(stream.fileno()))
-                json.dump(report, stream, indent=2, ensure_ascii=False)
-                stream.write("\n")
-            for line in lines:
-                transcript.emit(line)
-            transcript.emit("REPORT: " + str(target))
-    except BaseException:
-        kit.sets.cleanup_own_output(log, log_identity)
-        kit.sets.cleanup_own_output(target, json_identity)
-        raise
+    evidence_io.emit_json_report(
+        report, lines, output, error_type=HealthError,
+        collision_message="Report/log already exists; refusing overwrite")
 
 
 def run(argv=None):

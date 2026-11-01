@@ -41,6 +41,16 @@
 - This is **NEGATIVE_TESTED on synthetic Windows fixtures**, not actual end-user acceptance, vendor binary integrity, enterprise approval or a proof of every possible fault.
 - Remaining candidates moved to [Issue #87](https://github.com/greatgc-flow/portakit/issues/87) for risk-driven opt-in consideration.
 
+## Follow-up: create-only JSON and console-evidence ownership (Issue #87, PR in review)
+
+**Reproduced source gap:** Three consumers (`offline_ready.emit`, `kit_footprint.create_report`, `kit_doctor.emit`) previously handled a JSON-write exception by deleting whatever occupied the target path, even if an unrelated file won the race between preflight and exclusive open. They also kept their JSON/log files when the later evidence emitter failed. `plugin_health.emit` already used safer opened-file identity guards and cleaned both owned outputs.
+
+**Narrow remedy:** one reusable `scripts/report_evidence.py:emit_json_report` restricted to create-only JSON + verbatim UTF-8 console log. It reuses `toolsets.Evidence`, `created_output_identity`, `cleanup_own_output` and `core.check_links`. Its only policy inputs are the per-command exception type and existing collision message; no new schema, CLI, general-purpose abstraction or business-acceptance authority. All four existing callers retain their independent line projections, no-output behavior, exit semantics and special readiness `.json` suffix validation.
+
+**New negative regressions:** for all four callers verify exact console/log and JSON bytes, collision without overwrite, injected JSON disk failure, injected log write failure, concurrent foreign JSON appearance, and replacing a JSON path after creation. Include a symlink replacement guard fixture where permitted. Existing report tests and full Windows matrix remain required.
+
+**Guarantee boundary:** best-effort cleanup based on opened-file identity; it is **not** an atomic two-file commit, durable fsync guarantee, malicious-race containment or company/provider certification. A process crash and competing writer can still leave partial local evidence. Do not label successful source CI as a live-workstation acceptance.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

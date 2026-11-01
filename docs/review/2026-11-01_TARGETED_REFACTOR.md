@@ -82,6 +82,12 @@
 
 **Regression cases:** malformed selectors include `None`, scalar values, dictionaries, nested/unhashable lists, unknown IDs, duplicates and length beyond the saved-kit limit; ensure deterministic `KitError`, no mutation, no JSON/log creation or vendor execution. Valid tuple inputs produce ordinary JSON lists, and empty in-memory previews still work. The required proof remains full exact-PR-head Windows Python 3.11/3.14 CI followed by independent merged-main CI. No real vendor/GUI/company approval is claimed.
 
+## Direct plugin-choice input validation follow-up (in review)
+
+The existing `my_toolkit.plugin_choices` deduplicated requested IDs using `dict.fromkeys(requested)` **before** checking the ID type; an unhashable nested list/dict therefore raised a raw `TypeError`. Direct callers could also pass malformed selected-host values to `set(selected)`, bypassing the caller's expected `KitError` boundary.
+
+The small fix retains original ordering, duplicate collapse, plugin metadata and host/pin checks while validating host selection types and checking plugin IDs **before inserting them into a seen set**. One synthetic regression test covers null/nonstring/unhashable plugin IDs, invalid host selection collections, valid duplicate deduplication and absence of output files. No JSON schema, pin state or installer logic changes; no new abstraction, no vendor execution.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

@@ -88,6 +88,12 @@ The existing `my_toolkit.plugin_choices` deduplicated requested IDs using `dict.
 
 The small fix retains original ordering, duplicate collapse, plugin metadata and host/pin checks while validating host selection types and checking plugin IDs **before inserting them into a seen set**. One synthetic regression test covers null/nonstring/unhashable plugin IDs, invalid host selection collections, valid duplicate deduplication and absence of output files. No JSON schema, pin state or installer logic changes; no new abstraction, no vendor execution.
 
+## Verified direct kit and plugin input boundary results (PRs #93/#94)
+
+- [PR #93](https://github.com/greatgc-flow/portakit/pull/93) exact head `c5a6acfa92d00421a09a1e3070a7ca66137b35f5`: [Windows CI #41265234612](https://github.com/greatgc-flow/portakit/actions/runs/41265234612) **726/726 PASS** each on 3.11/3.14. Squash source `e0abe0829df5b5915c5e9f2bcfa68df73844a01f`: independent [main CI #41265304539](https://github.com/greatgc-flow/portakit/actions/runs/41265304539) **726/726 PASS** each. All four logs inspected.
+- [PR #94](https://github.com/greatgc-flow/portakit/pull/94) exact head `02a9ff54c6147a2e1c2fa7049b9f65c6190d0df3`: [Windows CI #41265472711](https://github.com/greatgc-flow/portakit/actions/runs/41265472711) **727/727 PASS** each. Squash source `67da8b7e52144d8c61b2301d035e3a716300b1a3`: independent [main CI #41265563813](https://github.com/greatgc-flow/portakit/actions/runs/41265563813) **727/727 PASS** each. All four logs inspected.
+- Negative test evidence applies to synthetic API inputs and headless model state only. No original vendor binaries, permission gates, download/install network path, Tk GUI field use, licensed distribution or end-user organization approval was carried out. Remaining refactor candidates optional under Issue #87.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

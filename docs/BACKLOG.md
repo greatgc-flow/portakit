@@ -1,12 +1,12 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — direct config/picker selector input boundaries (Issue #87, in review)
+## 2026-11-01 — direct config/picker selector input boundaries (Issue #87, verified)
 
 - [x] Reconfirm SSOT strict saved-kit JSON and plugin-receipt checks; avoid merging domain-specific trust readers into a new generic abstraction.
 - [x] Prevent raw TypeError/KeyError from unhashable/unknown selection IDs in direct `make_kit` and pure picker controls. Fail closed with domain `KitError` before mutation; reject duplicate direct kit selections before unsaveable JSON is generated.
 - [x] Add synthetic/headless tests for null, empty, invalid type, duplicate/oversized tool lists, no partial selection/file writes; retain intentionally empty *in-memory* preview and valid tuple-input compatibility.
 - [x] Follow-up: validate unhashable/nontext plugin IDs and selected-host lists before hash/dedup in `my_toolkit.plugin_choices`; preserve valid duplicate collapse and pinned/research intent. Add one synthetic no-write regression test.
-- [ ] Inspect exact PR-head Windows 3.11/3.14 full CI, squash merge on PASS only, then independently verify new `main` CI and document acceptance boundaries. No vendor or company approval inferred.
+- [x] [PR #93](https://github.com/greatgc-flow/portakit/pull/93) squash merged `e0abe0829df5b5915c5e9f2bcfa68df73844a01f`: [PR CI #41265234612](https://github.com/greatgc-flow/portakit/actions/runs/41265234612) and independent [main CI #41265304539](https://github.com/greatgc-flow/portakit/actions/runs/41265304539) **726/726 PASS** per Windows Python 3.11 and 3.14; four job logs checked. [PR #94](https://github.com/greatgc-flow/portakit/pull/94) squash merged `67da8b7e52144d8c61b2301d035e3a716300b1a3`: [PR CI #41265472711](https://github.com/greatgc-flow/portakit/actions/runs/41265472711) and independent [main CI #41265563813](https://github.com/greatgc-flow/portakit/actions/runs/41265563813) **727/727 PASS** per version; four job logs checked. No vendor GUI/execution or enterprise approval claimed.
 
 
 ## 2026-11-01 — fail closed on mismatched GUI/KitDoctor diagnostics (Issue #87, verified)

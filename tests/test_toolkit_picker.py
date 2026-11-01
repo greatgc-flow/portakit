@@ -168,11 +168,12 @@ class PickerTests(unittest.TestCase):
         self.model.add_plugin("compareplus")
         prior = self.model.draft("inspection")
         with mock.patch.object(self.model, "save",
-                               side_effect=AssertionError("unexpected write")), \\
-             mock.patch.object(picker.readiness, "assess",
-                               side_effect=AssertionError("unexpected inspection")):
-            payload = self.model.preview_json("inspection")
-        self.assertTrue(payload.endswith("\\n"))
+                               side_effect=AssertionError("unexpected write")):
+            with mock.patch.object(
+                    picker.readiness, "assess",
+                    side_effect=AssertionError("unexpected inspection")):
+                payload = self.model.preview_json("inspection")
+        self.assertTrue(payload.endswith("\n"))
         self.assertEqual(json.loads(payload), prior)
         self.assertEqual(json.loads(payload)["schemaVersion"], 2)
         self.assertEqual(json.loads(payload)["researchOnly"], ["duckdb-cli"])

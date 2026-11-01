@@ -258,7 +258,12 @@ class PickerModel:
 
 def overview_lines(checked, measured):
     """Explain readiness and *known* installed bytes without guessing sizes."""
-    # Also guard direct callers that pass reports from separate operations.
+    # Preserve the existing GUI missing-footprint error contract first;
+    # then verify the full set, ordered IDs, status and root consistently.
+    measured_by_id = {row["id"]: row for row in measured["tools"]}
+    for item in checked["tools"]:
+        if item["id"] not in measured_by_id:
+            raise kit.KitError("Missing footprint row for selected pin: " + item["id"])
     footprint.confirm_readiness_alignment(checked, measured)
     selected = (checked["pinnedTotal"] +
                 len(checked["researchOnlyExcluded"]) +
@@ -288,11 +293,8 @@ def overview_lines(checked, measured):
         "",
         "TOOL STATUS / ORIGINAL SOURCE FILE:",
     ]
-    measured_by_id = {row["id"]: row for row in measured["tools"]}
     for item in checked["tools"]:
         # A partial or mismatched measurement must not be shown as zero bytes.
-        if item["id"] not in measured_by_id:
-            raise kit.KitError("Missing footprint row for selected pin: " + item["id"])
         count = measured_by_id[item["id"]]["logicalBytes"]
         size = "UNKNOWN" if count is None else "{:,} logical bytes".format(count)
         lines.append("  {}  |  {}  |  {}  |  {}  |  size={}".format(

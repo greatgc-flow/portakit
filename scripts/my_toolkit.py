@@ -139,11 +139,19 @@ def plugin_choices(requested, selected, pins, inventory=None):
     if not requested:
         return []
     known = inventory if inventory is not None else plugin_inventory(pins)
+    # Direct callers may bypass the CLI/model; never hash unvalidated data.
+    if (not isinstance(selected, (list, tuple))
+            or any(not isinstance(ident, str) for ident in selected)):
+        raise KitError("Plugin host selections must be tool IDs")
     selected_set = set(selected)
     items = []
-    for ident in dict.fromkeys(requested):
+    seen = set()
+    for ident in requested:
         if not isinstance(ident, str) or ident not in known:
             raise KitError("Unknown editor plugin: " + str(ident))
+        if ident in seen:
+            continue
+        seen.add(ident)
         plugin = known[ident]
         if plugin["host"] not in selected_set:
             raise KitError("Plugin host must be selected: " + plugin["host"])

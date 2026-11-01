@@ -120,6 +120,10 @@ The small fix retains original ordering, duplicate collapse, plugin metadata and
 
 **Revisit trigger:** a measured/reproduced regression, changed public contract, incorrect evidence, duplicated invariant requiring the same modification in multiple modules, or actual maintenance burden. Otherwise stop after the smallest verified change.
 
+## Optional UX feature gap — existing picker pinned-profile browse (Issue #27, in review)
+
+**Verified gap:** a validated, preset-adding action existed, but there was no read-only profile view filter despite Issue #27's explicit profile-filter requirement. Implement a trailing optional `profile="all"` in `PickerModel.rows`, using the existing authoritative `toolsets.selection` (no second preset parser or hard-coded IDs). It merely intersects tool IDs with all other filters and deliberately returns an empty list for empty legacy aliases. GUI gets one pinned-only profile Combobox; only the separately authorized Add filtered / Add preset buttons change current selection. Preserve frozen pending state (no implicit promotion). Headless negative tests reject null/list/dict/unknown profile types, validate no change to selection/files or installation authority; live Tk/IME/DPI/GUI accessibility and company authorization remain NOT_EVALUATED.
+
 ## Proof boundaries
 
 - **Design and source review:** targeted files and the cited VerySimpleGuide contracts inspected.

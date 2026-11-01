@@ -38,7 +38,8 @@ class PickerModel:
         self.selected_plugins = []
         self.frozen_plugin_choices = {}
 
-    def rows(self, search="", category="all", status="all", selected_only=False):
+    def rows(self, search="", category="all", status="all", selected_only=False,
+             profile="all"):
         """Display effective saved-kit approval, never just current catalog pins.
 
         A formerly research-only ID that was later pinned remains inert in an
@@ -53,6 +54,15 @@ class PickerModel:
             raise kit.KitError("Unknown category: " + str(category))
         if status not in ("all", "READY", "OS_ONLY", "RESEARCH_ONLY"):
             raise kit.KitError("Unknown status: " + str(status))
+        if not isinstance(profile, str) or (
+                profile != "all" and profile not in self.profiles):
+            raise kit.KitError("Unknown preset filter: " + str(profile))
+        # Profiles are pinned, named read-only projections of the same toolset
+        # taxonomy. An empty legacy profile is a legitimate empty filter.
+        # Reuse the authoritative selector; never add a profile to the kit.
+        profile_ids = (None if profile == "all" else set(
+            kit.sets.selection([profile], [], [], self.categories,
+                               self.profiles, self.pins)))
         needle = search.casefold().strip()
         results = []
         selected = set(self.selected)
@@ -63,6 +73,7 @@ class PickerModel:
             # current catalog now pins it. Never silently upgrade consent.
             state = "RESEARCH_ONLY" if is_frozen else STATES[rec["admission"]]
             if (selected_only and not is_chosen) or (
+                    profile_ids is not None and rec["id"] not in profile_ids) or (
                     category != "all" and rec["primary"] != category) or (
                     status != "all" and state != status):
                 continue
@@ -361,6 +372,7 @@ def launch():
     domain = tk.StringVar(value="all")
     status = tk.StringVar(value="all")
     selected_filter = tk.BooleanVar(value=False)
+    profile_filter = tk.StringVar(value="all")
     preset = tk.StringVar(value="essentials")
     name = tk.StringVar(value="my-portable-kit")
     output = tk.StringVar(value=str(Path.cwd() / "MyPortableKit.json"))
@@ -402,7 +414,15 @@ def launch():
                  values=["all", "READY", "OS_ONLY", "RESEARCH_ONLY"]).pack(
                      side="left", padx=(0, 12))
     ttk.Checkbutton(filter_row, text="Selected only",
-                    variable=selected_filter).pack(side="left")
+                    variable=selected_filter).pack(side="left", padx=(0, 11))
+    # This is a VIEW filter only; adding a whole preset remains a separate,
+    # explicit button below. Legacy empty aliases are deliberately omitted.
+    tk.Label(filter_row, text="Profile (pinned)", fg="#a9bdc9",
+             bg="#121e2b").pack(side="left", padx=(0, 5))
+    ttk.Combobox(filter_row, textvariable=profile_filter, width=20,
+                 state="readonly", values=["all"] + [
+                     k for k, v in model.profiles.items() if not v.get("legacy")
+                 ]).pack(side="left")
 
     holder = tk.Frame(frame, bg="#121e2b")
     holder.pack(fill="both", expand=True)
@@ -462,7 +482,8 @@ def launch():
         if old_rows:
             table.delete(*old_rows)
         visible = model.rows(search.get(), domain.get(), status.get(),
-                             selected_only=selected_filter.get())
+                             selected_only=selected_filter.get(),
+                             profile=profile_filter.get())
         for row in visible:
             chosen = "●" if row["selected"] else ""
             st = "PENDING (locked)" if row["locked_pending"] else row["status"]
@@ -479,8 +500,10 @@ def launch():
             table.focus(focused)
         scope = (str(len(model.selected)) + " selected" if selected_filter.get()
                  else str(len(model.known)) + " known")
-        results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.".format(
-            len(visible), scope, len(kept)))
+        profile_notice = ("" if profile_filter.get() == "all" else
+                          " Profile: " + profile_filter.get() + " (pinned only).")
+        results_text.set("Showing {} of {} tools; highlighted {}. Filters do not change your kit.{}".format(
+            len(visible), scope, len(kept), profile_notice))
         counts = model.summary()
         summary_text.set(("Selected {selected}  •  Pinned {approved}  •  "
                           "Research {pending}  •  OS {os}  •  Plugins {plugins} "
@@ -528,7 +551,7 @@ def launch():
     table.bind("<Control-a>", highlight_all)
     table.bind("<Delete>", remove_highlighted)
     table.bind("<Escape>", clear_highlight)
-    for var in (search, domain, status, selected_filter):
+    for var in (search, domain, status, selected_filter, profile_filter):
         var.trace_add("write", refresh)
     plugin_choice.trace_add("write", refresh_plugin_details)
 
@@ -542,7 +565,8 @@ def launch():
     command("Add filtered", lambda: action(
         lambda: model.add([x["id"] for x in model.rows(
             search.get(), domain.get(), status.get(),
-            selected_only=selected_filter.get())])))
+            selected_only=selected_filter.get(),
+            profile=profile_filter.get())])))
     command("Pinned only", lambda: action(model.set_approved_only))
     command("Clear", lambda: action(model.clear))
     ttk.Combobox(buttons, textvariable=preset, width=17, state="readonly",

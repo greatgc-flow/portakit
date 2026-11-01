@@ -80,6 +80,31 @@ class PluginKitTests(unittest.TestCase):
             kit.make_kit("x", ["notepad++"], self.pins, self.tools,
                          plugins=["inject-binary"])
 
+    def test_direct_plugin_choices_bad_types_are_domain_errors(self):
+        """No raw TypeError/KeyError for unhashable direct API inputs."""
+        host = ["notepad++"]
+        invalid_choices = ([[]], [{}], [None], ["compareplus", []],
+                           ["compareplus", {}], [123], [True])
+        for choices in invalid_choices:
+            with self.subTest(plugins=repr(choices)):
+                with self.assertRaisesRegex(kit.KitError, "Unknown editor plugin"):
+                    kit.make_kit("x", host, self.pins, self.tools,
+                                 plugins=choices)
+                self.assertFalse(self.path.exists())
+                self.assertFalse(self.path.with_suffix(".log").exists())
+        for bad_host in (None, {}, [["notepad++"]], [None], "notepad++"):
+            with self.subTest(host=repr(bad_host)):
+                with self.assertRaisesRegex(
+                        kit.KitError, "Plugin host selections must be tool IDs"):
+                    kit.plugin_choices(
+                        ["compareplus"], bad_host, self.pins, self.plugs)
+        valid = kit.plugin_choices(
+            ["compareplus", "compareplus", "jsontools-npp"], host,
+            self.pins, self.plugs)
+        self.assertEqual([row["id"] for row in valid],
+                         ["compareplus", "jsontools-npp"])
+        self.assertFalse(self.root.exists())
+
     def test_v2_bad_shape_null_duplicates_and_host_mismatch(self):
         source = kit.make_kit("x", ["notepad++"], self.pins, self.tools,
                               plugins=["compareplus"])

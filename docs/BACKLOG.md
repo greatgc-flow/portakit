@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — VerySimpleGuide-inspired focused refactor (in review)
+
+- [x] Inspect current source responsibility map against the guide's minimal abstraction, one-authority, evidence, optional extension and regression contracts. Document the scoped audit and candidate follow-ups in [targeted refactor review](review/2026-11-01_TARGETED_REFACTOR.md).
+- [x] Within `scripts/toolsets.py`, extract **bounded child launch**, **strict success-envelope parsing**, and **managed postcondition verification** into separate unit-testable helpers without changing CLI, core installer, catalog, evidence, permissions, or failure policies.
+- [x] Add vendor-free direct tests for malformed/duplicate/NaN/contradictory child JSON and missing/empty/stale managed state; retain existing end-to-end batch/timeout/partial/evidence regressions.
+- [ ] Verify full Windows Python 3.11/3.14 matrix against exact PR head, squash merge on success, then independently verify post-merge main CI. Real vendor execution and enterprise approval are **not** part of source-only verification.
+
+
 ## 2026-11-01 — reject toolset selection/pin drift during apply (source-only)
 
 - [x] Retain the operator's initial ordered tool ID/version/SHA-256 plan and compare it with the revalidated plan under the batch lock. Any added, removed or reordered ID or changed pin aborts before child installation/evidence creation, instead of silently expanding a consented selection.

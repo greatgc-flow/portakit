@@ -312,6 +312,50 @@ def verify_offline_assets(rows, archive_dir, *, load_catalog=core.load_catalog):
     return plan
 
 
+def run_core_child(cmd, runner, child_timeout):
+    """Launch only the already constructed core command; test runner is optional.
+
+    The default production path retains bounded concurrent pipe capture.
+    The runner seam preserves existing synthetic test injection unchanged.
+    """
+    if runner is None:
+        return bounded.run_bounded(cmd, timeout_seconds=child_timeout)
+    return runner(cmd, capture_output=True, text=True, encoding="utf-8",
+                  errors="replace", check=False)
+
+
+def parse_core_install_result(stdout, name):
+    """Validate a single successful core JSON envelope, without side effects.
+
+    A zero process exit alone is insufficient: the result must be strict JSON
+    with the expected command, selected tool ID and an absent error.
+    Keep the original ValueError/TypeError boundary for apply's diagnostics.
+    """
+    parsed = core.strict_json_loads(stdout)
+    if (not isinstance(parsed, dict) or parsed.get("ok") is not True
+            or parsed.get("command") != "install"
+            or not isinstance(parsed.get("data"), dict)
+            or parsed["data"].get("id") != name
+            or parsed.get("error") is not None):
+        raise ValueError("Unexpected core installer result")
+    return parsed
+
+
+def verify_managed_install(row, catalog, root):
+    """Re-read receipt and destination after one child, never trust JSON alone.
+
+    This minimal status check does not attest vendor binary integrity or
+    workstation acceptance. It preserves the existing post-install rules.
+    """
+    pin = catalog[row["id"]]
+    if (pin["version"] != row["version"]
+            or pin["sha256"] != row["sha256"]):
+        raise ToolsetError("catalog pin changed since preflight")
+    observed = status_of(pin, root, core.read_state(root))
+    if observed != "already-installed":
+        raise ToolsetError("managed install not confirmed: " + observed)
+
+
 def apply(plan, recommended, log, runner=None, *, offline_dir=None,
           child_timeout=bounded.DEFAULT_TIMEOUT):
     """Apply verified plan using bounded core-child capture by default.
@@ -383,11 +427,7 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
                     cmd.append("--recommended")
                 evidence.emit("INSTALL: " + name + " (catalog SHA-pinned)")
                 try:
-                    if runner is None:
-                        completed = bounded.run_bounded(cmd, timeout_seconds=child_timeout)
-                    else:
-                        completed = runner(cmd, capture_output=True, text=True, encoding="utf-8",
-                                           errors="replace", check=False)
+                    completed = run_core_child(cmd, runner, child_timeout)
                 except (OSError, bounded.BoundedProcessError) as exc:
                     result["failed"] = name
                     evidence.emit("STOP: " + name + " launcher error: " + str(exc))
@@ -403,25 +443,13 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
                     evidence.emit("PARTIAL: previously installed tools are NOT rolled back")
                     break
                 try:
-                    parsed = core.strict_json_loads(completed.stdout)
-                    if (not isinstance(parsed, dict) or parsed.get("ok") is not True
-                            or parsed.get("command") != "install"
-                            or not isinstance(parsed.get("data"), dict)
-                            or parsed["data"].get("id") != name
-                            or parsed.get("error") is not None):
-                        raise ValueError("Unexpected core installer result")
+                    parse_core_install_result(completed.stdout, name)
                 except (ValueError, AttributeError, TypeError) as exc:
                     result["failed"] = name
                     evidence.emit("STOP: " + name + " invalid core result: " + str(exc))
                     break
                 try:
-                    pin = verified_catalog[name]
-                    if (pin["version"] != row["version"]
-                            or pin["sha256"] != row["sha256"]):
-                        raise ToolsetError("catalog pin changed since preflight")
-                    observed = status_of(pin, root, core.read_state(root))
-                    if observed != "already-installed":
-                        raise ToolsetError("managed install not confirmed: " + observed)
+                    verify_managed_install(row, verified_catalog, root)
                 except (KeyError, OSError, ValueError, core.PortakitError,
                         ToolsetError) as exc:
                     result["failed"] = name

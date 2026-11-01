@@ -51,6 +51,12 @@
 
 **Guarantee boundary:** best-effort cleanup based on opened-file identity; it is **not** an atomic two-file commit, durable fsync guarantee, malicious-race containment or company/provider certification. A process crash and competing writer can still leave partial local evidence. Do not label successful source CI as a live-workstation acceptance.
 
+## Verified report-evidence follow-up (Issue #87, PR #89)
+
+- [PR #89](https://github.com/greatgc-flow/portakit/pull/89) head `72f5e5bc38e53f6da0aacd49291c9aa3d3cae64a`: [Windows CI #41262818996](https://github.com/greatgc-flow/portakit/actions/runs/41262818996) 718/718 PASS on each Python 3.11 and 3.14, both job logs checked.
+- Squash merged source `b7e0cee2ee35f181c93558f3b759b82f2aea59c2`: independent [main Windows CI #41262904434](https://github.com/greatgc-flow/portakit/actions/runs/41262904434) 718/718 PASS each, both job logs checked.
+- Archive smoke **not triggered** for these read-only report sources; no validation claim beyond actually executed checks. Defect and negative fixtures documented above. Operator/company approval and original vendor execution **NOT_EVALUATED**.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

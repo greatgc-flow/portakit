@@ -499,7 +499,9 @@ class PickerTests(unittest.TestCase):
         self.assertIn('selected_filter = tk.BooleanVar(value=False)', source)
         self.assertIn('text="Selected only"', source)
         self.assertIn('selected_only=selected_filter.get()', source)
-        self.assertIn('for var in (search, domain, status, selected_filter)', source)
+        self.assertIn(
+            'for var in (search, domain, status, selected_filter, profile_filter)',
+            source)
         self.assertNotIn("subprocess.run(", source)
         self.assertNotIn(".apply(", source)
 

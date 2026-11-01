@@ -244,6 +244,9 @@ class PickerModel:
         saved = self.draft("preview")
         checked = readiness.assess(saved, self.pins, root, archive_dir, skip_pending)
         measured = footprint.audit(saved, root, budget_mib=budget_mib)
+        # Both reports inspect managed state at different instants; never
+        # combine contradictory snapshots into an apparently valid preview.
+        footprint.confirm_readiness_alignment(checked, measured)
         return checked, measured
 
     def save(self, name, path):

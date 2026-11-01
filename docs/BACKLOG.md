@@ -1,5 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — reject toolset selection/pin drift during apply (source-only)
+
+- [x] Retain the operator's initial ordered tool ID/version/SHA-256 plan and compare it with the revalidated plan under the batch lock. Any added, removed or reordered ID or changed pin aborts before child installation/evidence creation, instead of silently expanding a consented selection.
+- [x] Add synthetic Windows tests for post-plan manifest edits (add/remove/reorder) and for independently completed matching installations (status changes allowed; no redundant child launch). This does not freeze the filesystem against external edits or certify real vendor execution.
+- [ ] Verify the exact PR-head Python 3.11/3.14 Windows matrix; squash merge only after it is green, then independently verify post-merge main CI. Final-user enterprise/vendor approval remains separate.
+
 ## 2026-11-01 — reject empty managed install folders in batch status
 
 - [x] Keep the existing read-only toolset status and post-install receipt check, but distinguish missing from **empty** managed directories (`blocked-missing` vs `blocked-empty`), never reporting either as `already-installed` or a completed child install. Do not guess app-specific executable locations or execute vendor code.

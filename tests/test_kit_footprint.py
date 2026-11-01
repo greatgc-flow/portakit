@@ -163,6 +163,47 @@ class FootprintTests(unittest.TestCase):
             self.assertEqual(foot.run(["--kit", str(self.saved_path),
                                        "--root", str(self.root)]), 0)
 
+    def test_alignment_accepts_empty_and_matching_pinned_snapshots(self):
+        empty = foot.audit(self.saved("cmd"), self.root)
+        first = {"root": empty["root"], "tools": []}
+        self.assertIsNone(foot.confirm_readiness_alignment(first, empty))
+        self.install_fixture()
+        measured = foot.audit(self.saved("jq"), self.root)
+        ready = {"root": measured["root"], "tools": [
+            {"id": row["id"], "installStatus": row["status"]}
+            for row in measured["tools"]]}
+        self.assertIsNone(foot.confirm_readiness_alignment(ready, measured))
+        self.assertEqual(measured["tools"][0]["status"], "already-installed")
+
+    def test_alignment_rejects_changed_status_root_ids_and_bad_inputs(self):
+        self.install_fixture()
+        measured = foot.audit(self.saved("jq"), self.root)
+        matching = {"root": measured["root"], "tools": [
+            {"id": "jq", "installStatus": "already-installed"}]}
+        cases = (
+            ("status changed", matching,
+             dict(measured, tools=[dict(measured["tools"][0], status="install")]),
+             "status changed"),
+            ("root changed", dict(matching, root="unrelated"), measured,
+             "root mismatch"),
+            ("lost row", matching, dict(measured, tools=[]),
+             "tool ID mismatch"),
+            ("extra row", matching, dict(measured, tools=measured["tools"] +
+                                         [dict(measured["tools"][0], id="ripgrep")]),
+             "tool ID mismatch"),
+            ("different ID", matching,
+             dict(measured, tools=[dict(measured["tools"][0], id="ripgrep")]),
+             "tool ID mismatch"),
+            ("invalid readiness", None, measured, "Invalid"),
+            ("invalid list", dict(matching, tools=None), measured, "Invalid"),
+            ("invalid status", dict(matching, tools=[
+                {"id": "jq", "installStatus": None}]), measured, "status changed"),
+        )
+        for name, ready, size, expected in cases:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(foot.FootprintError, expected):
+                    foot.confirm_readiness_alignment(ready, size)
+
     def test_no_network_or_installer_called(self):
         self.install_fixture()
         with mock.patch.object(foot.kit.sets, "apply",

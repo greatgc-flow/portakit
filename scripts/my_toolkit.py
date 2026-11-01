@@ -193,6 +193,17 @@ def make_kit(name, selected, pins, known, *, plugins=()):
 
     if not isinstance(name, str) or not NAME.fullmatch(name):
         raise KitError("Kit name must be 1-64 lowercase letters/digits/._-")
+    # Empty selections remain valid for *in-memory* read-only diagnostics.
+    # Nonempty persisted kits are separately enforced by read_kit().
+    # Do not let direct callers construct impossible, duplicated kit schemas
+    # or turn an unhashable/unknown tool into an uncaught TypeError/KeyError.
+    if not isinstance(selected, (list, tuple)) or len(selected) > 256:
+        raise KitError("Selections must be a list of at most 256 tools")
+    if any(not isinstance(ident, str) or ident not in known for ident in selected):
+        raise KitError("Unknown tool in kit selection")
+    if len(set(selected)) != len(selected):
+        raise KitError("Duplicate selected tools")
+    selected = list(selected)
     locks = {}
     pending = []
     builtin = []

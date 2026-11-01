@@ -48,7 +48,8 @@ class PickerModel:
             raise kit.KitError("Search must be text")
         if type(selected_only) is not bool:
             raise kit.KitError("selected_only must be a boolean")
-        if category != "all" and category not in self.categories:
+        if not isinstance(category, str) or (
+                category != "all" and category not in self.categories):
             raise kit.KitError("Unknown category: " + str(category))
         if status not in ("all", "READY", "OS_ONLY", "RESEARCH_ONLY"):
             raise kit.KitError("Unknown status: " + str(status))
@@ -95,7 +96,7 @@ class PickerModel:
         if not isinstance(ids, (list, tuple)):
             raise kit.KitError("Selections must be a list")
         for ident in ids:
-            if ident not in self.known:
+            if not isinstance(ident, str) or ident not in self.known:
                 raise kit.KitError("Unknown tool: " + str(ident))
         removed = set(ids)
         self.selected = [x for x in self.selected if x not in removed]
@@ -155,7 +156,7 @@ class PickerModel:
         return rows
 
     def add_plugin(self, ident):
-        if ident not in self.plugin_catalog:
+        if not isinstance(ident, str) or ident not in self.plugin_catalog:
             raise kit.KitError("Unknown editor plugin: " + str(ident))
         host = self.plugin_catalog[ident]["host"]
         if host not in self.selected or host not in self.pins:
@@ -166,7 +167,7 @@ class PickerModel:
             self.frozen_plugin_choices.pop(ident, None)
 
     def remove_plugin(self, ident):
-        if ident not in self.plugin_catalog:
+        if not isinstance(ident, str) or ident not in self.plugin_catalog:
             raise kit.KitError("Unknown editor plugin: " + str(ident))
         self.selected_plugins = [x for x in self.selected_plugins if x != ident]
         self.frozen_plugin_choices.pop(ident, None)
@@ -176,7 +177,7 @@ class PickerModel:
         self.add([x["id"] for x in self.rows(status="READY")])
 
     def add_preset(self, profile):
-        if profile not in self.profiles:
+        if not isinstance(profile, str) or profile not in self.profiles:
             raise kit.KitError("Unknown preset: " + str(profile))
         ids = kit.requested_ids([], [profile], [], [], self.pins,
                                 self.categories, self.profiles, self.known)

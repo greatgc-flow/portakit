@@ -1,5 +1,13 @@
 # PortaKit backlog (prioritized, evidence-based)
 
+## 2026-11-01 — direct config/picker selector input boundaries (Issue #87, in review)
+
+- [x] Reconfirm SSOT strict saved-kit JSON and plugin-receipt checks; avoid merging domain-specific trust readers into a new generic abstraction.
+- [x] Prevent raw TypeError/KeyError from unhashable/unknown selection IDs in direct `make_kit` and pure picker controls. Fail closed with domain `KitError` before mutation; reject duplicate direct kit selections before unsaveable JSON is generated.
+- [x] Add synthetic/headless tests for null, empty, invalid type, duplicate/oversized tool lists, no partial selection/file writes; retain intentionally empty *in-memory* preview and valid tuple-input compatibility.
+- [ ] Inspect exact PR-head Windows 3.11/3.14 full CI, squash merge on PASS only, then independently verify new `main` CI and document acceptance boundaries. No vendor or company approval inferred.
+
+
 ## 2026-11-01 — fail closed on mismatched GUI/KitDoctor diagnostics (Issue #87, verified)
 
 - [x] Inspect `PickerModel.inspect_readiness`, GUI `overview_lines` and `KitDoctor.inspect`: independently read readiness/footprint reports could be combined after managed status drift. Original Doctor checked ordered IDs only; GUI checked missing IDs only.

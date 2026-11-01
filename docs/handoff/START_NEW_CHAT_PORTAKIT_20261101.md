@@ -2,6 +2,13 @@
 
 > **Public-safe source-of-truth checkpoint.** A newer GitHub `main` HEAD/CI/PR always supersedes the listed snapshot. No company network addresses, credentials, privately collected vendor files, legal attestations, host inventory or customer data are contained here.
 
+## 0c. Latest verified GUI/Doctor consistency checkpoint — PR #91 (supersedes PR #89 source)
+
+- Source-only `main` squash SHA: `acbd6e97838347130ebf798bebec95a563c153b8`, [PR #91](https://github.com/greatgc-flow/portakit/pull/91) merged. Exact [PR-head Windows CI #41263772358](https://github.com/greatgc-flow/portakit/actions/runs/41263772358) **723/723 PASS each** on Python 3.11/3.14, two job logs checked. Independent [source-main CI #41263859072](https://github.com/greatgc-flow/portakit/actions/runs/41263859072) **723/723 PASS each**, both job logs checked.
+- Pure `kit_footprint.confirm_readiness_alignment` checks matching read-only diagnostic roots, ordered pinned IDs and per-tool install statuses. Invoked by `PickerModel.inspect_readiness`, direct GUI `overview_lines`, `KitDoctor.inspect`. This rejects contradictory snapshots without GUI/CLI installation, core catalog or kit-schema changes; genuine empty pinned selections remain valid.
+- **Compatibility regression handled:** early candidate [CI #41263655133](https://github.com/greatgc-flow/portakit/actions/runs/41263655133) failed an existing GUI missing-row error-contract test; the old error was restored and final CI rerun before merge. New negative tests address null/malformed/empty inputs, stale status, different root/ID, no selection mutation or output writes. The test count increased from 718 to 723 per version.
+- [Scoped review](../review/2026-11-01_TARGETED_REFACTOR.md) and [Issue #87](https://github.com/greatgc-flow/portakit/issues/87) hold remaining optional proposals. Never claim atomic point-in-time filesystem snapshots or real user-site GUI, vendor, company EULA/EDR/OSS approvals based solely on CI; final user owns those. A later documentation-only `main` SHA must pass independent CI.
+
 ## 0b. Latest source and evidence-safety checkpoint — PR #89 (supersedes PR #86 source)
 
 - Source-only `main` squash HEAD: `b7e0cee2ee35f181c93558f3b759b82f2aea59c2`; [PR #89](https://github.com/greatgc-flow/portakit/pull/89) merged. Exact [PR-head Windows CI #41262818996](https://github.com/greatgc-flow/portakit/actions/runs/41262818996) **718/718 PASS each** on Python 3.11/3.14 (logs checked). Independent [merged-main Windows CI #41262904434](https://github.com/greatgc-flow/portakit/actions/runs/41262904434) **718/718 PASS each**, both job logs inspected. No archive smoke for this report-only source change (not triggered).

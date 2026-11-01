@@ -77,6 +77,28 @@ class PickerTests(unittest.TestCase):
         with self.assertRaisesRegex(picker.kit.KitError, "Select at least one"):
             self.model.draft("empty")
 
+    def test_invalid_selector_types_use_kit_error_without_mutation(self):
+        """Unhashable, null, and nontext selectors cannot escape UI boundary."""
+        self.model.add(["notepad++", "jq", "cmd"])
+        self.model.add_plugin("compareplus")
+        original = self.model.draft("preserved")
+        invalid = (None, [], {}, ["jq"], 123, True)
+        for bad in invalid:
+            with self.subTest(value=repr(bad)):
+                with self.assertRaisesRegex(picker.kit.KitError, "Unknown tool"):
+                    self.model.remove([bad])
+                with self.assertRaisesRegex(picker.kit.KitError, "Unknown editor plugin"):
+                    self.model.add_plugin(bad)
+                with self.assertRaisesRegex(picker.kit.KitError, "Unknown editor plugin"):
+                    self.model.remove_plugin(bad)
+                with self.assertRaisesRegex(picker.kit.KitError, "Unknown preset"):
+                    self.model.add_preset(bad)
+                with self.assertRaisesRegex(picker.kit.KitError, "Unknown category"):
+                    self.model.rows(category=bad)
+                self.assertEqual(self.model.draft("preserved"), original)
+        self.assertFalse(self.saved.exists())
+        self.assertFalse(self.saved.with_suffix(".log").exists())
+
     def test_7zip_order_and_existing_builder_inheritance(self):
         self.model.add(["7zip", "7zr"])
         self.assertEqual(self.model.selected, ["7zr", "7zip"])

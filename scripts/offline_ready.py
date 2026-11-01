@@ -7,7 +7,6 @@ report and a verbatim console transcript .log on the user's local machine.
 Windows / Python 3.11+ stdlib, no administrative privileges required.
 """
 import argparse
-import json
 import os
 from pathlib import Path
 import sys
@@ -17,6 +16,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
 import offline_assets as assets  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 SCHEMA_VERSION = 1
 NOTICE = ("READ-ONLY OFFLINE CHECK: local hashes are not vendor signatures, "
@@ -173,24 +173,9 @@ def emit(report, out=None):
     target = Path(out).absolute()
     if target.suffix.lower() != ".json":
         raise ReadinessError("--out must end in .json")
-    logfile = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(logfile)
-    if target == logfile or os.path.lexists(target) or os.path.lexists(logfile):
-        raise ReadinessError("Report or matching evidence log exists; refusing overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(logfile) as ev:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(report, stream, indent=2, ensure_ascii=False)
-                stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            ev.emit(line)
-        ev.emit("REPORT: " + str(target))
+    evidence_io.emit_json_report(
+        report, lines, target, error_type=ReadinessError,
+        collision_message="Report or matching evidence log exists; refusing overwrite")
 
 
 def run(argv=None):

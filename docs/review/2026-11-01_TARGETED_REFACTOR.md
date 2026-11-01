@@ -130,6 +130,12 @@ The small fix retains original ordering, duplicate collapse, plugin metadata and
 - Squash source `80afc0f9dd8d773d2c8f29d80d9dbfc516b47987`: independent [merged-main CI #41272360388](https://github.com/greatgc-flow/portakit/actions/runs/41272360388) **734/734 PASS per version**, both logs inspected. Four new headless model/GUI-source tests; 730→734 total.
 - No real Tk display, screen reader, Korean IME/DPI, optional vendor execution, company OSS/EULA/EDR or human device acceptance tested. [Issue #27](https://github.com/greatgc-flow/portakit/issues/27) remains open for independently justified/approved work.
 
+## Source-verified optional picker JSON preview — PR #100
+
+- Source gap: the native picker exposed selected counts/readiness but not the exact eventual personal-kit JSON, immutable pinned version/SHA/dest and chosen plugin research status **before saving**. Rather than duplicate the schema or create preview files, `PickerModel.preview_json` formats the existing validated `draft` identically to `save_new` in memory. If name/selection changes, users must preview again; saving still requires an explicit separate action and refuses overwrites.
+- [PR #100](https://github.com/greatgc-flow/portakit/pull/100) exact final head `cba1b83b30fbff05bcf855a4630aae1c17766394`: [Windows CI #41276830271](https://github.com/greatgc-flow/portakit/actions/runs/41276830271) **738/738 PASS per Python 3.11 and 3.14**, each job log inspected. Source squash `f940851059a9aa96943779cfcfb14ab596b11be2`: independent [merged-main Windows CI #41276948135](https://github.com/greatgc-flow/portakit/actions/runs/41276948135) **738/738 PASS per version**, both logs examined.
+- Four new headless tests cover exact serial bytes, no preview writes, malformed/empty inputs, frozen historical research consent and v2 plugins. No live Tk operation or screen-reader/DPI/IME confirmation, corporate EULA/OSS/EDR, authentic vendor binaries or industrial devices were tested. Final user owns field acceptance; no new installer path was introduced.
+
 ## Proof boundaries
 
 - **Design and source review:** targeted files and the cited VerySimpleGuide contracts inspected.

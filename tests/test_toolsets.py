@@ -232,6 +232,28 @@ class ToolsetTests(unittest.TestCase):
         with self.assertRaisesRegex(toolsets.ToolsetError, "schemaVersion"):
             toolsets.load_manifest(path, toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG))
 
+    def test_schema_version_requires_real_integer_not_bool_or_float(self):
+        """True == 1 and 2.0 == 2 must not pass a declarative schema gate."""
+        original = json.loads(self.manifest.read_text(encoding="utf-8"))
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        path = self.root.parent / "invalid-schema-version.json"
+        for version in (True, False, 1.0, 2.0, "1", "2", None, [], {}):
+            with self.subTest(version=repr(version)):
+                data = dict(original, schemaVersion=version)
+                path.write_text(json.dumps(data), encoding="utf-8")
+                before = path.read_bytes()
+                with self.assertRaisesRegex(
+                        toolsets.ToolsetError, "schemaVersion=1 or 2"):
+                    toolsets.load_manifest(path, catalog)
+                self.assertEqual(path.read_bytes(), before)
+                self.assertFalse(self.root.exists())
+        # The unchanged v2 source remains valid after all bad inputs.
+        categories, profiles = toolsets.load_manifest(self.manifest, catalog)
+        self.assertEqual(set(categories), {
+            "files", "text", "structured-data", "system", "network",
+            "security", "development", "automation", "documents", "transfer"})
+        self.assertIn("minimal", profiles)
+
     def test_mutating_apply_rejects_log_under_managed_root_before_writes(self):
         """No batch, lock, root mkdir or installer may run with deletable evidence."""
         plan = self.plan(["data"])

@@ -2,6 +2,10 @@
 
 > **Public-safe source-of-truth checkpoint.** A newer GitHub `main` HEAD/CI/PR always supersedes the listed snapshot. No company network addresses, credentials, privately collected vendor files, legal attestations, host inventory or customer data are contained here.
 
+## Active verification rule (single current-state entrypoint)
+
+**GitHub remote, not the dated snapshots below, decides what is current.** Before taking action, fetch the actual [main SHA](https://github.com/greatgc-flow/portakit/tree/main), [Windows CI](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml), [open PRs](https://github.com/greatgc-flow/portakit/pulls), [issues](https://github.com/greatgc-flow/portakit/issues), and source `catalog.json`/`toolsets.json`. Each numbered checkpoint below is immutable **historical evidence** for that commit and must never be called the live latest once a newer merge exists. `README.md` and archived `docs/HANDOFF.md` link here; neither maintains independent "current SHA/count" claims.
+
 ## 0d. Latest verified direct selection input checkpoint — PRs #93/#94 (supersedes #91 code)
 
 - Source-only latest `main` squash HEAD: `67da8b7e52144d8c61b2301d035e3a716300b1a3`, [PR #94](https://github.com/greatgc-flow/portakit/pull/94) merged. Exact [PR-head Windows CI #41265472711](https://github.com/greatgc-flow/portakit/actions/runs/41265472711) **727/727 PASS** each on Python 3.11/3.14; independent [source-main CI #41265563813](https://github.com/greatgc-flow/portakit/actions/runs/41265563813) **727/727 PASS** each; four job logs checked.
@@ -39,16 +43,16 @@
 - The PR #84 source checkpoint supersedes historical PR #82 706-test code and PR #83 docs-only SHA below. This handoff refresh, once merged, has its **own different main SHA and independent CI**; always check current GitHub.
 - No third-party binaries, live industrial connections, services, registry edits, automatic release or enterprise approval claims. Final-user acceptance ownership and open Issues #25/#27/#36/#51 remain unchanged.
 
-## 1. Verified remote state at handoff
+## 1. Archived PR #82-era remote state (historical; do not use as current)
 
 - Repository: https://github.com/greatgc-flow/portakit
-- Latest independently verified **functional-source `main` before this docs-only refresh**: `a4ef03a5569ed289187e9bfce2c08b7645e30b74`. A docs-only PR merged after that SHA creates a newer `main` and must pass its own independent CI.
-- Latest source [merged-main Windows CI #41225137743](https://github.com/greatgc-flow/portakit/actions/runs/41225137743): **SUCCESS**, **706/706 PASS** on **Python 3.11 and 3.14**; each job log independently checked. PR #82 head [CI #41224955787](https://github.com/greatgc-flow/portakit/actions/runs/41224955787) was **706/706 PASS** per version; archive smoke [#41224955832](https://github.com/greatgc-flow/portakit/actions/runs/41224955832) **SUCCESS**.
+- At this historical PR #82 checkpoint only, the source `main` was `a4ef03a5569ed289187e9bfce2c08b7645e30b74`. Later PRs #84–#95 supersede it; verify the live remote for all new work.
+- Historical PR #82 source [merged-main Windows CI #41225137743](https://github.com/greatgc-flow/portakit/actions/runs/41225137743): **SUCCESS**, **706/706 PASS** on **Python 3.11 and 3.14**; each job log independently checked. PR #82 head [CI #41224955787](https://github.com/greatgc-flow/portakit/actions/runs/41224955787) was **706/706 PASS** per version; archive smoke [#41224955832](https://github.com/greatgc-flow/portakit/actions/runs/41224955832) **SUCCESS**.
 - Historical [PR #73](https://github.com/greatgc-flow/portakit/pull/73) research docs head `7425e5b04d12994f053302d965b0b981a8c0d2a9`, [PR CI #41218083490](https://github.com/greatgc-flow/portakit/actions/runs/41218083490) **686/686 each**; squash merged. See newer tested PRs below.
-- **Open PRs: zero** at last check. Open Issues: [#25](https://github.com/greatgc-flow/portakit/issues/25), [#27](https://github.com/greatgc-flow/portakit/issues/27), [#36](https://github.com/greatgc-flow/portakit/issues/36), [#51](https://github.com/greatgc-flow/portakit/issues/51).
+- At that historical check only, **open PRs were zero**. Open Issues then: [#25](https://github.com/greatgc-flow/portakit/issues/25), [#27](https://github.com/greatgc-flow/portakit/issues/27), [#36](https://github.com/greatgc-flow/portakit/issues/36), [#51](https://github.com/greatgc-flow/portakit/issues/51).
 - Public repository rulesets `[]`, `main.protected=false` as last verified; **no branch protection change** was made. Issue #51 contains an optional minimal policy proposal only.
 
-### Recent merged PR timeline (source CI and actual main CI checked)
+### Historical earlier merged PR timeline (per-commit CI, not live status)
 
 | PR | Main squash commit | Purpose | Windows tests per Python version |
 | --- | --- | --- | --- |
@@ -102,7 +106,7 @@ The PR #76–#82 history above contains independently verified **PR-head and mer
 ## 5. New-chat continuation prompt (copy everything below into a new chat)
 
 > **PortaKit — full handoff restoration and source development continuation**  
-> My GitHub repository is `https://github.com/greatgc-flow/portakit`. Start from the **actual latest** remote `main` HEAD, open PRs, Issues #25/#27/#36/#51 and Actions, rather than trusting historical SHA. The latest verified functional-source checkpoint before this documentation refresh was `a4ef03a5569ed289187e9bfce2c08b7645e30b74`, with merged-main Windows CI #41225137743 **706/706 PASS** on Python 3.11/3.14. A newer docs-only commit requires its own exact-head/main CI verification. Read `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md` and its listed current documents before work; confirm any newer docs-only closeout commit and CI.  
+> My GitHub repository is `https://github.com/greatgc-flow/portakit`. Begin by verifying the **live** [`main` branch](https://github.com/greatgc-flow/portakit/tree/main), [Windows test runs](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml), open PRs, and Issues #25/#27/#36/#51/#87. Treat every embedded SHA, test count or date in older records as a **historical checkpoint only**; the current run must be tied to the exact current remote commit. Read `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md`, `README.md`, `docs/BACKLOG.md` and the other current source documents before changing anything.  
 > **You may create branches/Issues/PRs, commit, and squash-merge to main after exact-head Windows Python 3.11+3.14 full green CI; independently verify post-merge main CI.** This explicitly supersedes the older do-not-merge instruction.  
 > **Real operator tests and all enterprise company-use, EULA, OSS/EDR, file transfer/redistribution, runtime compatibility, real GUI and deployment approvals are the final user's/organization's responsibility**, not a blocker to unrelated developer source work. Do not fabricate/claim such approval, run industrial protocols on production networks, install drivers/services, redistribute unapproved binaries or promote RESEARCH_ONLY tools.  
 > Prioritize **Very Simple**, optional independent modules, null/empty/duplicate/error cases, no unsafe defaults, exact console-to-local evidence logs, MECE classification, a short regression-driven PR, and updated public-safe docs/Issues. Avoid speculative redundant implementation. The latest industrial role matrix is under `research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md`; `pymcprotocol` and `PyXGT` are client-focused, not drop-in virtual PLC servers. Continue actual engineering and report tested commit/CI facts, not progress promises. If a conversation becomes genuinely too long, commit/update GitHub handoff context and provide one new-chat prompt.

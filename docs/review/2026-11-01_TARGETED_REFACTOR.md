@@ -72,6 +72,16 @@
 - **Regression red-to-green evidence:** an earlier candidate [Windows CI #41263655133](https://github.com/greatgc-flow/portakit/actions/runs/41263655133) exposed legacy `test_gui_readiness` missing-row error wording regression. Existing error behavior restored; full CI passed on exact revised head. This is not a release certification or actual live Tk GUI verification.
 - Remaining issue #87 topics are opt-in and only justified by reproduced defects or measurable cost improvements.
 
+## Candidate #3 — direct kit creation and pure picker input boundaries (in review)
+
+**Existing SSOT remains unchanged:** `portakit.strict_json_loads` already rejects duplicate JSON members and nonfinite values. `my_toolkit.read_kit` validates saved v1/v2 partitions, version/SHA locks and plugin host decisions. `plugin_offline` has separate plugin receipt provenance rules. Do **not** unify them into a permissive generic schema or rewrite known-good state readers.
+
+**Observed source-level failure boundary:** `my_toolkit.make_kit`, when directly called with an unknown or unhashable selected ID, indexed `known[ident]` and could throw raw `KeyError`/`TypeError`; duplicate direct selections could create a kit rejected by its own `read_kit` later. The GUI's pure `PickerModel.remove`, `add_plugin`, `remove_plugin`, `add_preset` and `rows(category=...)` also lacked type checks before dict membership, so unexpected list/dict values could escape as raw `TypeError` rather than a domain `KitError`. Direct API consumers merit the same fail-closed policy as the CLI.
+
+**Minimal behavior-preserving boundary:** validate direct `make_kit` selected input as a list/tuple of at most 256 unique known string IDs, then construct canonical JSON list data. Preserve intentionally allowed empty in-memory selections for read-only diagnostic fixtures; persisted kit readers still reject empty saved kits. Explicitly check selector types before membership for the five named picker functions. The normal CLI, presets, approved/research status, pin checks, saved schema, error messages for already-invalid **string** IDs, external execution and all valid selections remain unchanged.
+
+**Regression cases:** malformed selectors include `None`, scalar values, dictionaries, nested/unhashable lists, unknown IDs, duplicates and length beyond the saved-kit limit; ensure deterministic `KitError`, no mutation, no JSON/log creation or vendor execution. Valid tuple inputs produce ordinary JSON lists, and empty in-memory previews still work. The required proof remains full exact-PR-head Windows Python 3.11/3.14 CI followed by independent merged-main CI. No real vendor/GUI/company approval is claimed.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

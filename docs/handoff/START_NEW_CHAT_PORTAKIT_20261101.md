@@ -2,6 +2,13 @@
 
 > **Public-safe source-of-truth checkpoint.** A newer GitHub `main` HEAD/CI/PR always supersedes the listed snapshot. No company network addresses, credentials, privately collected vendor files, legal attestations, host inventory or customer data are contained here.
 
+## 0. Later verified engineering checkpoint — PR #84 (supersedes older source SHA below)
+
+- Functional-source `main` squash HEAD: `01c7559b31cb1d9dd88fe83e0b2e43a4826cb060`; [PR #84](https://github.com/greatgc-flow/portakit/pull/84) merged. **Windows Python 3.11 and 3.14: 708/708 PASS each**, independently verified from the [merged-main run #41260317503](https://github.com/greatgc-flow/portakit/actions/runs/41260317503) job logs. [PR-head run #41260210938](https://github.com/greatgc-flow/portakit/actions/runs/41260210938) also returned **708/708 PASS** per version; [archive smoke #41260210900](https://github.com/greatgc-flow/portakit/actions/runs/41260210900) **SUCCESS**.
+- Engineering change: `scripts/toolsets.py apply` rejects changed tool IDs, order, version or SHA pins between initial planning and the locked replan, **before child launch and evidence creation**. Matching installed-status-only changes are safely skipped. Two new test methods cover three manifest-drift variants and status-only drift.
+- The PR #84 source checkpoint supersedes historical PR #82 706-test code and PR #83 docs-only SHA below. This handoff refresh, once merged, has its **own different main SHA and independent CI**; always check current GitHub.
+- No third-party binaries, live industrial connections, services, registry edits, automatic release or enterprise approval claims. Final-user acceptance ownership and open Issues #25/#27/#36/#51 remain unchanged.
+
 ## 1. Verified remote state at handoff
 
 - Repository: https://github.com/greatgc-flow/portakit

@@ -49,7 +49,11 @@ def load_manifest(path, catalog):
         data = core.strict_json_loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ToolsetError("Cannot read toolsets manifest: " + str(exc)) from exc
-    if not isinstance(data, dict) or data.get("schemaVersion") not in (1, 2):
+    # bool and integral floats compare equal to 1/2 in Python, but they are
+    # not version integers in the declarative manifest contract.
+    if (not isinstance(data, dict)
+            or type(data.get("schemaVersion")) is not int
+            or data["schemaVersion"] not in (1, 2)):
         raise ToolsetError("toolsets.json must have schemaVersion=1 or 2")
     version = data["schemaVersion"]
     categories, profiles = {}, {}

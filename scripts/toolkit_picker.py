@@ -6,6 +6,7 @@ It deliberately has NO installation, update, uninstall, driver, service, shell
 or network actions: use existing my_toolkit.py build --yes separately.
 """
 from pathlib import Path
+import json
 import sys
 
 HERE = Path(__file__).resolve().parents[1]
@@ -260,6 +261,14 @@ class PickerModel:
         # combine contradictory snapshots into an apparently valid preview.
         footprint.confirm_readiness_alignment(checked, measured)
         return checked, measured
+
+    def preview_json(self, name):
+        """Exact prospective KIT.json text; never create a file or run a tool.
+
+        Save still validates and rebuilds the draft at the moment the user
+        explicitly saves. A changed selection after preview changes the output.
+        """
+        return json.dumps(self.draft(name), indent=2, ensure_ascii=False) + "\n"
 
     def save(self, name, path):
         # Create-only and mirrored evidence delegated to the source of truth.
@@ -647,6 +656,44 @@ def launch():
         side="left", padx=(0, 9))
     ttk.Button(foot, text="Save personal kit + evidence",
                command=save_kit).pack(side="left")
+
+    def preview_kit():
+        """Preview current consent and pin snapshot, without any filesystem write."""
+        def op():
+            payload = model.preview_json(name.get().strip())
+            dialog = tk.Toplevel(root)
+            dialog.title("PortaKit  •  Proposed KIT.json (read-only)")
+            dialog.geometry("820x560")
+            dialog.minsize(620, 380)
+            dialog.configure(bg="#121e2b")
+            panel = tk.Frame(dialog, bg="#121e2b", padx=14, pady=12)
+            panel.pack(fill="both", expand=True)
+            tk.Label(
+                panel,
+                text=("Current selection only: no file saved or vendor executed. "
+                      "Edit selection/name and preview again before saving."),
+                bg="#121e2b", fg="#c8d6e2", anchor="w",
+                justify="left", wraplength=760).pack(fill="x", pady=(0, 8))
+            frame_json = tk.Frame(panel, bg="#121e2b")
+            frame_json.pack(fill="both", expand=True)
+            viewer = tk.Text(frame_json, wrap="none", relief="flat",
+                             bg="#1b2937", fg="#edf3f8",
+                             font=("Consolas", 10), padx=10, pady=10)
+            scroll_y = ttk.Scrollbar(frame_json, orient="vertical",
+                                     command=viewer.yview)
+            scroll_x = ttk.Scrollbar(frame_json, orient="horizontal",
+                                     command=viewer.xview)
+            viewer.configure(yscrollcommand=scroll_y.set,
+                             xscrollcommand=scroll_x.set)
+            viewer.grid(row=0, column=0, sticky="nsew")
+            scroll_y.grid(row=0, column=1, sticky="ns")
+            scroll_x.grid(row=1, column=0, sticky="ew")
+            frame_json.grid_rowconfigure(0, weight=1)
+            frame_json.grid_columnconfigure(0, weight=1)
+            viewer.insert("1.0", payload)
+            viewer.configure(state="disabled")
+        action(op)
+
     def open_readiness():
         """User-triggered, read-only dialog; NEVER call any apply or installer."""
         dialog = tk.Toplevel(root)
@@ -721,7 +768,13 @@ def launch():
                  fg="#aec5d2", bg="#121e2b", anchor="w").pack(fill="x")
     ttk.Button(foot, text="Inspect readiness / size…",
                command=open_readiness).pack(side="left", padx=(9, 0))
-    tk.Label(foot, text="No install, download or registry edits",
+    # Keep the original footer buttons reachable on a narrow Windows desktop.
+    # The extra read-only preview stays in a separate, compact footer row.
+    preview_row = tk.Frame(frame, bg="#121e2b")
+    preview_row.pack(fill="x", pady=(5, 0))
+    ttk.Button(preview_row, text="Preview KIT.json (read-only)",
+               command=preview_kit).pack(side="left")
+    tk.Label(preview_row, text="No install, download or registry edits",
              bg="#121e2b", fg="#b2c1cc").pack(side="right")
     def focus_search(_event=None):
         search_entry.focus_set()

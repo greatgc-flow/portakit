@@ -370,6 +370,43 @@ class PickerTests(unittest.TestCase):
             status="READY", selected_only=True)])
         self.assertIn("duckdb-cli", later.draft("reselected")["lockedPins"])
 
+    def test_readiness_preview_rejects_changed_snapshot_without_writes(self):
+        self.model.add(["jq"])
+        managed = Path(self.temp) / "missing-managed"
+        checked, measured = self.model.inspect_readiness(managed)
+        lines = picker.overview_lines(checked, measured)
+        self.assertTrue(any("OFFLINE READINESS: BLOCKED" in x for x in lines))
+        self.assertFalse(managed.exists())
+        self.assertFalse(self.saved.exists())
+
+        original = picker.footprint.audit
+        def status_drift(*args, **kwargs):
+            result = original(*args, **kwargs)
+            changed = [dict(row) for row in result["tools"]]
+            changed[0]["status"] = "already-installed"
+            return dict(result, tools=changed)
+        with mock.patch.object(picker.footprint, "audit",
+                               side_effect=status_drift):
+            with self.assertRaisesRegex(picker.footprint.FootprintError,
+                                        "status changed"):
+                self.model.inspect_readiness(managed)
+        self.assertEqual(self.model.selected, ["jq"])
+        self.assertFalse(managed.exists())
+        self.assertFalse(self.saved.exists())
+
+    def test_overview_rejects_mismatched_direct_report_inputs(self):
+        self.model.add(["jq"])
+        checked, measured = self.model.inspect_readiness(Path(self.temp) / "root")
+        with self.assertRaisesRegex(picker.footprint.FootprintError,
+                                    "root mismatch"):
+            picker.overview_lines(checked, dict(measured, root="different"))
+        changed = dict(measured, tools=[
+            dict(measured["tools"][0], id="ripgrep")])
+        with self.assertRaisesRegex(picker.footprint.FootprintError,
+                                    "tool ID mismatch"):
+            picker.overview_lines(checked, changed)
+        self.assertFalse(self.saved.exists())
+
     def test_gui_selected_filter_is_read_only_and_has_no_install_path(self):
         import ast
         source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")

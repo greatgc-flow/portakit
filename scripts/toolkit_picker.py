@@ -258,6 +258,8 @@ class PickerModel:
 
 def overview_lines(checked, measured):
     """Explain readiness and *known* installed bytes without guessing sizes."""
+    # Also guard direct callers that pass reports from separate operations.
+    footprint.confirm_readiness_alignment(checked, measured)
     selected = (checked["pinnedTotal"] +
                 len(checked["researchOnlyExcluded"]) +
                 len(checked["osBuiltinsInformational"]))

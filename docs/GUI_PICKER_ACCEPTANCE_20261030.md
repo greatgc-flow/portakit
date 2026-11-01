@@ -13,6 +13,10 @@ On an approved nonproduction desktop, choose Notepad++, jq, a research-only cand
 
 These are **HUMAN_NOT_VERIFIED** until an actual approved Windows operator records them. Headless CI tests serialization and source wiring only; neither preview nor SHA pin proves company EULA/EDR/redistribution/vendor authenticity.
 
+## Frozen editor-host consent — supplemental GUI acceptance (2026-11-01)
+
+Import a synthetic old v1 kit whose now-pinned editor host was saved as `researchOnly`. Without changing the real catalog or original vendor files, confirm the host remains `PENDING (locked)`. Adding its dependent plugin must yield a controlled **remove/reselect** warning with no selection mutation, JSON/log creation, vendor action or automatic consent. Plugins under a separately current pinned host must remain selectable. After explicit host remove/reselect, preview the new `lockedPins` and save a fresh v2 kit whose host/plugin linkage validates. Automated tests cover the headless model only; actual Tk, DPI, Korean IME and enterprise acceptance remain **HUMAN_NOT_VERIFIED**.
+
 ## Optional pinned-profile filter — supplemental human GUI check (2026-11-01)
 
 On an approved nonproduction desktop, select **Profile (pinned) = essentials**. The visible table should contain only the preset's current pinned IDs (for this checkpoint Notepad++, WinMerge and jq); combining the profile with search/category/READY/Selected only must return their intersection. `all` should restore the complete list without modifying saved choices; changing the profile must not auto-add any tool, download or install anything. The independent **Add preset** action still adds the whole preset, whereas **Add filtered** adds only the visible rows after all filters. Check clear/empty results and that hidden selected tools and selected editor plugins remain intact. Check the filter row and tool table for 850px width, 100/150/200% scaling, focus navigation and Korean IME. This is **HUMAN_NOT_VERIFIED** until an actual operator records results; GitHub CI verifies only headless projection and parser behavior.

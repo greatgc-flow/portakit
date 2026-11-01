@@ -8,6 +8,12 @@ The optional `scripts\\MyToolkitGUI.cmd` picker has a **Preview KIT.json (read-o
 
 Preview is pure and produces **no JSON/log on disk, no download, no installer, no registry or service change**. Invalid/empty names and empty selections fail with existing `KitError`; past research-only choices remain inert even after a catalog changes. If the kit name or selections change after preview, **preview again**. Saving with `Save personal kit + evidence` is still the only explicit create-only JSON + console-mirrored log operation; saving recalculates the current draft and refuses existing output paths. Any actual build requires the separate CLI's explicit consent and all original-archive/company gates. Automated Windows CI checks JSON byte equality for an unchanged selection without opening Tk; visual/DPI/IME/keyboard/accessibility checks remain [operator-only](GUI_PICKER_ACCEPTANCE_20261030.md).
 
+## Frozen editor-host consent boundary (2026-11-01)
+
+An imported historical v1 kit can mark an editor host as `researchOnly` even after the current catalog pins that host. **Selected does not mean approved**: the picker preserves the frozen pending stage and now refuses dependent editor-plugin additions until the host is **explicitly removed and reselected**. The read-only GUI detail line explains this action. A separate currently pinned host can still have its own independently chosen plugin.
+
+After reselecting the host, review its new version/SHA/destination under `lockedPins` in **Preview KIT.json (read-only)**, then explicitly create a **new** kit file. This never overwrites the historical file, installs a plugin, or establishes vendor/company EULA/OSS/EDR approval.
+
 ## Optional pinned-profile browse filter (2026-11-01)
 
 The optional picker now has a **Profile (pinned)** dropdown in its filter row. Select `all` for every known tool, or choose a current non-legacy role preset (for example `essentials` or `mes-support`) to **browse the pinned tool IDs in that preset without selecting them**. This filter composes with name/ID search, primary domain, stage and **Selected only**; it does not change any saved choice when its visible rows change. **Add filtered** is still an explicit click that selects *only currently visible IDs*; **Add preset** is a separate explicit action that adds the full preset. Empty profiles produce zero visible rows rather than an error. The pure API also supports older legacy alias names.

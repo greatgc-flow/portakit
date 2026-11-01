@@ -4,7 +4,7 @@
 
 - [x] Retain the operator's initial ordered tool ID/version/SHA-256 plan and compare it with the revalidated plan under the batch lock. Any added, removed or reordered ID or changed pin aborts before child installation/evidence creation, instead of silently expanding a consented selection.
 - [x] Add synthetic Windows tests for post-plan manifest edits (add/remove/reorder) and for independently completed matching installations (status changes allowed; no redundant child launch). This does not freeze the filesystem against external edits or certify real vendor execution.
-- [ ] Verify the exact PR-head Python 3.11/3.14 Windows matrix; squash merge only after it is green, then independently verify post-merge main CI. Final-user enterprise/vendor approval remains separate.
+- [x] [PR #84](https://github.com/greatgc-flow/portakit/pull/84) squash merged as `01c7559b31cb1d9dd88fe83e0b2e43a4826cb060`. Exact [PR-head Windows CI #41260210938](https://github.com/greatgc-flow/portakit/actions/runs/41260210938) and independent [merged-main Windows CI #41260317503](https://github.com/greatgc-flow/portakit/actions/runs/41260317503) both **708/708 PASS** per Python 3.11 and 3.14 (all four job logs checked); [Windows archive smoke #41260210900](https://github.com/greatgc-flow/portakit/actions/runs/41260210900) **SUCCESS**. Final-user enterprise/vendor approval remains separate.
 
 ## 2026-11-01 — reject empty managed install folders in batch status
 

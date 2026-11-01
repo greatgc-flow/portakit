@@ -34,6 +34,13 @@
 
 **Regression contract:** original Windows 3.11/3.14 full suite plus isolated tests for valid/invalid/duplicate-key/nonstandard core JSON, ID mismatch, missing/empty destination, matching installed receipt and pin changes. Existing failure/timeout/partial/evidence-mirror tests must still pass. CI results will be recorded by exact commit before merge; merged-main CI is independent.
 
+## Verified implementation evidence (later source checkpoint)
+
+- [PR #86](https://github.com/greatgc-flow/portakit/pull/86), exact head `3d7cb8f6d6d40ac6f5cdf50a30c2cde1f0d995d1`: [Windows CI #41261968622](https://github.com/greatgc-flow/portakit/actions/runs/41261968622), 710/710 PASS each on Python 3.11/3.14; [archive smoke #41261968600](https://github.com/greatgc-flow/portakit/actions/runs/41261968600), SUCCESS.
+- Source squash merge `1888db2dc2c98fb00a57a7e22555e0217aee0962`: independent [main Windows CI #41262060770](https://github.com/greatgc-flow/portakit/actions/runs/41262060770) 710/710 PASS each version; all four relevant test-job logs independently checked.
+- This is **NEGATIVE_TESTED on synthetic Windows fixtures**, not actual end-user acceptance, vendor binary integrity, enterprise approval or a proof of every possible fault.
+- Remaining candidates moved to [Issue #87](https://github.com/greatgc-flow/portakit/issues/87) for risk-driven opt-in consideration.
+
 ## Candidate follow-ups — only when regression benefit is demonstrated
 
 | Order | Area | Specific observation | Recommended next step / stop criterion |

@@ -1,11 +1,11 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-## 2026-11-01 — VerySimpleGuide-inspired focused refactor (in review)
+## 2026-11-01 — VerySimpleGuide-inspired focused refactor (verified)
 
 - [x] Inspect current source responsibility map against the guide's minimal abstraction, one-authority, evidence, optional extension and regression contracts. Document the scoped audit and candidate follow-ups in [targeted refactor review](review/2026-11-01_TARGETED_REFACTOR.md).
 - [x] Within `scripts/toolsets.py`, extract **bounded child launch**, **strict success-envelope parsing**, and **managed postcondition verification** into separate unit-testable helpers without changing CLI, core installer, catalog, evidence, permissions, or failure policies.
 - [x] Add vendor-free direct tests for malformed/duplicate/NaN/contradictory child JSON and missing/empty/stale managed state; retain existing end-to-end batch/timeout/partial/evidence regressions.
-- [ ] Verify full Windows Python 3.11/3.14 matrix against exact PR head, squash merge on success, then independently verify post-merge main CI. Real vendor execution and enterprise approval are **not** part of source-only verification.
+- [x] [PR #86](https://github.com/greatgc-flow/portakit/pull/86) squash merged as `1888db2dc2c98fb00a57a7e22555e0217aee0962`: exact PR-head [Windows CI #41261968622](https://github.com/greatgc-flow/portakit/actions/runs/41261968622) **710/710 PASS** per Python 3.11/3.14; [live Windows archive smoke #41261968600](https://github.com/greatgc-flow/portakit/actions/runs/41261968600) **SUCCESS**; independent post-merge main [Windows CI #41262060770](https://github.com/greatgc-flow/portakit/actions/runs/41262060770) **710/710 PASS** per version. All four test-job logs inspected. Later prospective refactor candidates tracked in [Issue #87](https://github.com/greatgc-flow/portakit/issues/87). No vendor/enterprise acceptance performed.
 
 
 ## 2026-11-01 — reject toolset selection/pin drift during apply (source-only)

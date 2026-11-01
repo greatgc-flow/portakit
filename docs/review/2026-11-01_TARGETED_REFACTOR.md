@@ -120,9 +120,15 @@ The small fix retains original ordering, duplicate collapse, plugin metadata and
 
 **Revisit trigger:** a measured/reproduced regression, changed public contract, incorrect evidence, duplicated invariant requiring the same modification in multiple modules, or actual maintenance burden. Otherwise stop after the smallest verified change.
 
-## Optional UX feature gap — existing picker pinned-profile browse (Issue #27, in review)
+## Optional UX feature gap — existing picker pinned-profile browse (Issue #27, source verified)
 
 **Verified gap:** a validated, preset-adding action existed, but there was no read-only profile view filter despite Issue #27's explicit profile-filter requirement. Implement a trailing optional `profile="all"` in `PickerModel.rows`, using the existing authoritative `toolsets.selection` (no second preset parser or hard-coded IDs). It merely intersects tool IDs with all other filters and deliberately returns an empty list for empty legacy aliases. GUI gets one pinned-only profile Combobox; only the separately authorized Add filtered / Add preset buttons change current selection. Preserve frozen pending state (no implicit promotion). Headless negative tests reject null/list/dict/unknown profile types, validate no change to selection/files or installation authority; live Tk/IME/DPI/GUI accessibility and company authorization remain NOT_EVALUATED.
+
+### Verified source evidence — PR #98
+
+- Exact source PR head `62f9688136bbca644330f0caffc858438aafac1c`: [Windows CI #41272286342](https://github.com/greatgc-flow/portakit/actions/runs/41272286342) Python 3.11 **734/734 PASS**, Python 3.14 **734/734 PASS**; both job logs inspected.
+- Squash source `80afc0f9dd8d773d2c8f29d80d9dbfc516b47987`: independent [merged-main CI #41272360388](https://github.com/greatgc-flow/portakit/actions/runs/41272360388) **734/734 PASS per version**, both logs inspected. Four new headless model/GUI-source tests; 730→734 total.
+- No real Tk display, screen reader, Korean IME/DPI, optional vendor execution, company OSS/EULA/EDR or human device acceptance tested. [Issue #27](https://github.com/greatgc-flow/portakit/issues/27) remains open for independently justified/approved work.
 
 ## Proof boundaries
 

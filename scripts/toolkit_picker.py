@@ -417,6 +417,8 @@ def launch():
                     variable=selected_filter).pack(side="left", padx=(0, 11))
     # This is a VIEW filter only; adding a whole preset remains a separate,
     # explicit button below. Legacy empty aliases are deliberately omitted.
+    tk.Label(filter_row, text="Profile (pinned)", fg="#a9bdc9",
+             bg="#121e2b").pack(side="left", padx=(0, 5))
     ttk.Combobox(filter_row, textvariable=profile_filter, width=20,
                  state="readonly", values=["all"] + [
                      k for k, v in model.profiles.items() if not v.get("legacy")

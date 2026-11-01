@@ -141,10 +141,6 @@ def confirm_readiness_alignment(readiness, measured):
     first, second = readiness.get("tools"), measured.get("tools")
     if not isinstance(first, list) or not isinstance(second, list):
         raise FootprintError("Invalid readiness/footprint rows")
-    if (not isinstance(readiness.get("root"), str)
-            or not isinstance(measured.get("root"), str)
-            or readiness["root"] != measured["root"]):
-        raise FootprintError("Readiness/footprint root mismatch")
     if len(first) != len(second):
         raise FootprintError("Readiness/footprint tool ID mismatch")
     for ready_row, size_row in zip(first, second):
@@ -160,6 +156,10 @@ def confirm_readiness_alignment(readiness, measured):
             raise FootprintError(
                 "Readiness/footprint install status changed during inspection: "
                 + ident)
+    if (not isinstance(readiness.get("root"), str)
+            or not isinstance(measured.get("root"), str)
+            or readiness["root"] != measured["root"]):
+        raise FootprintError("Readiness/footprint root mismatch")
 
 
 

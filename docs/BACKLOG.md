@@ -3,13 +3,13 @@
 > **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
-## 2026-11-01 — optional pinned profile filtering in existing GUI (Issue #27, in review)
+## 2026-11-01 — optional pinned profile filtering in existing GUI (Issue #27, source verified)
 
 - [x] Confirm source gap: UI supported **Add preset** but not browsing a preset's pinned tool IDs as a non-mutating, composable view filter. Issue #27 explicitly requested optional work-profile filtering.
 - [x] Use existing `toolsets.selection` for pure profile membership; add `profile` as trailing optional argument to `PickerModel.rows`, preserving all old positional callers. Filter combines search/category/stage/Selected only; an empty legacy profile is valid.
 - [x] Add a `Profile (pinned)` Tk dropdown (non-legacy profiles only) and an explicit result scope notice; user must still click Add filtered or Add preset, no save or install on filter change.
 - [x] Add headless tests for membership, combined filters, malformed/null profile values, pending-consent preservation, no writes, and no UI installer path.
-- [ ] Verify exact PR head Windows Python 3.11/3.14 CI, squash merge, and independent new-main CI. Real GUI/IME/DPI/accessibility and enterprise acceptance remain solely final-user responsibility.
+- [x] [PR #98](https://github.com/greatgc-flow/portakit/pull/98) squash merged source `80afc0f9dd8d773d2c8f29d80d9dbfc516b47987`; exact [PR Windows CI #41272286342](https://github.com/greatgc-flow/portakit/actions/runs/41272286342) **734/734 PASS** each Python 3.11/3.14, and independent [source main CI #41272360388](https://github.com/greatgc-flow/portakit/actions/runs/41272360388) **734/734 PASS** each. Four job logs inspected. Actual Tk UI, Korean IME, 100/150/200% DPI, operator-accessibility, enterprise OSS/EULA/EDR/vendor acceptance remain **NOT_VERIFIED** and solely final-user owned; Issue #27 stays open for other acceptance/feature tracks.
 
 ## 2026-11-01 — strict manifest version + single current handoff route (Issue #87, verified)
 

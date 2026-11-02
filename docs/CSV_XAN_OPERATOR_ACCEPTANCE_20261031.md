@@ -73,6 +73,16 @@ Record the following for **each** case privately: exact commands, version and EX
 
 Do not introduce unapproved process monitors, network probes, drivers, services, new installations, or production connectivity just to collect performance observations.
 
+### Stage D paired measurement consistency (source-only follow-up)
+
+The [CSV performance record template and read-only checker](CSV_BENCHMARK_PROTOCOL.md)
+supply an optional local format for balanced 5–20 cold/warm trial records,
+same-input SHA/row/byte checks and purely descriptive min/median/max.
+It never executes or authenticates either tool, verifies OS cold caches or
+assigns a performance winner. Missing metrics remain NOT_MEASURED_OR_PARTIAL;
+any reported error/stderr/non-matching semantics blocks a timing summary.
+Original runtime and release decisions remain exclusively human-owned.
+
 ## Evidence producer write failures (source-only safety)
 
 Both opt-in report producers (the local ZIP preflight and the approved-host CSV smoke) use **exclusive-create** JSON/console-log outputs. A new synthetic-tested guard now attempts to remove **only** report files opened by that invocation if JSON serialization or log emission fails. It records the original regular-file identity on the open handle before cleanup; an existing or replacement file from another writer is left untouched. The smoke's previously generated `edge.csv` and `bulk.csv` are never deleted by this report cleanup.

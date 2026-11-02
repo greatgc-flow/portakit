@@ -28,6 +28,11 @@
 
 The release API SHA, size and version are **not locally verified original bytes**, enterprise approval, runtime functionality or a current upstream-security verdict. All candidate selection, previews, root/network restrictions, and `RESEARCH_ONLY` status stay unchanged. No production PLC/MES or industrial-protocol live traffic.
 
+## Executed research-source follow-ups (live GitHub takes precedence)
+
+- **PR #108 (2026-11-02):** `lightweight_review.py` now uses shared owned-output JSON/log writer; four negative tests. Exact PR CI #41395586064 and merged-main CI #41395730610 each passed **757/757** Python 3.11/3.14 at main `dbb82058b78c2441e5ee150059c87ba8cb23cb3a`. This supersedes items 1–3 below (which are archived execution plan, not still-open tasks).
+- **Next targeted DuckDB candidate preflight:** `scripts/targz_preflight.py` already implements bounded, **read-only** `tar.gz` structural audit. No generic extractor needed for the existing research-only workflow. A separately reproduced JSON/log collision and late-error cleanup gap is the scoped source change; four negative tests reuse the same common owned-output helper. The core installer still rejects `tar.gz`; admission, actual archived bytes, genuine Windows runtime and license approvals remain deferred. PR/CI proof is attached to #25 after verification.
+
 ## Immediate implementation and acceptance loop
 
 1. Apply exactly one **source-only #25** repair: move `scripts/lightweight_review.py --out` to existing `report_evidence.emit_json_report`, keep output JSON/transcript byte-identical. Reject foreign JSON create race and clean only owned partial outputs on dump/log failures.

@@ -40,6 +40,14 @@ class ComparisonError(Exception):
     pass
 
 
+def lexical_path(value):
+    """Collapse dot components for comparisons without following reparse links.
+
+    File access still uses the original path and existing check_links guards.
+    """
+    return Path(os.path.normpath(str(Path(value).absolute())))
+
+
 def checked_directory(folder, label):
     """Require an existing non-reparse directory; never create any input."""
     if not isinstance(folder, (str, os.PathLike)) or not str(folder).strip():
@@ -133,7 +141,7 @@ def inspect(fixtures_dir, results_dir):
     """
     source = checked_directory(fixtures_dir, "Fixture")
     outputs = checked_directory(results_dir, "Results")
-    if source == outputs:
+    if lexical_path(source) == lexical_path(outputs):
         raise ComparisonError("Fixture and results directories must differ")
     verify_fixtures(source)
     rows = []
@@ -193,9 +201,13 @@ def emit(report, output=None, inputs=()):
     target = Path(output).absolute()
     if target.suffix.casefold() != ".json":
         raise ComparisonError("--out must end in .json")
-    # Never write the result report into existing input/evidence directories.
+    # The raw path may contain `other/../fixtures`: compare normalized
+    # locations, but preserve original paths for the reparse safety checks.
+    normalized_target = lexical_path(target)
     for folder in inputs:
-        if target == folder or folder in target.parents:
+        normalized_folder = lexical_path(folder)
+        if (normalized_target == normalized_folder or
+                normalized_folder in normalized_target.parents):
             raise ComparisonError("--out must be outside input directories")
     evidence_io.emit_json_report(
         report, lines(report), target,

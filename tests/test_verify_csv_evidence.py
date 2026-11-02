@@ -639,6 +639,51 @@ class EvidenceChainTests(unittest.TestCase):
                          {path: (path.read_bytes(), path.stat().st_mtime_ns)
                           for path in files})
 
+    def test_cli_report_cannot_modify_smoke_evidence_tree(self):
+        """Optional reports must never contaminate the original smoke inputs."""
+        self.build()
+        before = {p.name: p.read_bytes() for p in self.folder.iterdir()}
+        detour = self.base / "detour"
+        detour.mkdir()
+        # The sibling/../ alias reaches the same physical evidence folder.
+        for out in (self.folder / "crosscheck.json",
+                    detour / ".." / self.folder.name / "crosscheck.json",
+                    self.folder / "nested" / "crosscheck.json"):
+            with self.subTest(out=str(out)):
+                with mock.patch.object(source, "official_record",
+                                       return_value=self.frozen):
+                    with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                        rc = chain.run(["--source-json", str(self.source_json),
+                                        "--smoke-dir", str(self.folder),
+                                        "--out", str(out)])
+                self.assertEqual(rc, 1)
+                self.assertIn("outside smoke evidence directory",
+                              stderr.getvalue())
+                self.assertFalse((self.folder / "crosscheck.json").exists())
+                self.assertFalse((self.folder / "crosscheck.log").exists())
+                self.assertFalse((self.folder / "nested").exists())
+                self.assertEqual(before, {
+                    p.name: p.read_bytes() for p in self.folder.iterdir()})
+
+    def test_cli_allows_third_location_next_to_source_report(self):
+        """Preserve the documented original-source-parent output workflow."""
+        self.build()
+        out = self.base / "review-third-location.json"
+        before = {p.name: p.read_bytes() for p in self.folder.iterdir()}
+        with mock.patch.object(source, "official_record",
+                               return_value=self.frozen):
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                rc = chain.run(["--source-json", str(self.source_json),
+                                "--smoke-dir", str(self.folder),
+                                "--out", str(out)])
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.getvalue(),
+                         out.with_suffix(".log").read_text("utf-8"))
+        self.assertEqual(json.loads(out.read_text("utf-8"))["outcome"],
+                         "EVIDENCE_CROSSCHECK_ONLY")
+        self.assertEqual(before, {
+            p.name: p.read_bytes() for p in self.folder.iterdir()})
+
     def test_json_dump_failure_removes_only_new_partial_json(self):
         self.build()
         out = self.base / "crosscheck-fail.json"

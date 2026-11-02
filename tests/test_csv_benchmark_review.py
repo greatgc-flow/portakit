@@ -194,6 +194,31 @@ class CSVBenchmarkEvidenceTests(unittest.TestCase):
                 self.assertEqual(rc, 1)
                 self.assertIn("header invalid", stderr.getvalue())
 
+    def test_space_only_operator_notes_fail_even_with_complete_trials(self):
+        """A blank environment or cold-cache method is not documented evidence."""
+        for field in ("environmentNote", "coldMethod"):
+            for blank in (" ", "     "):
+                with self.subTest(field=field, blank=blank):
+                    doc = self.full_record()
+                    doc[field] = blank
+                    with self.assertRaisesRegex(
+                            review.BenchmarkError, "Invalid local method note"):
+                        review.inspect(doc, self.csv)
+                    self.write_record(doc)
+                    with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                        rc = review.run(["--input", str(self.input),
+                                         "--dataset", str(self.csv)])
+                    self.assertEqual(rc, 1)
+                    self.assertIn("Invalid local method note",
+                                  stderr.getvalue())
+
+            # An intentionally unset note still belongs to the existing
+            # INCOMPLETE_OR_BLOCKED (not malformed schema) state.
+            doc = self.full_record()
+            doc[field] = None
+            self.assertEqual(review.inspect(doc, self.csv)["outcome"],
+                             "INCOMPLETE_OR_BLOCKED")
+
     def test_optional_cpu_rss_disk_are_not_fabricated(self):
         doc = self.full_record()
         for row in doc["runs"]:

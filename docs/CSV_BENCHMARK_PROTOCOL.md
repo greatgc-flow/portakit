@@ -33,7 +33,7 @@ CPU/RSS/disk coverage labels are independently RECORDED_ALL or NOT_MEASURED_OR_P
 
 ## JSON schema and ownership
 
-The checked-in [template](../research/CSV_BENCHMARK_TEMPLATE.json) deliberately contains *null* provenance and *zero* timing observations. Keep it that way in this PUBLIC repo. Copy it locally and fill `inputSha256` (64 lower-hex characters), `inputBytes`, `inputRows` (excluding CSV header), the two `toolSha256` digests, nonempty ASCII `environmentNote` and `coldMethod` (max 300 chars, no private path or secret in public issues). Supported workload names: `count`, `select`, `sort`, `group`; `datasetClass` stays `SYNTHETIC_OPERATOR_DECLARED`. A real source ID is validated locally but **no host-specific note is echoed or written to summary output**.
+The checked-in [template](../research/CSV_BENCHMARK_TEMPLATE.json) deliberately contains *null* provenance and *zero* timing observations. Keep it that way in this PUBLIC repo. Copy it locally and fill `inputSha256` (64 lower-hex characters), `inputBytes`, `inputRows` (excluding CSV header), the two `toolSha256` digests, non-blank printable ASCII `environmentNote` and `coldMethod` (1–300 chars; spaces-only notes are rejected, no private path or secret in public issues). Supported workload names: `count`, `select`, `sort`, `group`; `datasetClass` stays `SYNTHETIC_OPERATOR_DECLARED`. A real source ID is validated locally but **no host-specific note is echoed or written to summary output**.
 
 One run has this **structure only** (the null elapsed is **not** allowed for a recorded run; fill with a real positive finite number only after actual observation):
 

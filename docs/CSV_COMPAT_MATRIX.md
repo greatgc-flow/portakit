@@ -42,6 +42,16 @@ xan groupby category "sum(qty) as qty_sum" sort-group.csv
 
 These examples do not assert identical column order, quoting, or numeric formatting. For the BOM/UTF-16/malformed/quoted files, use operator-approved vendor commands to observe exact parsing/error behavior, with independently recorded exit, stderr, output and original SHA. In particular, do not mark UTF-16 as supported solely because Python could generate a UTF-16 fixture.
 
+## Read-only comparison of separately retained operator outputs
+
+After an independently authorized operator obtains real stdout files, use the
+[read-only result checker](CSV_COMPAT_RESULTS.md) to compare Miller and xan
+numeric sort and group sum outputs against this source-only matrix. It requires
+the original five fixture files plus matrix.json/.log to match the generator's
+exact source bytes; missing or malformed results are never reported as matching.
+Even a four-of-four **SEMANTIC_MATCH_ONLY** result is not proof the vendors
+ran, returned exit 0, produced empty stderr or passed an enterprise gate.
+
 ## Safety, errors and evidence
 
 - The **default mode** prints a plan and leaves the filesystem unchanged (exit 2). `--out-dir` is explicitly opt-in and **refuses any existing directory** rather than overwriting or deleting it. Its filenames and input byte lengths are fixed and bounded; it performs no vendor calls. Exit 0 means **files prepared**, NOT a functional compatibility PASS.

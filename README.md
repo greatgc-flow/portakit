@@ -104,6 +104,10 @@ fixtures without running either vendor executable, use
 `--out-dir NEW_DIRECTORY` to create only five tiny deterministic CSVs plus
 SHA-256 manifest and a byte-mirrored local transcript. Files prepared do not
 prove vendor compatibility or admission. [CSV compatibility matrix](docs/CSV_COMPAT_MATRIX.md).
+The [read-only compatibility output checker](docs/CSV_COMPAT_RESULTS.md)
+compares already retained Miller/xan sort/group CSV outputs against those exact
+synthetic inputs and flags missing/mismatched results. It **does not execute**
+either vendor or infer process exit/stderr, EDR approval or performance.
 
 ## DuckDB TAR safety preflight / CSV alternatives (2026-10-31)
 

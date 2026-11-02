@@ -98,6 +98,13 @@ Headless CI only executes short synthetic Python subprocess fixtures, **never ve
 promotion, company EULA/EDR/transfer approval or performance ranking.
 [Operator guide and safety gates](docs/CSV_OPERATOR_SMOKE.md).
 
+For optional **BOM, UTF-16, malformed CSV, numeric sort and group-sum** comparison
+fixtures without running either vendor executable, use
+`python -I scripts/csv_compat_fixtures.py` (read-only plan), or explicitly
+`--out-dir NEW_DIRECTORY` to create only five tiny deterministic CSVs plus
+SHA-256 manifest and a byte-mirrored local transcript. Files prepared do not
+prove vendor compatibility or admission. [CSV compatibility matrix](docs/CSV_COMPAT_MATRIX.md).
+
 ## DuckDB TAR safety preflight / CSV alternatives (2026-10-31)
 
 Optional `python -I scripts/targz_preflight.py --original LOCAL.tar.gz` reads

@@ -44,6 +44,17 @@ A successful run is **FUNCTIONAL_PASS_ONLY**, with operator-local EXE SHA-256 fi
 
 The report explicitly retains vendor archive provenance, corporate EULA/OSS/EDR/transfer rights and performance ranking as **NOT_VERIFIED / NOT_ASSESSED**. The command records individual elapsed milliseconds but **one pass is not a representative benchmark**, nor CPU/RAM measurement. Manual side effects outside its local scratch directory and network isolation remain unmeasured.
 
+## Optional extended compatibility input matrix (source only)
+
+The original smoke remains exactly **four** fixed count/select cases.
+For reproducible *additional* BOM/UTF-16/invalid CSV and numeric sort/group
+operator checks, use [synthetic compatibility fixture preparation](CSV_COMPAT_MATRIX.md).
+Its default is a no-write plan, and explicit `--out-dir NEW_DIRECTORY`
+creates five bounded CSVs plus SHA/byte-count JSON and exact console evidence.
+It **never invokes** either vendor. A successful preparation is not a runtime
+comparison and does not change `result.json` schema v1 or the independent
+source/runtime evidence crosscheck. Execute separately only under operator policy.
+
 ## Optional pre-execution original-file check
 
 Before any separately authorized runtime smoke, an operator may use the

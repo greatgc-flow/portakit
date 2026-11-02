@@ -260,6 +260,24 @@ class PickerTests(unittest.TestCase):
             self.model.load_existing(self.saved)
         self.assertEqual(self.model.selected, ["ripgrep"])
 
+    def test_oversized_or_deep_import_preserves_current_gui_choice(self):
+        """Bad external kits cannot clear existing tool/plugin selections."""
+        self.model.add(["notepad++", "jq"])
+        self.model.add_plugin("compareplus")
+        before = self.model.draft("still-selected")
+        cases = (
+            b" " * (picker.kit.MAX_DECLARATIVE_JSON_BYTES + 1),
+            ("[" * 2000 + "0" + "]" * 2000).encode("utf-8"),
+        )
+        for payload in cases:
+            with self.subTest(size=len(payload)):
+                self.saved.write_bytes(payload)
+                with self.assertRaises(picker.kit.KitError):
+                    self.model.load_existing(self.saved)
+                self.assertEqual(self.model.draft("still-selected"), before)
+                self.assertEqual(self.saved.read_bytes(), payload)
+                self.assertFalse(self.saved.with_suffix(".log").exists())
+
     def test_duplicate_json_import_keeps_existing_ui_selection(self):
         self.model.add(["jq"])
         with contextlib.redirect_stdout(io.StringIO()):

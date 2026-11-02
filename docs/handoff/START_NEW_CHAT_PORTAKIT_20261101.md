@@ -145,7 +145,7 @@ The PR #76–#82 history above contains independently verified **PR-head and mer
 >
 > ## A. Live verification first — strictly required
 >
-> Verify actual remote `main` HEAD and tree; open PRs and open Issues #25/#27/#36/#51/#87 (and any newly opened), latest relevant GitHub Actions run, workflow triggers, and exact Windows Python 3.11/3.14 job counts. **A more recent GitHub remote commit always overrides old handoff SHA or CI results.** Inspect changed source and documentation since the last historical checkpoint before touching anything; concurrent sessions may have merged.
+> Verify actual remote `main` HEAD and tree; open PRs and open Issues #25/#27/#36/#51/#87 (and any newly opened), the [Windows CI workflow](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml), its newest relevant GitHub Actions run, workflow triggers, and exact Windows Python 3.11/3.14 job counts. **A more recent GitHub remote commit always overrides old handoff SHA or CI results.** Inspect changed source and documentation since the last historical checkpoint before touching anything; concurrent sessions may have merged.
 >
 > Read these sources in order: `docs/handoff/START_NEW_CHAT_PORTAKIT_20261101.md` (section 0h latest archived state, then section 5), `docs/handoff/PORTAKIT_20261102_CLOSEOUT.md`, `README.md`, `docs/BACKLOG.md`, `docs/PORTAKIT_ACTIVE_WORK_20261102.md`, `docs/END_USER_ACCEPTANCE.md`, `docs/review/2026-11-01_TARGETED_REFACTOR.md`, `docs/CSV_XAN_OPERATOR_ACCEPTANCE_20261031.md`, and live issues/PRs.
 >

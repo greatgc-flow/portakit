@@ -65,6 +65,55 @@ class OfflineAssetsTests(unittest.TestCase):
         with self.assertRaisesRegex(assets.AssetError, "exists"):
             assets.create_manifest_file(self.manifest(), self.out)
 
+    def test_export_race_with_foreign_manifest_preserves_foreign_file(self):
+        """Exclusive-create collision must not unlink another writer's JSON."""
+        original_init = assets.kit.sets.Evidence.__init__
+        def foreign_writer(ev, path):
+            self.out.write_bytes(b"OTHER-WRITER-JSON\\n")
+            original_init(ev, path)
+        with mock.patch.object(assets.kit.sets.Evidence, "__init__",
+                               new=foreign_writer):
+            with self.assertRaises(FileExistsError):
+                assets.create_manifest_file(self.manifest(), self.out)
+        self.assertEqual(self.out.read_bytes(), b"OTHER-WRITER-JSON\\n")
+        self.assertFalse(self.out.with_suffix(".log").exists())
+
+    def test_export_failed_json_write_cleans_owned_manifest_and_log(self):
+        """A partial JSON write never creates a usable manifest/evidence pair."""
+        def fail_json(data, stream, **kwargs):
+            stream.write('{"incomplete": ')
+            raise OSError("synthetic export JSON disk failure")
+        with mock.patch.object(assets.json, "dump", new=fail_json):
+            with self.assertRaisesRegex(OSError, "JSON disk failure"):
+                assets.create_manifest_file(self.manifest(), self.out)
+        self.assertFalse(self.out.exists())
+        self.assertFalse(self.out.with_suffix(".log").exists())
+
+    def test_export_failed_log_write_cleans_owned_manifest_and_log(self):
+        """A late mirrored-console failure invalidates the entire output pair."""
+        def fail_log(ev, message):
+            ev.stream.write("partial output\\n")
+            ev.stream.flush()
+            raise OSError("synthetic export transcript failure")
+        with mock.patch.object(assets.kit.sets.Evidence, "emit", new=fail_log):
+            with self.assertRaisesRegex(OSError, "transcript failure"):
+                assets.create_manifest_file(self.manifest(), self.out)
+        self.assertFalse(self.out.exists())
+        self.assertFalse(self.out.with_suffix(".log").exists())
+
+    def test_export_replaced_manifest_on_log_failure_preserves_replacement(self):
+        """Do not unlink a new owner who replaced the created JSON file."""
+        def replaced_then_fail(ev, message):
+            self.out.unlink()
+            self.out.write_bytes(b"REPLACED-BY-OTHER-WRITER\\n")
+            raise OSError("synthetic replaced-output failure")
+        with mock.patch.object(assets.kit.sets.Evidence, "emit",
+                               new=replaced_then_fail):
+            with self.assertRaisesRegex(OSError, "replaced-output failure"):
+                assets.create_manifest_file(self.manifest(), self.out)
+        self.assertEqual(self.out.read_bytes(), b"REPLACED-BY-OTHER-WRITER\\n")
+        self.assertFalse(self.out.with_suffix(".log").exists())
+
     def test_verify_uses_existing_SHA_engine_without_invoking_install(self):
         data = self.manifest()
         with mock.patch.object(assets.kit.sets, "verify_offline_assets",

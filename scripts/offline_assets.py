@@ -77,21 +77,31 @@ def create_manifest_file(data, path, log=None):
             or os.path.lexists(evidence_path)):
         raise AssetError("Output manifest/log exists; refuse overwrite")
     target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(evidence_path) as ev:
-        try:
+    # A newly created parent may alter path safety; check both output paths.
+    kit.core.check_links(target)
+    kit.core.check_links(evidence_path)
+    manifest_identity = log_identity = None
+    try:
+        with kit.sets.Evidence(evidence_path) as ev:
+            log_identity = kit.sets.created_output_identity(
+                os.fstat(ev.stream.fileno()))
             with target.open("x", encoding="utf-8", newline="\n") as f:
+                manifest_identity = kit.sets.created_output_identity(
+                    os.fstat(f.fileno()))
                 json.dump(data, f, indent=2, ensure_ascii=False)
                 f.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        ev.emit("MANIFEST: " + str(target))
-        ev.emit("KIT: " + data["kitName"])
-        ev.emit("PINNED ASSETS: " + str(len(data["assets"])))
-        ev.emit("NOT INCLUDED RESEARCH: " + str(len(data["researchOnlyNotPackaged"])))
-        ev.emit("NOT INCLUDED OS: " + str(len(data["osBuiltinsNotPackaged"])))
-        ev.emit(DISCLAIMER)
+            ev.emit("MANIFEST: " + str(target))
+            ev.emit("KIT: " + data["kitName"])
+            ev.emit("PINNED ASSETS: " + str(len(data["assets"])))
+            ev.emit("NOT INCLUDED RESEARCH: " + str(len(data["researchOnlyNotPackaged"])))
+            ev.emit("NOT INCLUDED OS: " + str(len(data["osBuiltinsNotPackaged"])))
+            ev.emit(DISCLAIMER)
+    except BaseException:
+        # Exclusive-create races must NEVER remove an unrelated manifest.
+        # A late log/JSON failure discards only outputs owned by this call.
+        kit.sets.cleanup_own_output(evidence_path, log_identity)
+        kit.sets.cleanup_own_output(target, manifest_identity)
+        raise
 
 
 def show_assets(data):

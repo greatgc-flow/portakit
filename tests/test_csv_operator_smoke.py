@@ -271,12 +271,12 @@ class CSVOperatorTests(fixtures.Workspace):
         """Higher-priority process failure must not be relabeled a warning."""
         warning = b"nonempty synthetic stderr"
         for response, expected in (
-            ((0, b"1\\n", warning, 1.0, None), "STDERR_REVIEW"),
-            ((1, b"1\\n", warning, 1.0, None), "COMMAND_FAILED"),
+            ((0, b"1\n", warning, 1.0, None), "STDERR_REVIEW"),
+            ((1, b"1\n", warning, 1.0, None), "COMMAND_FAILED"),
             ((None, b"", warning, 1.0, "TIMEOUT"), "TIMEOUT"),
-            ((0, b"1\\n", b"x" * (smoke.MAX_CAPTURE + 1), 1.0, None),
+            ((0, b"1\n", b"x" * (smoke.MAX_CAPTURE + 1), 1.0, None),
              "OUTPUT_LIMIT"),
-            ((0, b"1\\n", b"", 1.0, None), "PASS"),
+            ((0, b"1\n", b"", 1.0, None), "PASS"),
         ):
             with self.subTest(expected=expected):
                 self.assertEqual(smoke.evaluate(

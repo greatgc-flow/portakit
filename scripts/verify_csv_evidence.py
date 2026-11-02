@@ -463,14 +463,23 @@ def display_lines(result):
     ]
 
 
-def emit(result, out=None):
-    """No writes by default; optional NEW JSON and identical console log."""
+def emit(result, out=None, *, smoke_dir=None):
+    """No writes by default; NEW output must avoid source smoke input tree."""
     lines = display_lines(result)
     if out is None:
         for line in lines:
             print(line)
         return
     target = Path(out).absolute()
+    if smoke_dir is not None:
+        # Path.absolute() can retain parent traversals. Compare lexical
+        # normal forms; keep original paths for reparse-point checks.
+        normalized_target = Path(os.path.normpath(str(target)))
+        normalized_input = Path(os.path.normpath(
+            str(Path(smoke_dir).absolute())))
+        require(normalized_target != normalized_input and
+                normalized_input not in normalized_target.parents,
+                "--out must be outside smoke evidence directory")
     log = target.with_suffix(".log")
     source.kit.core.check_links(target)
     source.kit.core.check_links(log)
@@ -508,7 +517,7 @@ def run(argv=None):
     args = parser.parse_args(argv)
     try:
         result = verify(args.source_json, args.smoke_dir)
-        emit(result, args.out)
+        emit(result, args.out, smoke_dir=args.smoke_dir)
         return 0 if result["outcome"] == "EVIDENCE_CROSSCHECK_ONLY" else 2
     except (EvidenceError, source.XanPreflightError, source.kit.KitError,
             source.kit.core.PortakitError, source.kit.sets.ToolsetError,

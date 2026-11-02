@@ -30,6 +30,9 @@ KIT_V2_FIELDS = KIT_FIELDS | {"pluginSelections"}
 PLUGIN_PIN_ALIASES = {"jsontools-npp": "jsontools"}
 ALLOWED_PIN_FIELDS = frozenset(("version", "sha256", "dest"))
 NAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
+# Applies to personal kits and bundled research inventories.
+# Even a 256-tool kit with 64 plugin choices is far smaller than 1 MiB.
+MAX_DECLARATIVE_JSON_BYTES = 1024 * 1024
 
 
 class KitError(Exception):
@@ -41,8 +44,13 @@ def json_file(path):
     path = Path(path).absolute()
     core.check_links(path)
     try:
-        return core.strict_json_loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, ValueError) as exc:
+        # Import files are untrusted: cap the read before JSON parsing.
+        with path.open("rb") as stream:
+            data = stream.read(MAX_DECLARATIVE_JSON_BYTES + 1)
+        if len(data) > MAX_DECLARATIVE_JSON_BYTES:
+            raise KitError("JSON exceeds 1 MiB input limit: " + str(path))
+        return core.strict_json_loads(data.decode("utf-8"))
+    except (OSError, UnicodeError, ValueError, RecursionError) as exc:
         raise KitError("Cannot read JSON " + str(path) + ": " + str(exc)) from exc
 
 

@@ -123,6 +123,32 @@ class KitTests(unittest.TestCase):
         with self.assertRaisesRegex(kit.KitError, "schema"):
             kit.read_kit(self.saved, self.pins, self.known)
 
+    def test_json_import_is_bounded_with_inclusive_one_mib_limit(self):
+        """Current small profiles pass; an oversized imported file fails."""
+        data = self.make("jq", "cmd")
+        original = json.dumps(data).encode("utf-8")
+        self.assertLess(len(original), kit.MAX_DECLARATIVE_JSON_BYTES)
+        exact_limit = original + b" " * (
+            kit.MAX_DECLARATIVE_JSON_BYTES - len(original))
+        self.saved.write_bytes(exact_limit)
+        self.assertEqual(kit.read_kit(self.saved, self.pins, self.known), data)
+        self.saved.write_bytes(exact_limit + b" ")
+        before = self.saved.read_bytes()
+        with self.assertRaisesRegex(kit.KitError, "JSON exceeds 1 MiB"):
+            kit.read_kit(self.saved, self.pins, self.known)
+        self.assertEqual(self.saved.read_bytes(), before)
+        self.assertFalse(self.root.exists())
+
+    def test_deep_json_import_rejected_without_raw_traceback(self):
+        """Parser depth behavior differs by Python; both must raise KitError."""
+        self.saved.write_text("[" * 2000 + "0" + "]" * 2000,
+                              encoding="utf-8")
+        before = self.saved.read_bytes()
+        with self.assertRaises(kit.KitError):
+            kit.read_kit(self.saved, self.pins, self.known)
+        self.assertEqual(self.saved.read_bytes(), before)
+        self.assertFalse(self.root.exists())
+
     def test_saved_kit_duplicate_top_level_key_is_rejected(self):
         data = self.make("jq")
         source = json.dumps(data)

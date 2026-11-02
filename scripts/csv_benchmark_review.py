@@ -90,6 +90,7 @@ def validate(doc):
         value = doc[name]
         require(value is None or
                 (isinstance(value, str) and 1 <= len(value) <= 300 and
+                 bool(value.strip()) and
                  all(32 <= ord(char) < 127 for char in value)),
                 "Invalid local method note: " + name)
     entries = doc["runs"]

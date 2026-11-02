@@ -179,11 +179,11 @@ class CSVBenchmarkEvidenceTests(unittest.TestCase):
 
     def test_whitespace_only_header_rejected_despite_valid_hash_and_rows(self):
         """Blank-but-truthy header fields must not receive source verification."""
-        for blank in (b" ", b"\\t", b"  \\t"):
+        for blank in (b" ", b"\t", b"  \t"):
             with self.subTest(blank=blank):
                 self.csv.write_bytes(
-                    b"category," + blank + b"\\r\\n"
-                    b"A,2\\r\\nB,10\\r\\nA,9\\r\\n")
+                    b"category," + blank + b"\r\n"
+                    b"A,2\r\nB,10\r\nA,9\r\n")
                 doc = self.full_record()
                 with self.assertRaisesRegex(review.BenchmarkError, "header invalid"):
                     review.inspect(doc, self.csv)

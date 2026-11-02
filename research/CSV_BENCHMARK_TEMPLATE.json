@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "datasetClass": "SYNTHETIC_OPERATOR_DECLARED",
+  "workload": "count",
+  "inputSha256": null,
+  "inputBytes": null,
+  "inputRows": null,
+  "toolSha256": {
+    "miller": null,
+    "xan": null
+  },
+  "environmentNote": null,
+  "coldMethod": null,
+  "runs": []
+}

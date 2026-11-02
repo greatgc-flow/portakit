@@ -25,7 +25,7 @@ rem Optional new-only JSON plus an exactly mirrored local .log.
 python -I scripts/csv_benchmark_review.py --input D:\LocalEvidence\benchmark.json --dataset D:\LocalEvidence\bulk.csv --out D:\LocalEvidence\benchmark-review-001.json
 ```
 
-**Exit 0 = DESCRIPTIVE_TIMING_ONLY:** recorded tool/phase/trial slots balanced 5–20 each, declared exit 0/stderr=0/semantics=MATCH, and dataset original SHA/byte count/CSV rows independently checked against the supplied file. The checked source must have nonempty, unique CSV column names; matching SHA and row count alone cannot validate ambiguous duplicate headers. The *run observations remain operator self-report*. No actual vendor execution, cold-cache enforcement, publisher authenticity or corporate authorization is verified.
+**Exit 0 = DESCRIPTIVE_TIMING_ONLY:** recorded tool/phase/trial slots balanced 5–20 each, declared exit 0/stderr=0/semantics=MATCH, and dataset original SHA/byte count/CSV rows independently checked against the supplied file. The checked source must have non-blank, unique CSV column names (whitespace-only names are rejected); matching SHA and row count alone cannot validate ambiguous or empty headers. The *run observations remain operator self-report*. No actual vendor execution, cold-cache enforcement, publisher authenticity or corporate authorization is verified.
 
 **Exit 2 = INCOMPLETE_OR_BLOCKED:** not enough/unequal trials, operator-declared error/warning or semantic status unverified; no timing summary is output. The default PLAN also returns 2. Invalid schema, repeated trial, altered/unsafe dataset or invalid numbers and evidence I/O fail with exit 1.
 

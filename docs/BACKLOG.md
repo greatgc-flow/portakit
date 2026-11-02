@@ -3,6 +3,13 @@
 > **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
+## 2026-11-02 — active status reconciliation and lightweight-review evidence safety (#25 / #87)
+
+- [x] Reconcile live #25/#27/#36/#51/#87 issue descriptions and current source by responsibility: source-implemented, engineering follow-up, final-user-only. [Point-in-time status and next steps](PORTAKIT_ACTIVE_WORK_20261102.md) preserve the existing historical completed entries below. A historical unchecked issue checkbox is **not** proof that its corresponding source function is absent.
+- [x] Recheck current official release metadata for DuckDB CLI, xan, qsv and Tailviewer; keep DuckDB unsupported `tar.gz`, heavyweight qsv Windows x64, pinned Miller baseline, older Tailviewer and all research/enterprise acceptance restrictions intact. No candidate promotion, vendor download, license assertion or simulator listener.
+- [x] Scope one regression-driven #25 fix: protect create-only `lightweight_review.py --out` JSON/log pairs against foreign-file races and partial evidence by reusing the existing shared helper. Four synthetic negative tests preserve selection/report semantics.
+- [ ] End-user authorized original vendor SHA, real GUI/runtime, enterprise EULA/OSS/EDR/offline transfer and measured performance (final-user-only, not a blocker to unrelated source PRs).
+
 ## 2026-11-01 — prospective personal KIT.json preview (Issue #27, source verified)
 
 - [x] Verify outstanding UX requirement: prior GUI showed summary counts/approval stage and could inspect readiness, but did not expose the exact schema-v1/v2 kit and pinned version/SHA snapshot **before save**.

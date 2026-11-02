@@ -17,7 +17,7 @@ rem Optional NEW JSON and exactly mirrored local log at a THIRD location.
 python -I scripts/csv_compat_results.py --fixtures-dir D:\LocalEvidence\CSV-Compat-001 --results-dir D:\LocalEvidence\CSV-Compat-Results --out D:\LocalEvidence\CSV-Compat-Review-001.json
 ```
 
-Both input directories must exist. The source directory must have the original `matrix.json`, `matrix.log` and five canonical CSV files. The verifier recomputes their **exact bytes independently** and refuses modified/fake evidence; this is a point-in-time source consistency check, not publisher authentication.
+Both input directories must exist and must be **disjoint directory trees** (neither equal nor nested within the other, even through `..` path aliases). The source directory must have the original `matrix.json`, `matrix.log` and five canonical CSV files. The verifier recomputes their **exact bytes independently** and refuses modified/fake evidence; this is a point-in-time source consistency check, not publisher authentication.
 
 ## Fixed result filenames and semantic expectations
 

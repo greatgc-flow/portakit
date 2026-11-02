@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import uuid
 from datetime import datetime
@@ -44,8 +45,18 @@ def json_file(path):
     path = Path(path).absolute()
     core.check_links(path)
     try:
-        # Import files are untrusted: cap the read before JSON parsing.
+        # Reject pipes, devices and directories BEFORE opening them: a read
+        # from a pipe can block before the bounded read is even reached.
+        info = path.stat()
+        if not stat.S_ISREG(info.st_mode):
+            raise KitError("JSON input must be a regular file: " + str(path))
+        if info.st_size > MAX_DECLARATIVE_JSON_BYTES:
+            raise KitError("JSON exceeds 1 MiB input limit: " + str(path))
+        # A path may change between stat and open; recheck the opened handle
+        # before reading (without claiming atomic filesystem snapshots).
         with path.open("rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise KitError("JSON input must be a regular file: " + str(path))
             data = stream.read(MAX_DECLARATIVE_JSON_BYTES + 1)
         if len(data) > MAX_DECLARATIVE_JSON_BYTES:
             raise KitError("JSON exceeds 1 MiB input limit: " + str(path))

@@ -263,7 +263,11 @@ class Echo:
     """Emit each console line byte-identically into an evidence file."""
     def __init__(self, filename):
         self.file = Path(filename)
+        # The log is a separate evidence artifact, never an install payload.
+        # Reject junction/symlink ancestors both before and after parent mkdir.
+        core.check_links(self.file)
         self.file.parent.mkdir(parents=True, exist_ok=True)
+        core.check_links(self.file)
         self.stream = self.file.open("x", encoding="utf-8", newline="\n")
 
     def line(self, message):
@@ -289,8 +293,11 @@ def main(argv=None):
           ("context-menu-" + datetime.now().strftime("%Y%m%d-%H%M%S")
            + "-" + uuid.uuid4().hex[:8] + ".log"))
     try:
+        # The status command also writes a log. Keep every command's evidence
+        # out of the managed app folders and transient install/backup paths.
+        core.check_evidence_location(log, root, "install")
         sink = Echo(log)
-    except OSError as exc:
+    except (OSError, core.PortakitError) as exc:
         print("ERROR: could not create evidence log: " + str(exc), file=sys.stderr)
         return 1
     try:

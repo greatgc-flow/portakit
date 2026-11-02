@@ -250,6 +250,71 @@ class ContextMenuTests(unittest.TestCase):
         with self.assertRaisesRegex(menu.MenuError, "jq"):
             self.run_menu("install", "jq")
 
+    def test_cli_evidence_cannot_modify_managed_root_or_backup(self):
+        """All commands must reject logs that would contaminate managed data."""
+        import contextlib
+        import io
+        paths = (
+            self.root / "notepad++" / "menu.log",
+            self.root / "winmerge" / "menu.log",
+            self.root / "notepad++" / "plugins" / "menu.log",
+            self.root / "notepad++.old" / "menu.log",
+            self.root / ".portakit-stage-test.tmp" / "menu.log",
+            self.root / "misc" / "menu.log",
+            self.root / "direct.log",
+        )
+        state_before = (self.root / ".portakit-state.json").read_bytes()
+        for verb in ("status", "install", "remove"):
+            for path in paths:
+                with self.subTest(verb=verb, path=str(path)):
+                    out, err = io.StringIO(), io.StringIO()
+                    with mock.patch.object(
+                            menu, "perform",
+                            side_effect=AssertionError("unexpected registry call")) as action:
+                        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                            rc = menu.main([verb, "notepad++", "--root",
+                                            str(self.root), "--log-file", str(path)])
+                    self.assertEqual(rc, 1)
+                    self.assertEqual(out.getvalue(), "")
+                    self.assertIn("within --root", err.getvalue())
+                    self.assertFalse(path.exists())
+                    action.assert_not_called()
+        self.assertEqual((self.root / ".portakit-state.json").read_bytes(),
+                         state_before)
+        self.assertFalse(self.registry.keys)
+
+    def test_cli_allowed_evidence_paths_keep_exact_transcript(self):
+        """Reserved and external new logs remain supported with no registry side effects."""
+        import contextlib
+        import io
+        for target in (self.root / ".portakit-evidence" / "context.log",
+                       self.dir / "external-context.log"):
+            with self.subTest(target=str(target)):
+                out, err = io.StringIO(), io.StringIO()
+                with mock.patch.object(
+                        menu, "perform",
+                        return_value={"changed": False, "items": [
+                            {"key": "synthetic", "state": "absent"}]}) as action:
+                    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                        rc = menu.main(["status", "notepad++", "--root",
+                                        str(self.root), "--log-file", str(target)])
+                self.assertEqual((rc, err.getvalue()), (0, ""))
+                action.assert_called_once()
+                self.assertEqual(out.getvalue(), target.read_text("utf-8"))
+                self.assertIn("RESULT: NO_CHANGE", out.getvalue())
+        self.assertFalse(self.registry.keys)
+
+    def test_echo_reparse_path_fails_before_creating_parent(self):
+        """A synthetic unsafe ancestor never becomes an evidence directory."""
+        target = self.dir / "unsafe" / "menu.log"
+        with mock.patch.object(menu.core, "check_links",
+                               side_effect=menu.core.PortakitError(
+                                   "state", "synthetic reparse ancestor")):
+            with self.assertRaisesRegex(menu.core.PortakitError, "reparse"):
+                menu.Echo(target)
+        self.assertFalse(target.parent.exists())
+        self.assertFalse(target.exists())
+
     def test_mocked_console_log_matches_displayed_text(self):
         log = self.dir / "logs" / "menu.log"
         with mock.patch("builtins.print") as p:

@@ -349,7 +349,7 @@ python -I scripts/context_menu.py remove winmerge
 python -I scripts/context_menu.py remove notepad++
 ```
 
-The equivalent simple CMD entrypoint is `scripts\ContextMenu.cmd install|status|remove notepad++|winmerge`. If PortaKit was installed under a different root, add `--root "D:\My Portable Apps"`. The script creates a unique plain-text log for each run under `ROOT\.portakit-evidence\` with the **same lines as console output**; use `--log-file PATH` to override. Commands are idempotent and **do not require administrator privileges**.
+The equivalent simple CMD entrypoint is `scripts\ContextMenu.cmd install|status|remove notepad++|winmerge`. If PortaKit was installed under a different root, add `--root "D:\My Portable Apps"`. The script creates a unique plain-text log for each run under `ROOT\.portakit-evidence\` with the **same lines as console output**; use `--log-file PATH` to override. For **every command**, including read-only `status`, an explicit log inside ROOT must be under the reserved `ROOT\.portakit-evidence\` folder. Logs inside installed app/plugin folders, arbitrary root subfolders and backup/stage paths are rejected *before any evidence file or registry action*. An external log path remains valid; reparse/junction/symlink paths are refused. Commands are idempotent and **do not require administrator privileges**.
 
 Notepad++ adds **Edit with Notepad++ (PortaKit)** when right-clicking a file. WinMerge adds **Compare with WinMerge (PortaKit)** for one file or folder; WinMerge opens the selected path, and you choose the second comparison path in WinMerge. **These are not** the full vendor two-selected-items Explorer COM shell-extension commands. That advanced integration is optional backlog work, not installed here.
 

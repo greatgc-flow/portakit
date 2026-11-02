@@ -33,7 +33,7 @@ The following are **reference commands for a human on a separately authorized, i
 
 ```cmd
 rem With working directory set to the created synthetic fixture directory:
-mlr --csv sort -nr qty sort-group.csv
+mlr --csv sort -n qty sort-group.csv
 xan sort --numeric --select qty sort-group.csv
 
 mlr --csv stats1 -a sum -f qty -g category sort-group.csv

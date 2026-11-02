@@ -125,6 +125,13 @@ class CSVCompatibilityFixtureTests(unittest.TestCase):
                 matrix.prepare(self.dest)
         self.assertFalse(self.dest.exists())
 
+    def test_documented_miller_sort_is_numeric_ascending(self):
+        """Upstream Miller -n asc differs from -nr descending."""
+        guide = (ROOT / "docs" / "CSV_COMPAT_MATRIX.md").read_text("utf-8")
+        self.assertIn("mlr --csv sort -n qty sort-group.csv", guide)
+        self.assertNotIn("mlr --csv sort -nr qty sort-group.csv", guide)
+        self.assertIn("xan sort --numeric --select qty", guide)
+
     def test_no_vendor_download_or_default_candidate_admission(self):
         source = (ROOT / "scripts" / "csv_compat_fixtures.py").read_text("utf-8")
         for forbidden in ("subprocess.Popen(", "subprocess.run(", "urlopen(",

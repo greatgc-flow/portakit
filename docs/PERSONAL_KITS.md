@@ -72,6 +72,10 @@ After installing explicitly authorized pinned tools, run `python -I scripts/kit_
 For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.json` displays the selected pinned original asset filename, URL and hash; `export --kit MyKit.json --out MyKit.assets.json` writes the new JSON metadata + mirrored log; `verify --kit MyKit.json --archive-dir D:\ApprovedVendorArchives` checks separately acquired, approved original files and logs the result before an explicit separate `build --yes`. Never confuse metadata/checksum validation with vendor redistribution permission. See [offline guide](OFFLINE_ASSETS.md).
 
 
+## Importing KIT.json safely (2026-11-03)
+
+`scripts/MyToolkit.cmd plan|build --kit` and the optional GUI **Import existing kit…** use the same strict bounded declarative-JSON reader. The maximum local JSON size is **1 MiB**, including whitespace; strict UTF-8, duplicate-key and nonstandard-number checks still apply. Excessively deep JSON fails with a controlled error rather than a Python recursion traceback. A normal 256-tool personal kit, with up to 64 plugin choices, fits well below this limit. The original source is not changed or truncated and an invalid import preserves the current GUI selection. This is not evidence of enterprise/vendor approval.
+
 ## Optional mouse-based personal kit picker (2026-10-30)
 
 On an approved interactive Windows PC with the **standard** Python 3.11+ distribution and optional Tkinter runtime, use:

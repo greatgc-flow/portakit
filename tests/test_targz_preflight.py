@@ -211,10 +211,15 @@ class TarGzReviewTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(), old_json)
         self.assertEqual(target.with_suffix(".log").read_bytes(), old_log)
 
+    def synthetic_report(self):
+        """A full structural result from a tiny, never-executed TAR fixture."""
+        sha = self.write([("duckdb.exe", b"SYNTHETIC-ONLY", "file")])
+        return check.inspect(self.original, sha)
+
     def test_report_competing_json_writer_is_preserved(self):
         """A late exclusive-create collision must not delete foreign bytes."""
         target = self.root / "race.json"
-        report = {"schemaVersion": 1, "outcome": "SYNTHETIC_ONLY"}
+        report = self.synthetic_report()
         original_init = check.kit.sets.Evidence.__init__
 
         def competing_create(evidence, path):
@@ -238,7 +243,7 @@ class TarGzReviewTests(unittest.TestCase):
 
         with mock.patch.object(check.evidence_io.json, "dump", new=fail_dump):
             with self.assertRaisesRegex(OSError, "TAR JSON write error"):
-                check.emit({"schemaVersion": 1}, target)
+                check.emit(self.synthetic_report(), target)
         self.assertFalse(target.exists())
         self.assertFalse(target.with_suffix(".log").exists())
 
@@ -253,7 +258,7 @@ class TarGzReviewTests(unittest.TestCase):
 
         with mock.patch.object(check.kit.sets.Evidence, "emit", new=fail_emit):
             with self.assertRaisesRegex(OSError, "TAR log write error"):
-                check.emit({"schemaVersion": 1}, target)
+                check.emit(self.synthetic_report(), target)
         self.assertFalse(target.exists())
         self.assertFalse(target.with_suffix(".log").exists())
 
@@ -269,7 +274,7 @@ class TarGzReviewTests(unittest.TestCase):
         with mock.patch.object(check.kit.sets.Evidence, "emit",
                                new=replace_then_fail):
             with self.assertRaisesRegex(OSError, "TAR replacement race"):
-                check.emit({"schemaVersion": 1}, target)
+                check.emit(self.synthetic_report(), target)
         self.assertEqual(target.read_bytes(), b"REPLACED-BY-OTHER-WRITER\\n")
         self.assertFalse(target.with_suffix(".log").exists())
 

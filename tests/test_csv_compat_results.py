@@ -189,6 +189,39 @@ class CSVCompatibilityResultTests(unittest.TestCase):
             self.assertEqual(check.run(["--fixtures-dir", str(self.source)]), 1)
         self.assertIn("Both", err.getvalue())
 
+    def test_dotdot_alias_cannot_write_report_inside_either_input_tree(self):
+        """An absolute path via sibling/../input remains inside input."""
+        self.write_results()
+        detour = self.root / "detour"
+        detour.mkdir()
+        for protected in (self.source, self.outputs):
+            with self.subTest(protected=protected.name):
+                target = detour / ".." / protected.name / "bypass.json"
+                log = protected / "bypass.log"
+                self.assertFalse((protected / "bypass.json").exists())
+                with contextlib.redirect_stderr(io.StringIO()) as err:
+                    rc = check.run(["--fixtures-dir", str(self.source),
+                                    "--results-dir", str(self.outputs),
+                                    "--out", str(target)])
+                self.assertEqual(rc, 1)
+                self.assertIn("outside input", err.getvalue())
+                self.assertFalse((protected / "bypass.json").exists())
+                self.assertFalse(log.exists())
+
+    def test_aliased_same_input_directory_is_refused(self):
+        """Do not accept two spellings of the same physical input directory."""
+        self.write_results()
+        detour = self.root / "detour"
+        detour.mkdir()
+        # Put synthetic output files into a fixture folder so the old
+        # string-only equality check would incorrectly return a semantic PASS.
+        for name, _ in check.CASES:
+            (self.source / name).write_bytes((self.outputs / name).read_bytes())
+        alias = detour / ".." / self.source.name
+        with self.assertRaisesRegex(
+                check.ComparisonError, "directories must differ"):
+            check.inspect(self.source, alias)
+
     def test_no_vendor_execution_or_mutations_when_verifying(self):
         self.write_results()
         before = [(str(p), p.read_bytes()) for p in self.root.rglob("*")

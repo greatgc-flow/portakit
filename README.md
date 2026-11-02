@@ -97,6 +97,10 @@ EXE SHA, SHA drift, individual results and exactly mirrored console evidence.
 Headless CI only executes short synthetic Python subprocess fixtures, **never vendor executables**. Vendor stdout and stderr are now consumed as two bounded streams, with the direct child terminated if either exceeds 256 KiB. This is **not** a Windows Job Object, RAM/disk/network sandbox or descendant-process kill. A passing smoke is **not** a xan catalog
 promotion, company EULA/EDR/transfer approval or performance ranking.
 [Operator guide and safety gates](docs/CSV_OPERATOR_SMOKE.md).
+For reproducible *operator-entered* cold/warm Miller–xan timing metadata,
+the optional [read-only benchmark record reviewer](docs/CSV_BENCHMARK_PROTOCOL.md)
+checks source CSV identity, paired trial balance, missing resource metrics
+and failure states without launching either executable or ranking products.
 
 For optional **BOM, UTF-16, malformed CSV, numeric sort and group-sum** comparison
 fixtures without running either vendor executable, use

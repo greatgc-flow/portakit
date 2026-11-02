@@ -688,6 +688,17 @@ class EvidenceChainTests(unittest.TestCase):
                 self.assertEqual(existing.read_bytes(), b"ORIGINAL-KEEP-ME\n")
                 existing.unlink()
 
+    def test_unknown_file_id_cannot_delete_foreign_evidence(self):
+        """The legacy cross-check writer must share the safe cleanup rule."""
+        unknown = mock.Mock(st_dev=7, st_ino=0, st_mode=0o100600)
+        self.assertIsNone(chain.created_identity(unknown))
+        foreign = self.base / "foreign-unknown-id.json"
+        foreign.write_bytes(b"FOREIGN-MUST-SURVIVE")
+        with mock.patch.object(chain.source.kit.core, "check_links"), \
+                mock.patch.object(Path, "stat", return_value=unknown):
+            chain.cleanup_created(foreign, (7, 0))
+        self.assertEqual(foreign.read_bytes(), b"FOREIGN-MUST-SURVIVE")
+
     def test_cleanup_skips_replaced_output_file(self):
         self.build()
         path = self.base / "foreign-new.json"

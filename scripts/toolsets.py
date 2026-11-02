@@ -209,9 +209,10 @@ def created_output_identity(info):
     """Capture (device, file ID) while the output's own handle is open.
 
     Used only to recognize files created by the current evidence operation.
+    A zero file ID cannot distinguish a replaced file; do not clean it up.
     This is a cautious best-effort cleanup guard, not an atomic Windows lock.
     """
-    return info.st_dev, info.st_ino
+    return None if info.st_ino == 0 else (info.st_dev, info.st_ino)
 
 
 def cleanup_own_output(path, identity):

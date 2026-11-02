@@ -131,6 +131,19 @@ class ReportEvidenceCrossConsumerTests(unittest.TestCase):
                 self.assertEqual(dest.read_bytes(), b"FOREIGN-REPLACEMENT\n")
                 self.assertFalse(dest.with_suffix(".log").exists())
 
+    def test_unknown_file_id_does_not_delete_replacement(self):
+        """A zero/unknown file ID is not evidence of file ownership."""
+        unknown = mock.Mock(st_dev=7, st_ino=0, st_mode=0o100600)
+        self.assertIsNone(ready.kit.sets.created_output_identity(unknown))
+        foreign = self.tmp / "foreign-unknown-id.json"
+        foreign.write_bytes(b"FOREIGN-MUST-SURVIVE")
+        # Simulate both captured and current identities being the same
+        # unusable (device, 0) pair. The old cleanup would unlink foreign.
+        with mock.patch.object(ready.kit.core, "check_links"), \
+                mock.patch.object(Path, "stat", return_value=unknown):
+            ready.kit.sets.cleanup_own_output(foreign, (7, 0))
+        self.assertEqual(foreign.read_bytes(), b"FOREIGN-MUST-SURVIVE")
+
     def test_existing_log_collision_does_not_touch_any_evidence(self):
         for name, write, report in self.cases:
             with self.subTest(name=name):

@@ -450,6 +450,10 @@ def run(argv=None):
             raise PluginDeployError("apply requires --yes AND --policy-approved")
         path = (args.log_file or str(Path(args.root) / ".portakit-evidence" /
                 ("editor-plugins-" + uuid.uuid4().hex + ".log")))
+        # Never let evidence creation alter a managed editor/plugin directory.
+        # Reuse the core installer's pre-write guard: inside the install root,
+        # only the dedicated .portakit-evidence folder is safe.
+        kit.core.check_evidence_location(path, args.root, "install")
         with kit.sets.Evidence(path) as log:
             log.emit("OPERATION: offline pinned editor plugins")
             log.emit("POLICY APPROVAL: operator attested (not independently verified)")

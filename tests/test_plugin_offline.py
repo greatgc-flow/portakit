@@ -496,6 +496,60 @@ class OfflinePluginTests(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertFalse(self.receipt.exists())
 
+    def test_cli_apply_rejects_evidence_paths_inside_managed_root(self):
+        """No log may modify installed host/plugin state or arbitrary root paths."""
+        host = self.make_host()
+        self.save_kit()
+        candidates = [
+            host / "operation.log",
+            host / "plugins/ComparePlus/audit.log",
+            self.root / "misc/audit.log",
+            self.root / ".portakit-plugin-stage-manual/audit.log",
+            self.root / "notepad++.old/audit.log",
+        ]
+        before_receipts = self.receipt.exists()
+        for target in candidates:
+            with self.subTest(target=str(target)):
+                with mock.patch.object(
+                        plugins, "apply",
+                        side_effect=AssertionError("installer called")) as apply:
+                    rc, out, err = self.cli(
+                        "apply", "--kit", str(self.saved_path),
+                        "--root", str(self.root), "--offline-dir",
+                        str(self.originals), "--yes", "--policy-approved",
+                        "--log-file", str(target))
+                self.assertEqual(rc, 1)
+                self.assertEqual(out, "")
+                self.assertIn("within --root", err)
+                self.assertFalse(target.exists())
+                self.assertFalse(target.parent.exists()
+                                 if target.parent == self.root / "misc" else False)
+                apply.assert_not_called()
+        self.assertEqual(self.receipt.exists(), before_receipts)
+        self.assertEqual(plugins.make_plan(self.saved, self.pins, self.root)[0][0]["status"],
+                         "install")
+
+    def test_cli_apply_accepts_dedicated_and_external_new_evidence(self):
+        """Safe paths keep exact stdout/log mirroring and consent semantics."""
+        host = self.make_host()
+        self.evidence_apply()
+        self.source_path.unlink()
+        self.save_kit()
+        for target in (self.root / ".portakit-evidence/accepted.log",
+                       self.tmp / "external-evidence.log"):
+            with self.subTest(target=str(target)):
+                rc, out, err = self.cli(
+                    "apply", "--kit", str(self.saved_path),
+                    "--root", str(self.root), "--yes", "--policy-approved",
+                    "--log-file", str(target))
+                self.assertEqual((rc, err), (0, ""))
+                self.assertEqual(out, target.read_text("utf-8"))
+                self.assertIn("SKIP: compareplus", out)
+                self.assertIn("RESULT: COMPLETE", out)
+                self.assertTrue((host / "plugins/ComparePlus/ComparePlus.dll").is_file())
+        self.assertEqual(plugins.make_plan(self.saved, self.pins, self.root)[0][0]["status"],
+                         "already-installed")
+
     def test_cli_preflight_and_consented_installer_evidence(self):
         self.make_host()
         self.save_kit()

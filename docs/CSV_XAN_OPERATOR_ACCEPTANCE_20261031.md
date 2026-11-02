@@ -59,7 +59,7 @@ Only after G3 authorization for the **exact binary hashes and specific isolated 
 Use a **new, empty path not yet created** for each run. The script writes generated synthetic edge.csv/bulk.csv, result.json and screen-identical console.log; it does not use real MES/PLC data. It runs the four explicitly documented count/select cases. For a local consistency review, compare the following **without publishing the source files**:
 
 - Stage B localExeComparison.sha256 == Stage B structure.xanExeSha256 == Stage C exeSha256Local.xan.
-- Stage C outcome FUNCTIONAL_PASS_ONLY requires four checks PASS, inputsUnchanged true, executablesUnchanged true and unexpectedWorkspaceEntries empty.
+- Stage C outcome FUNCTIONAL_PASS_ONLY requires four checks PASS **with zero stderr bytes**, inputsUnchanged true, executablesUnchanged true and unexpectedWorkspaceEntries empty. A zero-exit command with a warning on stderr is explicitly `STDERR_REVIEW` and produces BLOCKED; investigate locally without claiming the vendor actually failed to compute its stdout result.
 - Stage C syntheticInputSha256.edge/bulk should match the retained synthetic CSV files. Review local console.log alongside result.json.
 - Stage C vendorArchiveProvenance and companyUseEDRRedistribution remain NOT_VERIFIED **even when its four commands pass**. Neither a previous source JSON nor a synthetic smoke automatically upgrades corporate authority.
 

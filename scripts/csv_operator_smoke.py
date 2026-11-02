@@ -264,6 +264,11 @@ def evaluate(tool, case, response, rows):
         result["status"] = error
     elif rc != 0:
         result["status"] = "COMMAND_FAILED"
+    elif stderr:
+        # A zero exit with semantically correct stdout is insufficient proof:
+        # vendor warnings (e.g., alignment/encoding issues) require independent
+        # operator review. Preserve stderr size/hash; never call it PASS.
+        result["status"] = "STDERR_REVIEW"
     else:
         result["status"] = check_output(tool, case, stdout, rows)
     return result

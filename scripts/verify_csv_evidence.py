@@ -26,7 +26,7 @@ SHA = re.compile(r"[a-f0-9]{64}\Z")
 EXPECTED_CASES = (("miller", "count"), ("xan", "count"),
                   ("miller", "select"), ("xan", "select"))
 STATUSES = {"PASS", "FAIL", "ERROR", "OUTPUT_LIMIT", "TIMEOUT",
-            "RUNTIME_ERROR", "COMMAND_FAILED"}
+            "RUNTIME_ERROR", "COMMAND_FAILED", "STDERR_REVIEW"}
 NOTICE = ("EVIDENCE CONSISTENCY ONLY: NOT publisher authenticity, "
           "company license/EDR/transfer approval, physical offline isolation "
           "or performance certification")
@@ -351,8 +351,12 @@ def check_smoke(doc, folder):
                 "Zero-byte process stream has inconsistent SHA256")
         if status in ("PASS", "FAIL"):
             require(rc == 0 and not truncated and
-                    (status != "PASS" or out_count > 0),
+                    (status != "PASS" or
+                     (out_count > 0 and err_count == 0)),
                     "PASS/FAIL verdict contradicts process/capture data")
+        elif status == "STDERR_REVIEW":
+            require(rc == 0 and err_count > 0 and not truncated,
+                    "STDERR_REVIEW verdict contradicts process/capture data")
         elif status == "COMMAND_FAILED":
             require(rc is not None and rc != 0 and not truncated,
                     "COMMAND_FAILED verdict contradicts return code")

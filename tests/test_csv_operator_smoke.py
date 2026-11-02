@@ -237,6 +237,51 @@ class CSVOperatorTests(fixtures.Workspace):
         with self.assertRaisesRegex(smoke.SmokeError, "non-byte"):
             smoke.evaluate("xan", "count", (0, "1", b"", 0.0, None), 1)
 
+    def test_success_stdout_with_vendor_stderr_blocks_all_four_cases(self):
+        """Each approved synthetic case fails closed on unexpected warnings."""
+        for warning_index in range(4):
+            with self.subTest(warning_case=warning_index):
+                self.output = self.base / ("stderr-case-" + str(warning_index))
+                calls = []
+
+                def warning_runner(argv, folder, timeout):
+                    result = self.fake_runner(argv, folder, timeout)
+                    index = len(calls)
+                    calls.append(argv)
+                    if index == warning_index:
+                        return (result[0], result[1],
+                                b"synthetic vendor alignment WARNING",
+                                result[3], result[4])
+                    return result
+
+                _, report = self.exec_ok(runner=warning_runner)
+                self.assertEqual(len(calls), 4)
+                self.assertEqual(report["outcome"], "BLOCKED")
+                self.assertEqual([c["status"] for c in report["checks"]],
+                                 ["STDERR_REVIEW" if i == warning_index
+                                  else "PASS" for i in range(4)])
+                warning = report["checks"][warning_index]
+                self.assertEqual(warning["returnCode"], 0)
+                self.assertGreater(warning["stderrBytes"], 0)
+                self.assertEqual(warning["stderrSha256"], smoke.hashlib.sha256(
+                    b"synthetic vendor alignment WARNING").hexdigest())
+                self.assertFalse(warning["capturedOutputTruncated"])
+
+    def test_warning_review_retains_timeout_exit_and_overflow_precedence(self):
+        """Higher-priority process failure must not be relabeled a warning."""
+        warning = b"nonempty synthetic stderr"
+        for response, expected in (
+            ((0, b"1\n", warning, 1.0, None), "STDERR_REVIEW"),
+            ((1, b"1\n", warning, 1.0, None), "COMMAND_FAILED"),
+            ((None, b"", warning, 1.0, "TIMEOUT"), "TIMEOUT"),
+            ((0, b"1\n", b"x" * (smoke.MAX_CAPTURE + 1), 1.0, None),
+             "OUTPUT_LIMIT"),
+            ((0, b"1\n", b"", 1.0, None), "PASS"),
+        ):
+            with self.subTest(expected=expected):
+                self.assertEqual(smoke.evaluate(
+                    "xan", "count", response, 1)["status"], expected)
+
     def test_semantic_failure_returns_blocked_but_keeps_other_cases(self):
         called = []
         def bad(args, folder, timeout):
@@ -318,7 +363,7 @@ class CSVOperatorTests(fixtures.Workspace):
         self.assertEqual((result[0], result[1], result[2], result[4]),
                          (0, b"count\n1\n", b"synthetic warning", None))
         self.assertEqual(smoke.evaluate("miller", "count", result, 1)["status"],
-                         "PASS")
+                         "STDERR_REVIEW")
 
     def test_live_stdout_and_stderr_each_enforce_cap_without_spooling(self):
         # One synthetic OS process per pipe; no real third-party vendor code.

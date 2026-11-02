@@ -254,6 +254,31 @@ class EvidenceChainTests(unittest.TestCase):
         with self.assertRaisesRegex(chain.EvidenceError, "Non-finite JSON"):
             self.verify()
 
+    def test_pass_case_with_nonempty_stderr_cannot_be_reverified(self):
+        """A forged PASS warning violates the current zero-stderr invariant."""
+        self.build()
+        warning = b"synthetic vendor alignment WARNING"
+        self.rewrite_smoke(lambda report: report["checks"][1].update({
+            "stderrBytes": len(warning),
+            "stderrSha256": hashlib.sha256(warning).hexdigest(),
+        }))
+        with self.assertRaisesRegex(chain.EvidenceError, "process/capture"):
+            self.verify()
+
+    def test_stderr_review_record_is_consistent_but_never_functional_pass(self):
+        """A genuine warning remains BLOCKED without losing SHA evidence."""
+        self.build()
+        warning = b"synthetic vendor warning"
+        def warn(report):
+            report["checks"][1].update({
+                "status": "STDERR_REVIEW",
+                "stderrBytes": len(warning),
+                "stderrSha256": hashlib.sha256(warning).hexdigest(),
+            })
+            report["outcome"] = "BLOCKED"
+        self.rewrite_smoke(warn)
+        self.assertEqual(self.verify()["outcome"], "INCOMPLETE_OR_BLOCKED")
+
     def test_pass_case_with_nonzero_exit_is_invalid(self):
         self.build()
         self.rewrite_smoke(

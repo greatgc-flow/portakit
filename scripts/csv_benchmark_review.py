@@ -138,7 +138,7 @@ def dataset_identity(path, doc):
         require("\x00" not in content, "Dataset is not UTF-8 CSV")
         records = csv.reader(io.StringIO(content, newline=""), strict=True)
         header = next(records)
-        require(len(header) > 0 and all(header) and
+        require(len(header) > 0 and all(name.strip() for name in header) and
                 len(set(header)) == len(header),
                 "Dataset header invalid or contains duplicate columns")
         count = 0

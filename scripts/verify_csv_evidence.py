@@ -63,8 +63,8 @@ def file_signature(info):
 
 
 def created_identity(info):
-    """Minimal identity for cautious cleanup of OUR newly created outputs."""
-    return (info.st_dev, info.st_ino)
+    """Use shared cleanup identity rules; unknown file IDs must not unlink."""
+    return source.kit.sets.created_output_identity(info)
 
 
 def cleanup_created(path, identity):

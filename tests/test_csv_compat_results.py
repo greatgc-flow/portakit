@@ -222,6 +222,46 @@ class CSVCompatibilityResultTests(unittest.TestCase):
                 check.ComparisonError, "directories must differ"):
             check.inspect(self.source, alias)
 
+    def test_nested_input_trees_are_refused_even_when_contents_match(self):
+        """A child directory is not an independent source/result evidence tree."""
+        self.write_results()
+        # Place otherwise valid simulated captures under the source corpus.
+        nested_results = self.source / "captured"
+        nested_results.mkdir()
+        for name, _ in check.CASES:
+            (nested_results / name).write_bytes((self.outputs / name).read_bytes())
+        original_result = (nested_results / "miller-sort.csv").read_bytes()
+        with self.assertRaisesRegex(
+                check.ComparisonError, "must differ and not overlap"):
+            check.inspect(self.source, nested_results)
+        self.assertEqual(
+            (nested_results / "miller-sort.csv").read_bytes(), original_result)
+
+        # The inverse direction must also be rejected: the fixture corpus
+        # cannot be nested inside operator-provided captured output storage.
+        nested_fixtures = self.outputs / "matrix"
+        nested_fixtures.mkdir()
+        for name in list(check.matrix.fixtures()) + ["matrix.json", "matrix.log"]:
+            (nested_fixtures / name).write_bytes((self.source / name).read_bytes())
+        with self.assertRaisesRegex(
+                check.ComparisonError, "must differ and not overlap"):
+            check.inspect(nested_fixtures, self.outputs)
+        self.assertEqual((nested_fixtures / "matrix.json").read_bytes(),
+                         (self.source / "matrix.json").read_bytes())
+
+    def test_nested_alias_is_rejected_before_any_result_reads(self):
+        """Normalize .. when deciding whether input trees are independent."""
+        self.write_results()
+        nested = self.source / "captured"
+        nested.mkdir()
+        detour = self.root / "detour"
+        detour.mkdir()
+        alias = detour / ".." / self.source.name / "captured"
+        with self.assertRaisesRegex(
+                check.ComparisonError, "must differ and not overlap"):
+            check.inspect(self.source, alias)
+        self.assertEqual(sorted(p.name for p in nested.iterdir()), [])
+
     def test_no_vendor_execution_or_mutations_when_verifying(self):
         self.write_results()
         before = [(str(p), p.read_bytes()) for p in self.root.rglob("*")

@@ -141,8 +141,12 @@ def inspect(fixtures_dir, results_dir):
     """
     source = checked_directory(fixtures_dir, "Fixture")
     outputs = checked_directory(results_dir, "Results")
-    if lexical_path(source) == lexical_path(outputs):
-        raise ComparisonError("Fixture and results directories must differ")
+    source_tree, results_tree = lexical_path(source), lexical_path(outputs)
+    if (source_tree == results_tree or
+            source_tree in results_tree.parents or
+            results_tree in source_tree.parents):
+        raise ComparisonError(
+            "Fixture and results directories must differ and not overlap")
     verify_fixtures(source)
     rows = []
     for name, operation in CASES:

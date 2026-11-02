@@ -163,6 +163,20 @@ class CSVBenchmarkEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(review.BenchmarkError, "Actual dataset"):
             review.inspect(doc, self.csv)
 
+    def test_duplicate_csv_header_names_fail_closed_even_with_matching_hash(self):
+        """A self-consistent SHA/row count must not bless ambiguous column names."""
+        self.csv.write_bytes(
+            b"category,category,qty\r\nA,Z,2\r\nB,Y,10\r\nA,X,9\r\n")
+        doc = self.full_record()
+        self.assertEqual(doc["inputRows"], 3)
+        with self.assertRaisesRegex(review.BenchmarkError, "duplicate columns"):
+            review.inspect(doc, self.csv)
+        self.write_record(doc)
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertEqual(review.run([
+                "--input", str(self.input), "--dataset", str(self.csv)]), 1)
+        self.assertIn("duplicate columns", stderr.getvalue())
+
     def test_optional_cpu_rss_disk_are_not_fabricated(self):
         doc = self.full_record()
         for row in doc["runs"]:

@@ -41,6 +41,12 @@ DuckDB's CLI can read local files and load/install extensions depending on confi
 
 No scripts in PortaKit download the vendor release, install extensions, start a server or run either lane. A green synthetic source-only unit test does not replace a real asset hash or workstation smoke.
 
+## November 2 source verification and evidence safety
+
+The [current active-work matrix](PORTAKIT_ACTIVE_WORK_20261102.md) separates **implemented developer code**, **candidate research decisions**, and **end-user-only reality gates**. Direct GitHub release API observations on 2026-11-02 reconfirmed DuckDB `v2.0.0` Windows AMD64 `tar.gz` (19,663,611 bytes), xan `0.61.0` Windows MSVC ZIP (6,473,075 bytes), and Tailviewer `v1.0.0-rc1` portable ZIP (3,786,701 bytes, *no release API SHA*). qsv `27.0.1` Windows x64 MSVC/ GNU ZIPs are respectively 402,543,109 / 129,287,020 bytes, both over the current 100-MiB compressed archive cap; do not weaken that limit for an unproven convenience. These are **release metadata only**; all remain unapproved and uninstalled in the relevant research lane.
+
+A source-only defect in `scripts/lightweight_review.py --out` was also identified: if another writer created the JSON between the early existence check and exclusive-open, the previous handler unlinked the **other writer's** file. A late console error could also leave an invalid partial report/transcript pair. The exporter now reuses `report_evidence.emit_json_report` for identity-guarded, best-effort owned-file cleanup; the existing JSON schema, research-only exit code `2`, console text, no-write default and no-vendor-execution contract are unchanged. No multi-file atomicity, power-loss protection, vendor provenance or local corporate approval is claimed.
+
 ## Independent next decision
 
 - DuckDB: separately decide whether bounded `tar.gz` support is justified, or use an independently immutable, separately validated approved ZIP for a selected version; never rename a tarball to ZIP. Compare a minimal `zip` approach against expanding the core extractor's attack surface.

@@ -169,6 +169,66 @@ class LightweightReviewTests(unittest.TestCase):
         self.assertEqual((target.read_bytes(), target.with_suffix(".log").read_bytes()),
                          before)
 
+    def test_report_race_preserves_foreign_json_and_removes_only_own_log(self):
+        """Exclusive-create failure must never unlink another writer's report."""
+        target = self.folder / "raced.json"
+        original_init = review.kit.sets.Evidence.__init__
+
+        def win_race(evidence, path):
+            target.write_bytes(b"FOREIGN-RESEARCH-REPORT\\n")
+            original_init(evidence, path)
+
+        with mock.patch.object(review.kit.sets.Evidence, "__init__", new=win_race):
+            with self.assertRaises(FileExistsError):
+                review.emit(review.assess(self.data), target)
+        self.assertEqual(target.read_bytes(), b"FOREIGN-RESEARCH-REPORT\\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_json_serialization_failure_removes_owned_pair(self):
+        """A partial report is never retained as apparently complete evidence."""
+        target = self.folder / "failed-json.json"
+
+        def fail_dump(value, stream, **kwargs):
+            stream.write('{"partial":')
+            raise OSError("synthetic research JSON failure")
+
+        with mock.patch.object(review.evidence_io.json, "dump", new=fail_dump):
+            with self.assertRaisesRegex(OSError, "research JSON failure"):
+                review.emit(review.assess(self.data), target)
+        self.assertFalse(target.exists())
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_late_transcript_failure_removes_owned_pair(self):
+        """An incomplete console log invalidates this run's report as well."""
+        target = self.folder / "failed-log.json"
+
+        def fail_emit(evidence, message):
+            evidence.stream.write("partial transcript\\n")
+            evidence.stream.flush()
+            raise OSError("synthetic research log failure")
+
+        with mock.patch.object(review.kit.sets.Evidence, "emit", new=fail_emit):
+            with self.assertRaisesRegex(OSError, "research log failure"):
+                review.emit(review.assess(self.data), target)
+        self.assertFalse(target.exists())
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_replaced_json_is_not_deleted_on_log_failure(self):
+        """Cleanup preserves a competing writer's replacement report bytes."""
+        target = self.folder / "replaced.json"
+
+        def replace_then_fail(evidence, message):
+            target.unlink()
+            target.write_bytes(b"OTHER-WRITER-REPORT\\n")
+            raise OSError("synthetic research replacement")
+
+        with mock.patch.object(review.kit.sets.Evidence, "emit",
+                               new=replace_then_fail):
+            with self.assertRaisesRegex(OSError, "research replacement"):
+                review.emit(review.assess(self.data), target)
+        self.assertEqual(target.read_bytes(), b"OTHER-WRITER-REPORT\\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
     def test_ledger_source_only_and_no_install_catalog_mutation(self):
         source = (ROOT / "scripts" / "lightweight_review.py").read_text("utf-8")
         self.assertNotIn("subprocess.run(", source)

@@ -16,6 +16,7 @@ HERE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 LEDGER = HERE / "research" / "LIGHTWEIGHT_CANDIDATES_20261031.json"
 EXTRACTOR_FORMATS = frozenset(("zip", "exe", "sfx7z"))
@@ -160,25 +161,13 @@ def emit(report, output=None):
         for line in lines:
             print(line)
         return
-    target = Path(output).absolute()
-    transcript = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(transcript)
-    if target == transcript or os.path.lexists(target) or os.path.lexists(transcript):
-        raise ResearchError("Report or console transcript already exists; no overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(transcript) as evidence:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(report, stream, ensure_ascii=False, indent=2)
-                stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            evidence.emit(line)
-        evidence.emit("REPORT: " + str(target))
+    # Shared create-only JSON/log boundary tracks the exact files created by
+    # this operation. Exclusive-open collisions must NEVER delete a foreign
+    # report, and a failed transcript must not leave a misleading JSON pair.
+    # Preserve report schema, original lines, final REPORT line and exit code.
+    evidence_io.emit_json_report(
+        report, lines, output, error_type=ResearchError,
+        collision_message="Report or console transcript already exists; no overwrite")
 
 
 def run(argv=None):

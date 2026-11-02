@@ -3,6 +3,13 @@
 > **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261101.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
+## 2026-11-02 — research source completion #108–#113 and session closeout
+
+- [x] [Full public-safe source closeout](handoff/PORTAKIT_20261102_CLOSEOUT.md) captures original PR-head and independent merged-main CI for PRs #108–#113, selected file contracts, remaining five issues, human/enterprise gates, and safe continuation. Source project checkpoint **before this docs-only update**: PR #113 merged main `3073fc9ce756793db10f0e786bc64f234fac6f2b`, both Python 3.11/3.14 full source suites 798/798 PASS on merged-main [CI #41435709404](https://github.com/greatgc-flow/portakit/actions/runs/41435709404). Latest live remote supersedes that checkpoint.
+- [x] Distinct #25 capabilities now implemented: research report ownership guard (#108), DuckDB TAR audit owned evidence (#109), CSV stderr review (#110), synthetic 5-file BOM/UTF-16/malformed/sort/group fixture matrix (#111), 4-file read-only sort/group semantic comparison (#112), and operator-declared 5–20 paired cold/warm timing metadata reviewer with empty public JSON template (#113). **No actual vendor process/approval from source CI.**
+- [ ] Final-user-only: approved original binaries SHA, EULA/OSS/EDR/transfer and physical Windows runtime and GUI, cold/warm measurements, performance and release acceptance. A missing real-world gate is **not** a reason to rewrite completed source modules.
+- [ ] Source-only next iteration: select one independently reproduced bug/UX improvement from live open issues, avoid speculative refactoring or promoting research-only candidates. #51 ruleset changes require a **new explicit owner approval**.
+
 ## 2026-11-02 — active status reconciliation and lightweight-review evidence safety (#25 / #87)
 
 - [x] Reconcile live #25/#27/#36/#51/#87 issue descriptions and current source by responsibility: source-implemented, engineering follow-up, final-user-only. [Point-in-time status and next steps](PORTAKIT_ACTIVE_WORK_20261102.md) preserve the existing historical completed entries below. A historical unchecked issue checkbox is **not** proof that its corresponding source function is absent.

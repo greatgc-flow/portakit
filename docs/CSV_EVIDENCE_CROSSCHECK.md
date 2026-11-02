@@ -23,7 +23,7 @@ rem Optional: creates only a NEW JSON plus identical console .log.
 python -I scripts/verify_csv_evidence.py --source-json D:\LocalEvidence\xan-source-001.json --smoke-dir D:\LocalEvidence\CSV-001 --out D:\LocalEvidence\CSV-crosscheck-001.json
 ~~~
 
-The first command prints a compact result only. The second fails rather than replacing existing evidence, and uses the same console text in the new .log file. No original asset, executable, registry, service, PATH, network interface, installer, file association or production MES/PLC system is modified.
+The first command prints a compact result only. The second fails rather than replacing existing evidence, and uses the same console text in the new .log file. **Choose a report path outside the existing CSV smoke evidence directory and its subdirectories**; parent-traversal aliases are also blocked. A report in the source JSON parent directory remains allowed when it does not overlap the smoke input directory. No original asset, executable, registry, service, PATH, network interface, installer, file association or production MES/PLC system is modified.
 
 ## Checks and exact meaning
 

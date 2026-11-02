@@ -139,12 +139,12 @@ class KitTests(unittest.TestCase):
         self.assertEqual(self.saved.read_bytes(), before)
         self.assertFalse(self.root.exists())
 
-    def test_deep_json_import_raises_user_error_not_recursion_traceback(self):
-        """Deep but short JSON raises KitError, not a raw RecursionError."""
+    def test_deep_json_import_rejected_without_raw_traceback(self):
+        """Parser depth behavior differs by Python; both must raise KitError."""
         self.saved.write_text("[" * 2000 + "0" + "]" * 2000,
                               encoding="utf-8")
         before = self.saved.read_bytes()
-        with self.assertRaisesRegex(kit.KitError, "Cannot read JSON"):
+        with self.assertRaises(kit.KitError):
             kit.read_kit(self.saved, self.pins, self.known)
         self.assertEqual(self.saved.read_bytes(), before)
         self.assertFalse(self.root.exists())

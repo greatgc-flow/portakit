@@ -211,6 +211,68 @@ class TarGzReviewTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(), old_json)
         self.assertEqual(target.with_suffix(".log").read_bytes(), old_log)
 
+    def test_report_competing_json_writer_is_preserved(self):
+        """A late exclusive-create collision must not delete foreign bytes."""
+        target = self.root / "race.json"
+        report = {"schemaVersion": 1, "outcome": "SYNTHETIC_ONLY"}
+        original_init = check.kit.sets.Evidence.__init__
+
+        def competing_create(evidence, path):
+            target.write_bytes(b"FOREIGN-ORIGINAL-REPORT\\n")
+            original_init(evidence, path)
+
+        with mock.patch.object(check.kit.sets.Evidence, "__init__",
+                               new=competing_create):
+            with self.assertRaises(FileExistsError):
+                check.emit(report, target)
+        self.assertEqual(target.read_bytes(), b"FOREIGN-ORIGINAL-REPORT\\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_json_write_error_cleans_only_owned_outputs(self):
+        """A partially serialized JSON must not survive a failed audit report."""
+        target = self.root / "partial.json"
+
+        def fail_dump(obj, stream, **kwargs):
+            stream.write('{"partial":')
+            raise OSError("synthetic TAR JSON write error")
+
+        with mock.patch.object(check.evidence_io.json, "dump", new=fail_dump):
+            with self.assertRaisesRegex(OSError, "TAR JSON write error"):
+                check.emit({"schemaVersion": 1}, target)
+        self.assertFalse(target.exists())
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_late_transcript_error_cleans_owned_json_and_log(self):
+        """No complete-looking JSON remains after evidence write interruption."""
+        target = self.root / "transcript-error.json"
+
+        def fail_emit(evidence, line):
+            evidence.stream.write("PARTIAL\\n")
+            evidence.stream.flush()
+            raise OSError("synthetic TAR log write error")
+
+        with mock.patch.object(check.kit.sets.Evidence, "emit", new=fail_emit):
+            with self.assertRaisesRegex(OSError, "TAR log write error"):
+                check.emit({"schemaVersion": 1}, target)
+        self.assertFalse(target.exists())
+        self.assertFalse(target.with_suffix(".log").exists())
+
+    def test_report_replaced_json_preserves_new_owner_after_log_error(self):
+        """Failure cleanup never deletes another writer's replacement report."""
+        target = self.root / "replaced.json"
+
+        def replace_then_fail(evidence, line):
+            target.unlink()
+            target.write_bytes(b"REPLACED-BY-OTHER-WRITER\\n")
+            raise OSError("synthetic TAR replacement race")
+
+        with mock.patch.object(check.kit.sets.Evidence, "emit",
+                               new=replace_then_fail):
+            with self.assertRaisesRegex(OSError, "TAR replacement race"):
+                check.emit({"schemaVersion": 1}, target)
+        self.assertEqual(target.read_bytes(), b"REPLACED-BY-OTHER-WRITER\\n")
+        self.assertFalse(target.with_suffix(".log").exists())
+
     def test_unaltered_duckdb_official_pin_stays_research_only(self):
         real = check.official_pin()
         self.assertEqual(real["id"], "duckdb-cli")

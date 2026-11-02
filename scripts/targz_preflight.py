@@ -18,6 +18,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import my_toolkit as kit  # noqa: E402
 import lightweight_review as research  # noqa: E402
+import report_evidence as evidence_io  # noqa: E402
 
 CHUNK = 1024 * 1024
 MAX_ARCHIVE_BYTES = kit.core.MAX_DOWNLOAD_BYTES
@@ -212,25 +213,13 @@ def emit(report, output=None):
         for line in lines:
             print(line)
         return
-    target = Path(output).absolute()
-    transcript = target.with_suffix(".log")
-    kit.core.check_links(target)
-    kit.core.check_links(transcript)
-    if target == transcript or os.path.lexists(target) or os.path.lexists(transcript):
-        raise TarAuditError("Report/log already exists; no overwrite")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with kit.sets.Evidence(transcript) as evidence:
-        try:
-            with target.open("x", encoding="utf-8", newline="\n") as stream:
-                json.dump(report, stream, ensure_ascii=False, indent=2)
-                stream.write("\n")
-        except BaseException:
-            if target.exists():
-                target.unlink()
-            raise
-        for line in lines:
-            evidence.emit(line)
-        evidence.emit("REPORT: " + str(target))
+    # Identity-track this invocation's create-only JSON/log pair. An exclusive
+    # open collision must not unlink a competing writer's report; failed
+    # transcript output must not leave an invalid-looking complete pair.
+    # The shared helper preserves the existing report schema and exact lines.
+    evidence_io.emit_json_report(
+        report, lines, output, error_type=TarAuditError,
+        collision_message="Report/log already exists; no overwrite")
 
 
 def run(argv=None):

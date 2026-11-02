@@ -134,9 +134,7 @@ class ReportEvidenceCrossConsumerTests(unittest.TestCase):
     def test_unknown_file_id_does_not_delete_replacement(self):
         """A zero/unknown file ID is not evidence of file ownership."""
         unknown = mock.Mock(st_dev=7, st_ino=0, st_mode=0o100600)
-        self.assertIsNone(writer.kit.sets.created_output_identity(unknown)
-                          if hasattr(writer, "kit") else
-                          ready.kit.sets.created_output_identity(unknown))
+        self.assertIsNone(ready.kit.sets.created_output_identity(unknown))
         foreign = self.tmp / "foreign-unknown-id.json"
         foreign.write_bytes(b"FOREIGN-MUST-SURVIVE")
         # Simulate both captured and current identities being the same

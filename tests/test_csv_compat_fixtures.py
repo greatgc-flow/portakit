@@ -99,16 +99,31 @@ class CSVCompatibilityFixtureTests(unittest.TestCase):
         with self.assertRaisesRegex(matrix.FixtureError, "nonempty"):
             matrix.prepare(None)
 
-    def test_generated_byte_error_never_claims_success_or_removes_user_files(self):
-        src = matrix.fixtures()
-        src["edge-utf8.csv"] = b"mutated-injected"
-        with mock.patch.object(matrix, "fixtures", return_value=src):
-            with mock.patch.object(matrix, "manifest",
-                                   side_effect=OSError("synthetic report failure")):
-                with self.assertRaisesRegex(OSError, "report failure"):
-                    matrix.prepare(self.dest)
+    def test_late_evidence_error_leaves_partial_files_for_manual_review(self):
+        """Never claim completion or automatically erase generated directories."""
+        with mock.patch.object(matrix.evidence_io, "emit_json_report",
+                               side_effect=OSError("synthetic report write error")):
+            with self.assertRaisesRegex(OSError, "report write error"):
+                matrix.prepare(self.dest)
+        self.assertTrue(self.dest.is_dir())
+        self.assertFalse((self.dest / "matrix.json").exists())
+        self.assertFalse((self.dest / "matrix.log").exists())
+        self.assertEqual(set(p.name for p in self.dest.iterdir()),
+                         set(matrix.CASE_NOTES))
+        original = (self.dest / "edge-utf8.csv").read_bytes()
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertEqual(matrix.run(["--out-dir", str(self.dest)]), 1)
+        self.assertIn("already exists", stderr.getvalue())
+        self.assertEqual((self.dest / "edge-utf8.csv").read_bytes(), original)
+
+    def test_injected_unsafe_output_link_rejected_before_creation(self):
+        with mock.patch.object(matrix.kit.core, "check_links",
+                               side_effect=matrix.kit.core.PortakitError(
+                                   "state", "synthetic reparse boundary")):
+            with self.assertRaisesRegex(
+                    matrix.kit.core.PortakitError, "reparse"):
+                matrix.prepare(self.dest)
         self.assertFalse(self.dest.exists())
-        # A parent creation failure or a later write failure is not a PASS.
 
     def test_no_vendor_download_or_default_candidate_admission(self):
         source = (ROOT / "scripts" / "csv_compat_fixtures.py").read_text("utf-8")

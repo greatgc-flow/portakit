@@ -120,7 +120,7 @@ def report_lines(report):
     return lines
 
 
-def prepare(out_dir, cases=None):
+def prepare(out_dir):
     """Create a new directory and fixtures, never replace existing evidence.
 
     On failure, the partially created directory may remain for local review.
@@ -133,8 +133,7 @@ def prepare(out_dir, cases=None):
     kit.core.check_links(folder)
     if os.path.lexists(folder):
         raise FixtureError("Output directory already exists; choose a NEW path")
-    if cases is None:
-        cases = fixtures()
+    cases = fixtures()
     report = manifest(cases)
     folder.mkdir(parents=True, exist_ok=False)
     kit.core.check_links(folder)
@@ -165,7 +164,7 @@ def run(argv=None):
             print("STATUS: PLAN_ONLY / NO FILES / NO VENDOR EXECUTION")
             return 2
         prepare(args.out_dir)
-        return 0  # FIxture creation only; NEVER a vendor compatibility PASS.
+        return 0  # Fixture creation only; NEVER a vendor compatibility PASS.
     except (FixtureError, kit.core.PortakitError, kit.KitError,
             kit.sets.ToolsetError, OSError, ValueError) as exc:
         print("ERROR: " + str(exc), file=sys.stderr)

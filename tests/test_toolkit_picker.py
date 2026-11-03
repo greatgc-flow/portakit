@@ -234,6 +234,42 @@ class PickerTests(unittest.TestCase):
         self.assertNotIn("subprocess.run(", source)
         self.assertNotIn(".apply(", source)
 
+    def test_saved_kit_plan_hint_uses_absolute_cli_and_json_paths(self):
+        """A GUI launched outside repo root must still show a runnable hint."""
+        relative = Path("portable files") / "한국어 kit.json"
+        with contextlib.chdir(self.temp):
+            expected = '"{}" plan --kit "{}"'.format(
+                REPO / "scripts" / "MyToolkit.cmd",
+                Path(self.temp) / relative)
+            self.assertEqual(picker.saved_kit_plan_command(relative), expected)
+            self.assertEqual(picker.saved_kit_plan_command(relative), expected)
+            self.assertFalse((Path(self.temp) / relative).exists())
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        self.assertIn("saved_kit_plan_command(output.get())", source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn(".apply(", source)
+
+    def test_gui_plan_hint_matches_actual_saved_path_outside_repo(self):
+        """The printed plan command points to an existing create-only kit."""
+        self.model.add(["jq", "cmd"])
+        folder = Path(self.temp) / "portable files"
+        folder.mkdir()
+        destination = folder / "my kit.json"
+        with contextlib.chdir(self.temp):
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                self.model.save("my-kit", destination)
+            hint = picker.saved_kit_plan_command(destination)
+        self.assertEqual(
+            hint, '"{}" plan --kit "{}"'.format(
+                REPO / "scripts" / "MyToolkit.cmd", destination))
+        self.assertTrue(destination.is_file())
+        self.assertIn("CREATED:", output.getvalue())
+        self.assertEqual(output.getvalue(),
+                         destination.with_suffix(".log").read_text("utf-8"))
+        self.assertEqual(
+            picker.kit.read_kit(destination, self.model.pins, self.model.known)
+            ["tools"], ["jq", "cmd"])
+
     def test_save_creates_json_and_exact_local_console_evidence(self):
         self.model.add(["jq", "duckdb-cli", "cmd"])
         with contextlib.redirect_stdout(io.StringIO()) as stdout:

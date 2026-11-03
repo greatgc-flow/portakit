@@ -7,6 +7,8 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import stat
+from types import SimpleNamespace
 import tempfile
 import unittest
 from unittest import mock
@@ -147,6 +149,38 @@ class KitTests(unittest.TestCase):
         with self.assertRaises(kit.KitError):
             kit.read_kit(self.saved, self.pins, self.known)
         self.assertEqual(self.saved.read_bytes(), before)
+        self.assertFalse(self.root.exists())
+
+    def test_nonregular_json_input_is_rejected_before_open(self):
+        """Do not open a blocking pipe/device even for a small declared size."""
+        data = self.make("jq")
+        self.saved.write_text(json.dumps(data), encoding="utf-8")
+        original = self.saved.read_bytes()
+        for mode in (stat.S_IFIFO, stat.S_IFCHR, stat.S_IFDIR):
+            with self.subTest(mode=mode):
+                fake = SimpleNamespace(st_mode=mode, st_size=0)
+                with mock.patch.object(Path, "stat", return_value=fake), \
+                     mock.patch.object(Path, "open",
+                                       side_effect=AssertionError("unsafe open")):
+                    with self.assertRaisesRegex(
+                            kit.KitError, "must be a regular file"):
+                        kit.json_file(self.saved)
+        self.assertEqual(self.saved.read_bytes(), original)
+        self.assertFalse(self.root.exists())
+
+    def test_replaced_nonregular_handle_refused_before_read(self):
+        """Recheck opened file descriptor; reject a post-stat type change."""
+        data = self.make("jq")
+        self.saved.write_text(json.dumps(data), encoding="utf-8")
+        original = self.saved.read_bytes()
+        fake = SimpleNamespace(st_mode=stat.S_IFIFO, st_size=0)
+        with mock.patch.object(kit.os, "fstat", return_value=fake), \
+             mock.patch.object(kit.core, "strict_json_loads",
+                               side_effect=AssertionError("unsafe parse")):
+            with self.assertRaisesRegex(
+                    kit.KitError, "must be a regular file"):
+                kit.json_file(self.saved)
+        self.assertEqual(self.saved.read_bytes(), original)
         self.assertFalse(self.root.exists())
 
     def test_saved_kit_duplicate_top_level_key_is_rejected(self):

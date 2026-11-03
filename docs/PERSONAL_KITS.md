@@ -74,7 +74,7 @@ For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.
 
 ## Importing KIT.json safely (2026-11-03)
 
-`scripts/MyToolkit.cmd plan|build --kit` and the optional GUI **Import existing kit…** use the same strict bounded declarative-JSON reader. The maximum local JSON size is **1 MiB**, including whitespace; strict UTF-8, duplicate-key and nonstandard-number checks still apply. Excessively deep JSON fails with a controlled error rather than a Python recursion traceback. A normal 256-tool personal kit, with up to 64 plugin choices, fits well below this limit. The original source is not changed or truncated and an invalid import preserves the current GUI selection. This is not evidence of enterprise/vendor approval.
+`scripts/MyToolkit.cmd plan|build --kit` and the optional GUI **Import existing kit…** use the same strict bounded declarative-JSON reader. The maximum local JSON size is **1 MiB**, including whitespace; strict UTF-8, duplicate-key and nonstandard-number checks still apply. Inputs must be **regular files**: pipes, device streams and directories are rejected before opening; the opened file handle is checked again before reading. This is best-effort protection against changing paths, not an atomic filesystem snapshot. Excessively deep JSON fails with a controlled error rather than a Python recursion traceback. A normal 256-tool personal kit, with up to 64 plugin choices, fits well below this limit. The original source is not changed or truncated and an invalid import preserves the current GUI selection. This is not evidence of enterprise/vendor approval.
 
 ## Optional mouse-based personal kit picker (2026-10-30)
 

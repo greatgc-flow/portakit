@@ -300,6 +300,22 @@ class PickerModel:
         return data
 
 
+
+def perform_picker_action(operation, refresh, report_error):
+    """Run a Tk command with controlled errors; callable headlessly in tests.
+
+    Core reparse/path checks raise PortakitError, not KitError. Both imported
+    and saved-kit failures must be displayed instead of escaping Tk callbacks.
+    """
+    try:
+        operation()
+        refresh()
+        return True
+    except (kit.KitError, kit.sets.ToolsetError, kit.core.PortakitError,
+            OSError, ValueError) as exc:
+        report_error(str(exc))
+        return False
+
 def overview_lines(checked, measured):
     """Explain readiness and *known* installed bytes without guessing sizes."""
     # Preserve the existing GUI missing-footprint error contract first;
@@ -546,11 +562,9 @@ def launch():
         refresh_plugin_details()
 
     def action(fn):
-        try:
-            fn()
-            refresh()
-        except (kit.KitError, kit.sets.ToolsetError, OSError, ValueError) as exc:
-            messagebox.showerror("PortaKit", str(exc), parent=root)
+        perform_picker_action(
+            fn, refresh,
+            lambda message: messagebox.showerror("PortaKit", message, parent=root))
 
     def picked():
         return list(table.selection())
@@ -827,7 +841,8 @@ def main():
     try:
         launch()
         return 0
-    except (kit.KitError, kit.sets.ToolsetError, OSError) as exc:
+    except (kit.KitError, kit.sets.ToolsetError, kit.core.PortakitError,
+            OSError) as exc:
         print("ERROR: " + str(exc), file=sys.stderr)
         return 1
 

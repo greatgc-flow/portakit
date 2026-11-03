@@ -247,6 +247,90 @@ class PickerTests(unittest.TestCase):
         with self.assertRaisesRegex(picker.kit.KitError, "already exists"):
             self.model.save("my-kit", self.saved)
 
+    def test_gui_action_reports_reparse_import_error_without_losing_choices(self):
+        """The GUI must show a core path error instead of an uncaught callback."""
+        self.model.add(["jq"])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.model.save("original", self.saved)
+        old_bytes = self.saved.read_bytes()
+        self.model.clear()
+        self.model.add(["notepad++"])
+        self.model.add_plugin("compareplus")
+        before = self.model.draft("chosen")
+        refreshed, errors = [], []
+
+        original_check = picker.kit.core.check_links
+
+        def fail_imported_path(path):
+            if Path(path) == self.saved:
+                raise picker.kit.core.PortakitError(
+                    "state", "Reparse path rejected: synthetic import")
+            return original_check(path)
+
+        with mock.patch.object(picker.kit.core, "check_links",
+                               side_effect=fail_imported_path):
+            ok = picker.perform_picker_action(
+                lambda: self.model.load_existing(self.saved),
+                lambda: refreshed.append(True), errors.append)
+        self.assertFalse(ok)
+        self.assertEqual(refreshed, [])
+        self.assertEqual(errors, ["Reparse path rejected: synthetic import"])
+        self.assertEqual(self.model.draft("chosen"), before)
+        self.assertEqual(self.saved.read_bytes(), old_bytes)
+
+    def test_gui_action_reports_reparse_save_error_without_files(self):
+        """A forbidden destination is visible to the user, never overwritten."""
+        self.model.add(["notepad++", "jq"])
+        self.model.add_plugin("compareplus")
+        before = self.model.draft("chosen")
+        output = Path(self.temp) / "blocked.json"
+        refreshed, errors = [], []
+        original_check = picker.kit.core.check_links
+
+        def fail_output_path(path):
+            if Path(path) == output:
+                raise picker.kit.core.PortakitError(
+                    "state", "Reparse path rejected: synthetic output")
+            return original_check(path)
+
+        with mock.patch.object(picker.kit.core, "check_links",
+                               side_effect=fail_output_path):
+            ok = picker.perform_picker_action(
+                lambda: self.model.save("chosen", output),
+                lambda: refreshed.append(True), errors.append)
+        self.assertFalse(ok)
+        self.assertEqual(refreshed, [])
+        self.assertEqual(errors, ["Reparse path rejected: synthetic output"])
+        self.assertEqual(self.model.draft("chosen"), before)
+        self.assertFalse(output.exists())
+        self.assertFalse(output.with_suffix(".log").exists())
+
+    def test_gui_action_success_refreshes_without_error(self):
+        """The extracted Tk action adapter retains the normal success path."""
+        refreshed, errors = [], []
+        ok = picker.perform_picker_action(
+            lambda: self.model.add(["jq"]),
+            lambda: refreshed.append(True), errors.append)
+        self.assertTrue(ok)
+        self.assertEqual(self.model.selected, ["jq"])
+        self.assertEqual(refreshed, [True])
+        self.assertEqual(errors, [])
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        self.assertIn("perform_picker_action(", source)
+        self.assertIn("fn, refresh,", source)
+        self.assertNotIn("subprocess.run(", source)
+
+    def test_gui_cli_entry_reports_core_path_error(self):
+        """Even an inventory-path error during launch returns a clean exit."""
+        with mock.patch.object(
+                picker, "launch",
+                side_effect=picker.kit.core.PortakitError(
+                    "state", "Reparse path rejected: synthetic startup")):
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                self.assertEqual(picker.main(), 1)
+        self.assertIn("ERROR: Reparse path rejected: synthetic startup",
+                      stderr.getvalue())
+
     def test_import_tampered_pin_does_not_replace_current_selection(self):
         self.model.add(["jq"])
         with contextlib.redirect_stdout(io.StringIO()):

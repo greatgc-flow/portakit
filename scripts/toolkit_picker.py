@@ -300,6 +300,11 @@ class PickerModel:
         return data
 
 
+def saved_kit_plan_command(path):
+    """Copy/paste CLI preview using absolute paths, independent of GUI CWD."""
+    launcher = HERE / "scripts" / "MyToolkit.cmd"
+    return '"{}" plan --kit "{}"'.format(launcher, Path(path).absolute())
+
 
 def perform_picker_action(operation, refresh, report_error):
     """Run a Tk command with controlled errors; callable headlessly in tests.
@@ -675,10 +680,9 @@ def launch():
             saved = model.save(name.get().strip(), output.get())
             messagebox.showinfo("Toolkit saved",
                                 "Saved selected IDs: " + str(len(saved["tools"])) +
-                                "\n\nPreview without changes:\n"
-                                "scripts\\MyToolkit.cmd plan --kit \"" +
-                                str(Path(output.get()).absolute()) +
-                                "\"\n\nInstallation requires a separate CLI build --yes.",
+                                "\n\nPreview without changes:\n" +
+                                saved_kit_plan_command(output.get()) +
+                                "\n\nInstallation requires a separate CLI build --yes.",
                                 parent=root)
         action(op)
 

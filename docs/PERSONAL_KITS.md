@@ -76,6 +76,10 @@ For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.
 
 `scripts/MyToolkit.cmd plan|build --kit` and the optional GUI **Import existing kit…** use the same strict bounded declarative-JSON reader. The maximum local JSON size is **1 MiB**, including whitespace; strict UTF-8, duplicate-key and nonstandard-number checks still apply. Inputs must be **regular files**: pipes, device streams and directories are rejected before opening; the opened file handle is checked again before reading. This is best-effort protection against changing paths, not an atomic filesystem snapshot. Excessively deep JSON fails with a controlled error rather than a Python recursion traceback. A normal 256-tool personal kit, with up to 64 plugin choices, fits well below this limit. The original source is not changed or truncated and an invalid import preserves the current GUI selection. This is not evidence of enterprise/vendor approval.
 
+## GUI import/save error recovery (2026-11-03)
+
+The optional Tk picker shows a normal **PortaKit error dialog** for blocked reparse/symlink locations during **Import existing kit…** or **Save personal kit + evidence**, just as it does for schema/collision errors. A failed import does not replace the current selected tools, frozen research consent, or editor plugins; a forbidden save destination does not create a kit or log there. The same core path error during picker startup is reported as `ERROR:` with a nonzero CLI return, not an uncaught exception traceback. These behaviors are covered by **headless synthetic callback tests**, not a claim of actual Windows Tk popup/DPI/accessibility acceptance. Real GUI inspection remains final-user owned.
+
 ## Optional mouse-based personal kit picker (2026-10-30)
 
 On an approved interactive Windows PC with the **standard** Python 3.11+ distribution and optional Tkinter runtime, use:

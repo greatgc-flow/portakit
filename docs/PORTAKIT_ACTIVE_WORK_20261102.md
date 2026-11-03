@@ -1,5 +1,7 @@
 # PortaKit — active work and MECE disposition (2026-11-02)
 
+> **Latest handoff (2026-11-03):** [START_NEW_CHAT_PORTAKIT_20261103.md](handoff/START_NEW_CHAT_PORTAKIT_20261103.md). This dated active-work matrix is historical; its old next-step bullets may already be implemented. Live main/PR/Actions take precedence.
+>
 > **Point-in-time engineering plan, not a second live SSOT.** The current GitHub [main](https://github.com/greatgc-flow/portakit/tree/main), [PRs](https://github.com/greatgc-flow/portakit/pulls), [Issues](https://github.com/greatgc-flow/portakit/issues) and [Windows CI](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml) always override this dated snapshot. Preserve historical evidence rather than replacing it with guesses.
 
 ## Reconciled starting point (verified against remote, not an enterprise approval)

@@ -300,12 +300,11 @@ class PickerModel:
         return data
 
 
-
-
 def saved_kit_plan_command(path):
     """Copy/paste CLI preview using absolute paths, independent of GUI CWD."""
     launcher = HERE / "scripts" / "MyToolkit.cmd"
     return '"{}" plan --kit "{}"'.format(launcher, Path(path).absolute())
+
 
 def perform_picker_action(operation, refresh, report_error):
     """Run a Tk command with controlled errors; callable headlessly in tests.

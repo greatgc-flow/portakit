@@ -1,5 +1,7 @@
 # Lightweight candidates — evidence, not installation approval (2026-10-31)
 
+> **Latest decision (2026-11-04):** [CSV candidate value and admission decision](CSV_CANDIDATE_DECISION_20261104.md) updates the *read-only comparison* with qsv 28.0.0 and retains Miller. This 2026-10-31 page and its ledger are historical source snapshots; no vendor is admitted or executed by that later review.
+
 **Source-only research snapshot. No candidate is deployable.** Issue [#25](https://github.com/greatgc-flow/portakit/issues/25) owns admission. The maintained software catalog and source integrity/installation code are unchanged. The new machine-readable [ledger](../research/LIGHTWEIGHT_CANDIDATES_20261031.json) is supplemental to the existing canonical research register and Oct 25 enterprise intake; it is not a new source of installable pins. Release API metadata can change: this document records a point-in-time observation as of 2026-10-31.
 
 ## Read-only command

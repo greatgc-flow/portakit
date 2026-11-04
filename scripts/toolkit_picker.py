@@ -300,10 +300,17 @@ class PickerModel:
         return data
 
 
-def saved_kit_plan_command(path):
-    """Copy/paste CLI preview using absolute paths, independent of GUI CWD."""
+def saved_kit_plan_command(path, install_root=None):
+    """Quote absolute CLI, kit, and managed-root paths for foreign shell CWDs.
+
+    The default matches the GUI's readiness root at launch (CWD/portable).
+    Operators using a different managed root may supply it explicitly.
+    """
     launcher = HERE / "scripts" / "MyToolkit.cmd"
-    return '"{}" plan --kit "{}"'.format(launcher, Path(path).absolute())
+    managed = (Path(install_root) if install_root is not None
+               else Path.cwd() / "portable")
+    return '"{}" plan --kit "{}" --root "{}"'.format(
+        launcher, Path(path).absolute(), managed.absolute())
 
 
 def perform_picker_action(operation, refresh, report_error):

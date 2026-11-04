@@ -80,6 +80,21 @@ For an existing user kit: `python -I scripts/offline_assets.py list --kit MyKit.
 
 After a successful **Save personal kit + evidence**, the GUI confirmation now prints a **quoted absolute** \`MyToolkit.cmd plan --kit "…"\` command, including the full path to the CLI launcher and to the new personal KIT.json. This allows a user who opened the GUI from an arbitrary directory (including an Explorer shortcut or a different working folder) to paste the preview command into **Windows Command Prompt** without first changing to the repository root. Spaces and Korean characters in the kit filename stay inside quotes. It performs no command execution in the GUI and remains **read-only plan**, not \`build --yes\`. Headless tests verify the generated text and link it to a real create-only saved kit; a real Windows desktop Command Prompt and Tk popup still require final-user acceptance.
 
+## GUI save plan targets a stable managed root (2026-11-04)
+
+The successful GUI save confirmation includes a **quoted absolute `--root`** in
+addition to the absolute CLI launcher and saved KIT.json. Without an explicit
+root, `MyToolkit.cmd plan` resolves its default `portable` relative to the
+*later Command Prompt's working directory*, which may be different from the
+directory where the GUI started. The new hint fixes that mismatch by using the
+GUI launch directory's default `portable` root (the same default as its
+read-only readiness dialog). An operator who manages tools in a **different**
+location must edit `--root` to the approved location before running the plan.
+This change is **display-only**: the picker does not run a command or install
+anything; the standalone CLI still accepts its existing relative default.
+Headless regression covers foreign CWDs and a Unicode/space KIT.json, but
+real Windows Command Prompt/Tk behavior remains final-user NOT_VERIFIED.
+
 ## GUI import/save error recovery (2026-11-03)
 
 The optional Tk picker shows a normal **PortaKit error dialog** for blocked reparse/symlink locations during **Import existing kit…** or **Save personal kit + evidence**, just as it does for schema/collision errors. A failed import does not replace the current selected tools, frozen research consent, or editor plugins; a forbidden save destination does not create a kit or log there. The same core path error during picker startup is reported as `ERROR:` with a nonzero CLI return, not an uncaught exception traceback. These behaviors are covered by **headless synthetic callback tests**, not a claim of actual Windows Tk popup/DPI/accessibility acceptance. Real GUI inspection remains final-user owned.

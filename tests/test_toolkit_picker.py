@@ -238,9 +238,9 @@ class PickerTests(unittest.TestCase):
         """A GUI launched outside repo root must still show a runnable hint."""
         relative = Path("portable files") / "한국어 kit.json"
         with contextlib.chdir(self.temp):
-            expected = '"{}" plan --kit "{}"'.format(
+            expected = '"{}" plan --kit "{}" --root "{}"'.format(
                 REPO / "scripts" / "MyToolkit.cmd",
-                Path(self.temp) / relative)
+                Path(self.temp) / relative, Path(self.temp) / "portable")
             self.assertEqual(picker.saved_kit_plan_command(relative), expected)
             self.assertEqual(picker.saved_kit_plan_command(relative), expected)
             self.assertFalse((Path(self.temp) / relative).exists())
@@ -260,8 +260,9 @@ class PickerTests(unittest.TestCase):
                 self.model.save("my-kit", destination)
             hint = picker.saved_kit_plan_command(destination)
         self.assertEqual(
-            hint, '"{}" plan --kit "{}"'.format(
-                REPO / "scripts" / "MyToolkit.cmd", destination))
+            hint, '"{}" plan --kit "{}" --root "{}"'.format(
+                REPO / "scripts" / "MyToolkit.cmd", destination,
+                Path(self.temp) / "portable"))
         self.assertTrue(destination.is_file())
         self.assertIn("CREATED:", output.getvalue())
         self.assertEqual(output.getvalue(),
@@ -269,6 +270,41 @@ class PickerTests(unittest.TestCase):
         self.assertEqual(
             picker.kit.read_kit(destination, self.model.pins, self.model.known)
             ["tools"], ["jq", "cmd"])
+
+    def test_saved_plan_hint_keeps_managed_root_after_shell_cwd_changes(self):
+        """A foreign Command Prompt must inspect the GUI's original managed root."""
+        gui_home = Path(self.temp) / "gui home"
+        foreign_shell = Path(self.temp) / "other shell"
+        gui_home.mkdir()
+        foreign_shell.mkdir()
+        kit_path = gui_home / "한국어 kit.json"
+        self.model.add(["jq", "cmd"])
+        with contextlib.chdir(gui_home):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.model.save("my-kit", kit_path)
+            hint = picker.saved_kit_plan_command(kit_path)
+            intended_root = gui_home / "portable"
+        with contextlib.chdir(foreign_shell):
+            saved = picker.kit.read_kit(
+                kit_path, self.model.pins, self.model.known)
+            # Existing CLI defaults to the *current shell* CWD, so without
+            # --root the same kit would inspect a different managed tree.
+            implicit = picker.kit.create_plan(saved, "portable")
+            explicit = picker.kit.create_plan(saved, intended_root)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                rc = picker.kit.run([
+                    "plan", "--kit", str(kit_path),
+                    "--root", str(intended_root)])
+        self.assertNotEqual(implicit["root"], explicit["root"])
+        self.assertEqual(explicit["root"], str(intended_root))
+        self.assertEqual(rc, 0)
+        self.assertIn("NO CHANGES / NO DOWNLOADS", output.getvalue())
+        self.assertEqual(
+            hint, '"{}" plan --kit "{}" --root "{}"'.format(
+                REPO / "scripts" / "MyToolkit.cmd", kit_path, intended_root))
+        self.assertFalse(intended_root.exists())
+        self.assertFalse((foreign_shell / "portable").exists())
 
     def test_save_creates_json_and_exact_local_console_evidence(self):
         self.model.add(["jq", "duckdb-cli", "cmd"])

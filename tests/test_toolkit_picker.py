@@ -245,7 +245,7 @@ class PickerTests(unittest.TestCase):
             self.assertEqual(picker.saved_kit_plan_command(relative), expected)
             self.assertFalse((Path(self.temp) / relative).exists())
         source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
-        self.assertIn("saved_kit_plan_command(output.get())", source)
+        self.assertIn("saved_kit_plan_command(output.get(), inspect_root.get())", source)
         self.assertNotIn("subprocess.run(", source)
         self.assertNotIn(".apply(", source)
 

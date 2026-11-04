@@ -245,7 +245,7 @@ class PickerTests(unittest.TestCase):
             self.assertEqual(picker.saved_kit_plan_command(relative), expected)
             self.assertFalse((Path(self.temp) / relative).exists())
         source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
-        self.assertIn("saved_kit_plan_command(output.get())", source)
+        self.assertIn("saved_kit_plan_command(output.get(), inspect_root.get())", source)
         self.assertNotIn("subprocess.run(", source)
         self.assertNotIn(".apply(", source)
 
@@ -305,6 +305,36 @@ class PickerTests(unittest.TestCase):
                 REPO / "scripts" / "MyToolkit.cmd", kit_path, intended_root))
         self.assertFalse(intended_root.exists())
         self.assertFalse((foreign_shell / "portable").exists())
+
+    def test_saved_plan_hint_uses_explicit_inspected_root_from_foreign_cwd(self):
+        """A user-selected readiness root must survive a later shell CWD."""
+        gui_home = Path(self.temp) / "gui home"
+        foreign = Path(self.temp) / "foreign"
+        custom = gui_home / "관리 대상 tools"
+        kit_path = gui_home / "my kit.json"
+        gui_home.mkdir()
+        foreign.mkdir()
+        with contextlib.chdir(gui_home):
+            hint = picker.saved_kit_plan_command(kit_path, str(custom))
+        with contextlib.chdir(foreign):
+            self.assertEqual(
+                hint, '"{}" plan --kit "{}" --root "{}"'.format(
+                    REPO / "scripts" / "MyToolkit.cmd", kit_path, custom))
+            self.assertNotIn(str(foreign / "portable"), hint)
+        self.assertFalse(custom.exists())
+
+    def test_readiness_root_ui_is_shared_with_post_save_plan_hint(self):
+        """Readiness and saved-kit plan must not read independent root fields."""
+        source = (REPO / "scripts" / "toolkit_picker.py").read_text("utf-8")
+        self.assertEqual(source.count("inspect_root = tk.StringVar("), 1)
+        self.assertIn(
+            'inspect_root = tk.StringVar(value=str(Path.cwd() / "portable"))',
+            source)
+        self.assertIn("ttk.Entry(line, textvariable=inspect_root)", source)
+        self.assertIn(
+            "saved_kit_plan_command(output.get(), inspect_root.get())", source)
+        self.assertNotIn("subprocess.run(", source)
+        self.assertNotIn("sets.apply(", source)
 
     def test_save_creates_json_and_exact_local_console_evidence(self):
         self.model.add(["jq", "duckdb-cli", "cmd"])

@@ -89,11 +89,28 @@ root, `MyToolkit.cmd plan` resolves its default `portable` relative to the
 directory where the GUI started. The new hint fixes that mismatch by using the
 GUI launch directory's default `portable` root (the same default as its
 read-only readiness dialog). An operator who manages tools in a **different**
-location must edit `--root` to the approved location before running the plan.
+location can edit `--root` before running the plan, or choose that location
+in the GUI's read-only readiness inspector before saving (see below).
 This change is **display-only**: the picker does not run a command or install
 anything; the standalone CLI still accepts its existing relative default.
 Headless regression covers foreign CWDs and a Unicode/space KIT.json, but
 real Windows Command Prompt/Tk behavior remains final-user NOT_VERIFIED.
+
+## Keep inspected managed root in the saved plan hint (2026-11-04)
+
+The GUI readiness dialog's editable **Install root** now shares a single
+in-memory value with the post-save `MyToolkit.cmd plan` instruction.
+If an operator inspects the unsaved selection under a custom managed root and
+then saves a new personal kit, the copied read-only plan command points to
+**that same absolute root**, not the GUI launch directory's default. Opening
+the readiness dialog again retains that root during the current GUI session.
+There is no additional setup file, schema field, installation, or permission:
+a personal KIT.json deliberately does not embed a machine-specific root.
+The operator must still explicitly verify the intended target and the
+separately authorized CLI build flags; a different run/session defaults to
+`portable` until the root is chosen again. Headless Windows tests cover
+Unicode/space paths and the Tk source wiring; actual GUI observation remains
+final-user NOT_VERIFIED.
 
 ## GUI import/save error recovery (2026-11-03)
 

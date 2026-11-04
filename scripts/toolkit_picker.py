@@ -436,6 +436,9 @@ def launch():
     preset = tk.StringVar(value="essentials")
     name = tk.StringVar(value="my-portable-kit")
     output = tk.StringVar(value=str(Path.cwd() / "MyPortableKit.json"))
+    # One explicit managed-root choice is shared by read-only inspection and
+    # the saved CLI plan hint; it never authorizes a GUI install.
+    inspect_root = tk.StringVar(value=str(Path.cwd() / "portable"))
     summary_text = tk.StringVar()
     plugin_choice = tk.StringVar(value="compareplus")
     plugin_selected_text = tk.StringVar(value="")
@@ -688,7 +691,7 @@ def launch():
             messagebox.showinfo("Toolkit saved",
                                 "Saved selected IDs: " + str(len(saved["tools"])) +
                                 "\n\nPreview without changes:\n" +
-                                saved_kit_plan_command(output.get()) +
+                                saved_kit_plan_command(output.get(), inspect_root.get()) +
                                 "\n\nInstallation requires a separate CLI build --yes.",
                                 parent=root)
         action(op)
@@ -753,7 +756,6 @@ def launch():
         dialog.configure(bg="#121e2b")
         panel = tk.Frame(dialog, bg="#121e2b", padx=14, pady=12)
         panel.pack(fill="both", expand=True)
-        inspect_root = tk.StringVar(value=str(Path.cwd() / "portable"))
         inspect_archive = tk.StringVar(value="")
         inspect_budget = tk.StringVar(value="")
         inspect_skip = tk.BooleanVar(value=False)

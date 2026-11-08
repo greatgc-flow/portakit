@@ -74,6 +74,11 @@ class ExtractTests(fixtures.ExtractWorkspace):
         self.assertEqual((self.root / "bin/demo.exe").read_bytes(), b"exe")
         self.assertFalse((self.root / "package").exists())
 
+    def test_case_variant_single_root_is_flattened(self):
+        self.extract([("Pkg/", b""), ("pkg/demo.exe", b"exe")])
+        self.assertEqual((self.root / "demo.exe").read_bytes(), b"exe")
+        self.assertEqual([p.name for p in self.root.iterdir()], ["demo.exe"])
+
     def test_multiple_roots_are_kept(self):
         self.extract([("bin/demo.exe", b"exe"), ("readme.txt", b"readme")])
         self.assertTrue((self.root / "bin/demo.exe").exists())

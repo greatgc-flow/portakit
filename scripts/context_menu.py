@@ -195,7 +195,9 @@ def perform(command, app, root, repo_dir=None, registry=winreg):
                 plan.append((path, None, "foreign"))
                 continue
             saved_exe = icon[0][:-2] if icon[0].endswith(",0") else None
-            if saved_exe is None:
+            if (not saved_exe or '"' in saved_exe or "\n" in saved_exe or
+                    "\r" in saved_exe or not os.path.isabs(saved_exe) or
+                    not Path(saved_exe).is_absolute()):
                 plan.append((path, None, "modified"))
                 continue
             spec = {"": label, "Icon": icon[0], "PortaKitOwner": OWNER,

@@ -157,12 +157,14 @@ def review(path, read=input):
         report = dict(baseline, mode="HUMAN_SELF_REPORT",
                       outcome=result, checks=choices,
                       observedUtc=datetime.now(timezone.utc).isoformat())
+        created = False
         try:
             with output.open("x", encoding="utf-8", newline="\n") as stream:
+                created = True
                 json.dump(report, stream, ensure_ascii=False, indent=2)
                 stream.write("\n")
         except BaseException:
-            if output.exists():
+            if created and output.exists():
                 output.unlink()
             raise
         for line in summary_lines(report):

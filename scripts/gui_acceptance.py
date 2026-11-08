@@ -186,7 +186,12 @@ def human_review(row, evidence, launch=False, allow_everything=False,
             return row
     else:
         evidence.print("GUI NOT STARTED: launch manually if approved")
-    verdict = input_fn("Result for " + ident + " [pass/fail/skip]: ").strip().lower()
+    try:
+        verdict = input_fn("Result for " + ident + " [pass/fail/skip]: ").strip().lower()
+    except (EOFError, OSError, ValueError) as exc:
+        row["status"] = "FAIL"
+        row["note"] = "Input interrupted: " + (str(exc) or exc.__class__.__name__)
+        return row
     if verdict == "pass":
         row["status"] = "PASS"
         row["human_attested"] = True

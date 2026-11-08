@@ -146,6 +146,30 @@ class GuiAcceptanceTests(unittest.TestCase):
         self.assertFalse(json.loads((self.evidence / "result.json").read_text(
             encoding="utf-8"))["results"][0]["human_attested"])
 
+    def test_review_eof_marks_fail_and_preserves_launch_and_pin_evidence(self):
+        self.add("grepwin")
+        launcher = mock.Mock()
+        def raise_eof(_prompt):
+            raise EOFError("Ctrl+Z")
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = self.run_offline(self.args(["grepwin"], review=True, launch=True),
+                                    launcher=launcher, input_fn=raise_eof, tty=True)
+        self.assertEqual(code, 1)
+        launcher.assert_called_once()
+        row = json.loads((self.evidence / "result.json").read_text(
+            encoding="utf-8"))["results"][0]
+        self.assertEqual(row["status"], "FAIL")
+        self.assertTrue(row["gui_launched"])
+        self.assertFalse(row["human_attested"])
+        self.assertEqual(row["pin"], "test")
+        self.assertEqual(len(row["sha256"]), 64)
+        with (self.evidence / "results.csv").open(encoding="utf-8-sig", newline="") as f:
+            csv_rows = list(csv.DictReader(f))
+        self.assertEqual(csv_rows[0]["status"], "FAIL")
+        self.assertEqual(csv_rows[0]["gui_launched"], "True")
+        self.assertEqual(csv_rows[0]["pin"], "test")
+        self.assertEqual(len(csv_rows[0]["sha256"]), 64)
+
     def test_binary_discovery_rejects_duplicate_and_symlink(self):
         d = self.add("grepwin")
         (d / "grepWin.exe").write_bytes(b"MZ")

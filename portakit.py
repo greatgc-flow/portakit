@@ -460,7 +460,7 @@ def extract(artifact, tool, destination):
                     raise PortakitError("archive", "zip member: file used as directory")
             if not any(not directory for _, _, directory in members):
                 raise PortakitError("archive", "zip: no files")
-            roots = {name.split("/")[0] for _, name, _ in members}
+            roots = {name.split("/")[0].lower() for _, name, _ in members}
             flatten = len(roots) == 1 and all(directory or "/" in name
                                              for _, name, directory in members)
             plan = []

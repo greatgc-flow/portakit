@@ -65,3 +65,8 @@ Sequence agreed and executed: P2 link test → P3 → P1 → P4 → F7. P5 remai
 - New: `docs/INDEX.md`, `docs/HISTORY.md`, `tests/test_doc_index_mece.py`, `tests/test_launcher_targets.py`.
 - Rewritten: `README.md` (dated sections moved; Air-gapped and Complete 7-Zip reference sections kept and placed after Quickstart; Docs section points to INDEX), `tests/test_doc_navigation_ssot.py` (derived CURRENT).
 - Edited: `docs/HANDOFF.md`, `docs/BACKLOG.md` (pointer → 20261103), `docs/DECISIONS.md` (scope note, line 4), `docs/handoff/START_NEW_CHAT_PORTAKIT_20261103.md` (added `## Active verification rule` heading above the existing rule; the copyable prompt now names the `windows-tests.yml` workflow URL; no content removed).
+
+### Follow-up after PR #130 (main 73bddf1, branch docs/ratify-post-1030-decisions)
+
+- G1 (F7 full close): `docs/DECISIONS.md` scope note replaced by one line; eight 2026-11-08 entries ratify merged PR families retrospectively (personal kits + picker; opt-in evidence logs; offline editor-plugin apply; read-only kit diagnostics; bounded toolset apply; strict declarative JSON; research-only CSV tooling + 2026-11-04 decision; final-user acceptance boundary). Each cites PRs, the test files enforcing the invariant, and the guide.
+- G2: `tests/test_launcher_targets.py` also parses `scripts/*.ps1` for literal `Join-Path $scriptDir "<name>"` (scripts/) and `Join-Path $repo "<name>.py"` (repo root) targets and asserts they exist; computed names, logs, directories and managed-root executables are ignored.

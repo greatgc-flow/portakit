@@ -11,7 +11,7 @@ Every file under `docs/` and `research/` appears here exactly once, either as an
 | Navigation and status | [HANDOFF](HANDOFF.md) | Archived 2026-10 open-work notes; historical, not the active handoff |
 | Navigation and status | [PORTAKIT_ACTIVE_WORK_20261102](PORTAKIT_ACTIVE_WORK_20261102.md) | Historical 2026-11-02 planning matrix |
 | Contract | [SPEC](SPEC.md) | Behavioral contract for the core CLI |
-| Contract | [DECISIONS](DECISIONS.md) | Ratified decisions through 2026-10-30; scope note for later features |
+| Contract | [DECISIONS](DECISIONS.md) | Ratified decisions, including 2026-11-08 retrospective ratification of merged post-2026-10-30 features |
 | User guides | [TOOLSETS](TOOLSETS.md) | Optional categorized toolsets, profiles, offline apply |
 | User guides | [PERSONAL_KITS](PERSONAL_KITS.md) | Personal kit CLI and optional Tk picker |
 | User guides | [OFFLINE_ASSETS](OFFLINE_ASSETS.md) | Metadata-only offline asset list/export/verify |

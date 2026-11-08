@@ -168,6 +168,9 @@ def status_of(tool, root, state):
     if os.path.lexists(backup):
         return "blocked-backup"
     if name not in state:
+        for installed in state.values():
+            if installed["dest"].lower() == dest.lower():
+                return "blocked-destination"
         return "blocked-unmanaged" if os.path.lexists(install) else "install"
     record = state[name]
     if record["dest"] != dest:
@@ -371,6 +374,8 @@ def apply(plan, recommended, log, runner=None, *, offline_dir=None,
     """
     if type(child_timeout) is not int or not 1 <= child_timeout <= bounded.MAX_TIMEOUT:
         raise ToolsetError("child_timeout must be an integer in 1..3600 seconds")
+    if offline_dir == "":
+        raise ToolsetError("Offline directory must not be empty")
     root = Path(plan["root"])
     if not plan["tools"]:
         print("NO_OP: selected toolsets contain no verified pinned tools")

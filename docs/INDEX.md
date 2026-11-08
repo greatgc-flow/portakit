@@ -46,5 +46,6 @@ Every file under `docs/` and `research/` appears here exactly once, either as an
 | Research data | [CSV_BENCHMARK_TEMPLATE.json](../research/CSV_BENCHMARK_TEMPLATE.json) | Empty public benchmark record template |
 | Research data | [INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md](../research/INDUSTRIAL_PROTOCOL_ROLE_MATRIX_20261101.md) | Industrial protocol client/server/simulator role matrix |
 | Reviews | [review/](review/) | Dated MECE, refactor and closure audits |
+| Releases | [release/](release/) | Versioned GitHub release notes |
 | Handoff (current) | [START_NEW_CHAT_PORTAKIT_20261108](handoff/START_NEW_CHAT_PORTAKIT_20261108.md) | The single current handoff and new-chat prompt |
 | Handoff (archive) | [handoff/](handoff/) | All earlier dated handoffs, closeouts and the 2026-10-22 source map |

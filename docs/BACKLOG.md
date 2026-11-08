@@ -1,6 +1,6 @@
 # PortaKit backlog (prioritized, evidence-based)
 
-> **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261103.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
+> **Status authority:** [live GitHub Issues](https://github.com/greatgc-flow/portakit/issues) / [PRs](https://github.com/greatgc-flow/portakit/pulls) / [main + CI](handoff/START_NEW_CHAT_PORTAKIT_20261108.md). Checked items below are **historical completed work at their own commit**, not present-day CI or enterprise acceptance. Do not maintain a competing current SHA/test count here.
 
 
 ## 2026-11-02 — research source completion #108–#113 and session closeout

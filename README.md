@@ -4,7 +4,7 @@ Small Windows portable app manager. Python 3.11+, standard library only. Windows
 
 ## Current status and authoritative handoff
 
-[**Resume PortaKit source development**](docs/handoff/START_NEW_CHAT_PORTAKIT_20261103.md): the single dated engineering checkpoint and next-chat entrypoint, with a copyable new-chat prompt. Use current GitHub `main` over historic SHAs.
+[**Resume PortaKit source development**](docs/handoff/START_NEW_CHAT_PORTAKIT_20261108.md): the single dated engineering checkpoint and next-chat entrypoint, with a copyable new-chat prompt. Use current GitHub `main` over historic SHAs.
 
 **Verify live GitHub before citing a current SHA or CI result:** [main branch](https://github.com/greatgc-flow/portakit/tree/main) · [Windows Actions](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml) · [open PRs](https://github.com/greatgc-flow/portakit/pulls) · [open Issues](https://github.com/greatgc-flow/portakit/issues). [BACKLOG](docs/BACKLOG.md) records history and unresolved scope; dated README checkpoints live in [HISTORY](docs/HISTORY.md). **Earlier PR-specific test counts and SHAs are preserved there as historical evidence, never as the present main.** Source-of-truth for installable choices is the repository's current `catalog.json` and `toolsets.json`, not a README count.
 

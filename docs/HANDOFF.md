@@ -1,6 +1,6 @@
 # Open work — archived history
 
-> **This file is historical, not the active handoff.** Start with [current handoff and new-chat instructions](handoff/START_NEW_CHAT_PORTAKIT_20261101.md), [README](../README.md), [BACKLOG](BACKLOG.md) and the actual GitHub [main](https://github.com/greatgc-flow/portakit/tree/main) / [Windows CI](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml). The evidence below belongs to the dates shown; it must not be presented as current source/CI status or company acceptance.
+> **This file is historical, not the active handoff.** Start with [current handoff and new-chat instructions](handoff/START_NEW_CHAT_PORTAKIT_20261103.md), [README](../README.md), [INDEX](INDEX.md), [BACKLOG](BACKLOG.md) and the actual GitHub [main](https://github.com/greatgc-flow/portakit/tree/main) / [Windows CI](https://github.com/greatgc-flow/portakit/actions/workflows/windows-tests.yml). The evidence below belongs to the dates shown; it must not be presented as current source/CI status or company acceptance.
 
 ## Historical R2 continuation (2026-10-23)
 

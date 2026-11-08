@@ -1,7 +1,9 @@
 # Ratified decisions
 
+> **Scope note (2026-11-08):** the decisions below were ratified through 2026-10-30. Features merged afterwards (personal kits and the optional picker GUI, opt-in evidence logs, offline editor-plugin apply, kit doctor/footprint/readiness diagnostics, CSV research tooling and the 2026-11-04 CSV admission decision) are specified by their guides, which [INDEX](INDEX.md) classifies, not by retroactive entries here. No decision is backdated.
+
 - Name: `portakit`. Windows only, Python 3.11+ standard library, one module and a catalog beside it. Initial build: 83 tests; static reviews passed; scope and specification approved unanimously by cc, cx and ag. Final v0.2.1 approval: cc, cx and ag; tests since restructured (173).
-- [SPEC](SPEC.md) is the behavioral contract. README summarizes user operation; HANDOFF contains open work.
+- [SPEC](SPEC.md) is the behavioral contract. README summarizes user operation; [INDEX](INDEX.md) classifies every document once; `docs/HANDOFF.md` is an archived history, not open work (live GitHub Issues are).
 - Catalog pins use HTTPS URLs and SHA256. Updates follow both version and digest, including downgrades; identical pins skip downloading while the destination exists.
 - Destinations are single folders, uniquely owned by state IDs. Never adopt unmanaged folders or follow reparse points, junctions or symlinks.
 - Mutating operations hold a root lock, discard stale temps, verify downloads before extraction, and stage before swapping. State write commits the swap; pre-commit failures roll back. Update alone recovers a lone backup; both folders require manual resolution.

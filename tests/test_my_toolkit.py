@@ -328,6 +328,24 @@ class KitTests(unittest.TestCase):
         self.assertEqual(install.call_args.kwargs["offline_dir"], str(self.root / "source"))
         self.assertFalse(self.root.exists())
 
+    def test_build_rejects_empty_offline_dir(self):
+        for identifier in ("jq", "cmd"):
+            with self.subTest(identifier=identifier):
+                self.saved.write_text(json.dumps(self.make(identifier)))
+                log = self.saved.parent / (identifier + "-empty-offline.log")
+                with mock.patch.object(kit.sets, "verify_offline_assets", return_value={}), \
+                     mock.patch.object(kit.sets, "run_core_child",
+                                       return_value=SimpleNamespace(
+                                           returncode=1, stdout="", stderr="")) as child:
+                    code, _, error = self.run_command([
+                        "build", "--kit", str(self.saved), "--root", str(self.root),
+                        "--yes", "--log-file", str(log), "--offline-dir", ""])
+                self.assertEqual(code, 1)
+                self.assertRegex(error, "[Oo]ffline.*empty")
+                child.assert_not_called()
+                self.assertFalse(log.exists())
+                self.assertFalse(self.root.exists())
+
     def test_builtin_only_is_no_op_with_matching_evidence(self):
         self.save(self.make("cmd"))
         evidence = self.saved.parent / "noop.log"

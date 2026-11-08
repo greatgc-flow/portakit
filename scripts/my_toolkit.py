@@ -492,6 +492,8 @@ def run(argv=None):
             return 0
         if not args.yes:
             raise KitError("build requires explicit --yes (run plan first)")
+        if args.offline_dir == "":
+            raise KitError("Offline directory must not be empty")
         if kit["schemaVersion"] == 2 and args.recommended:
             raise KitError("--recommended conflicts with explicit plugin choices; "
                            "no editor plugins were installed")

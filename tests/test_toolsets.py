@@ -182,6 +182,55 @@ class ToolsetTests(unittest.TestCase):
         (self.root / "jq.old").mkdir()
         self.assertEqual(self.plan(["data"])["tools"][0]["status"], "blocked-backup")
 
+    def test_other_state_owner_blocks_plan_and_apply_before_children(self):
+        self.root.mkdir()
+        pin = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)["winmerge"]
+        state_path = self.root / ".portakit-state.json"
+        for dest in (pin["dest"], pin["dest"].upper()):
+            with self.subTest(dest=dest):
+                state_path.write_text(json.dumps({"old-winmerge": {
+                    "version": "1", "sha256": "a" * 64, "dest": dest}}))
+                before = state_path.read_bytes()
+                plan = self.plan(["mes-support"])
+                statuses = {row["id"]: row["status"] for row in plan["tools"]}
+                self.assertEqual(statuses["winmerge"], "blocked-destination")
+                plan.update(include=[], exclude=[], manifest=self.manifest)
+                runner = mock.Mock(side_effect=AssertionError("unexpected child"))
+                log = self.root.parent / "owned.log"
+                with self.assertRaisesRegex(toolsets.ToolsetError, "blocked plan"):
+                    toolsets.apply(plan, False, log, runner=runner)
+                # A receipt appearing after initial planning also blocks the
+                # replan under the batch lock, before an earlier tool downloads.
+                for row in plan["tools"]:
+                    row["status"] = "install"
+                with self.assertRaisesRegex(toolsets.ToolsetError, "preflight"):
+                    toolsets.apply(plan, False, log, runner=runner)
+                runner.assert_not_called()
+                self.assertFalse(log.exists())
+                self.assertEqual(state_path.read_bytes(), before)
+                self.assertFalse((self.root / pin["dest"]).exists())
+
+    def test_empty_offline_dir_rejected_by_apply_and_cli(self):
+        self.mark_managed("jq")
+        for selected in ("data", "nw"):
+            with self.subTest(selected=selected):
+                plan = self.plan([selected])
+                plan.update(include=[], exclude=[], manifest=self.manifest)
+                log = self.root.parent / (selected + "-empty-offline.log")
+                runner = mock.Mock(side_effect=AssertionError("unexpected child"))
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(toolsets.ToolsetError, "[Oo]ffline.*empty"):
+                        toolsets.apply(plan, False, log, runner=runner, offline_dir="")
+                out, err = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    code = toolsets.main(["apply", selected, "--yes", "--root",
+                                          str(self.root), "--log-file", str(log),
+                                          "--offline-dir", ""])
+                self.assertEqual(code, 1)
+                self.assertRegex(err.getvalue(), "[Oo]ffline.*empty")
+                runner.assert_not_called()
+                self.assertFalse(log.exists())
+
     def test_manifest_unknown_tool_and_duplicate_rejected(self):
         data = json.loads(self.manifest.read_text(encoding="utf-8"))
         data["categories"][0]["tools"].append("not-in-pins")

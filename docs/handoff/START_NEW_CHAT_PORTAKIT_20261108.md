@@ -13,6 +13,8 @@ Before citing any SHA, test count or CI result, re-read live GitHub: [main](http
 - Repo hygiene: 96 stale remote branches removed after verifying each tip equals its merged PR head; two superseded unmerged heads preserved as tags `archive/pr43-offline-readiness-dup` and `archive/pr47-gui-overview-dup`. Only `main` remains.
 - Peer tooling (local, not in repo): headless cc and ag command allowlists added so peers can run tests/gh/peerhub; root cause recorded in peerhub issue #300.
 
+- Later the same day: MECE parallel defect hunt (5 slices, 5 peers; method and outcome in [issue #87](https://github.com/greatgc-flow/portakit/issues/87)). 6 confirmed defects fixed TDD with cross-peer review: PR #133 (case-insensitive single-root ZIP flatten), PR #134 (block plan when another state ID owns the destination; reject empty `--offline-dir`), PR #135 (cleanup only owned outputs; refuse modified context-menu payloads; keep GUI evidence on EOF). 3 candidates rejected as not mandated by SPEC.
+
 ## 2. Open items
 
 - Issues #25/#27/#36/#51/#87 unchanged; human GUI, vendor runtime and site acceptance remain final-user owned.

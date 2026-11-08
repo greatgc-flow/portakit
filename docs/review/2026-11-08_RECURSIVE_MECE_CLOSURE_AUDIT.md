@@ -70,3 +70,14 @@ Sequence agreed and executed: P2 link test → P3 → P1 → P4 → F7. P5 remai
 
 - G1 (F7 full close): `docs/DECISIONS.md` scope note replaced by one line; eight 2026-11-08 entries ratify merged PR families retrospectively (personal kits + picker; opt-in evidence logs; offline editor-plugin apply; read-only kit diagnostics; bounded toolset apply; strict declarative JSON; research-only CSV tooling + 2026-11-04 decision; final-user acceptance boundary). Each cites PRs, the test files enforcing the invariant, and the guide.
 - G2: `tests/test_launcher_targets.py` also parses `scripts/*.ps1` for literal `Join-Path $scriptDir "<name>"` (scripts/) and `Join-Path $repo "<name>.py"` (repo root) targets and asserts they exist; computed names, logs, directories and managed-root executables are ignored.
+
+### Re-audit after #133-#136 (branch docs/close-gaps-after-133-135)
+
+Fixes #133-#135 changed behaviour without updating the contract docs; the SPEC -> code -> doc axis is re-closed by one-clause additions:
+
+- G1: `docs/SPEC.md` toolset status line names `blocked-destination` (another state ID owns the destination, case-insensitive; blocks the batch before any download) plus the already-coded `blocked-backup`, `blocked-unmanaged`, `blocked-pin`.
+- G2: `docs/SPEC.md` single-root flatten states roots are compared case-insensitively (#133).
+- G3: `docs/TOOLSETS.md` and `docs/PERSONAL_KITS.md` state that an empty `--offline-dir` is rejected, no implicit current directory (#134).
+- G4: `docs/SPEC.md` context menu: a saved exe that is not absolute or contains a quote/newline counts as modified and is refused by install and remove (#135).
+- G5: `docs/GUI_ACCEPTANCE_20261021.md`: EOF/`OSError`/`ValueError` during operator review records FAIL while keeping `gui_launched`, pin and SHA-256 evidence (#135).
+- R1 (recursive closure): `tests/test_toolsets.py` collects every `"blocked-*"` literal in `scripts/toolsets.py` and asserts each appears in `docs/SPEC.md`, so new statuses cannot ship undocumented.

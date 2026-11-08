@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -655,6 +656,17 @@ class ToolsetTests(unittest.TestCase):
                                             str(self.root)]), 1)
         self.assertIn("--yes", errors.getvalue())
         self.assertFalse(self.root.exists())
+
+    def test_every_blocked_status_is_documented_in_spec(self):
+        source = (REPO / "scripts/toolsets.py").read_text(encoding="utf-8")
+        statuses = set(re.findall(r"""["'](blocked-[a-z][a-z-]*)["']""", source))
+        self.assertTrue(statuses)
+        spec = (REPO / "docs/SPEC.md").read_text(encoding="utf-8")
+        # apply() blocks on the generic prefix; SPEC must state that rule too.
+        self.assertRegex(source, r"""startswith\(["']blocked-["']\)""")
+        self.assertIn("`blocked-*` status blocks the whole batch", spec)
+        for status in sorted(statuses):
+            self.assertIn(status, spec)
 
 
 if __name__ == "__main__":

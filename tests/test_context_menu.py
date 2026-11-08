@@ -143,6 +143,32 @@ class ContextMenuTests(unittest.TestCase):
             self.run_menu("remove", "winmerge")
         self.assertIn(key, self.registry.keys)
 
+    def test_remove_refuses_unsafe_or_non_absolute_saved_exe_as_modified(self):
+        key = menu.registry_path(menu.ENTRIES["notepad++"][0][0])
+        label = menu.ENTRIES["notepad++"][0][1]
+        bad_exes = (
+            str(self.root / "notepad++" / 'bad"quote.exe'),
+            str(self.root / "notepad++" / "bad\nline.exe"),
+            str(self.root / "notepad++" / "bad\rreturn.exe"),
+            r"notepad++\notepad++.exe",
+            r"\rootless\notepad++.exe",
+        )
+        for bad_exe in bad_exes:
+            with self.subTest(bad_exe=bad_exe):
+                self.registry.keys[key] = {
+                    "": (label, self.registry.REG_SZ),
+                    "Icon": (bad_exe + ",0", self.registry.REG_SZ),
+                    "PortaKitOwner": (menu.OWNER, self.registry.REG_SZ),
+                }
+                self.registry.keys[key + r"\command"] = {
+                    "": ('"' + bad_exe + '" "%1"', self.registry.REG_SZ),
+                }
+                status = self.run_menu("status", "notepad++")
+                self.assertEqual(status["items"][0]["state"], "modified")
+                with self.assertRaisesRegex(menu.MenuError, "modified"):
+                    self.run_menu("remove", "notepad++")
+                self.assertIn(key, self.registry.keys)
+
     def test_not_owned_key_is_not_removed(self):
         key = menu.registry_path(menu.ENTRIES["notepad++"][0][0])
         self.registry.keys[key] = {"": ("someone else's command", self.registry.REG_SZ)}

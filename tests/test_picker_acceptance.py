@@ -107,6 +107,20 @@ class PickerHumanAcceptanceTests(unittest.TestCase):
         self.assertIn("RECORDED: launch = PASS", self.log.read_text("utf-8"))
         self.assertNotIn("RESULT: OPERATOR_REPORTED_PASS", self.log.read_text("utf-8"))
 
+    def test_failure_cleanup_preserves_preexisting_output_on_open_race(self):
+        steps = 0
+        def read():
+            nonlocal steps
+            steps += 1
+            if steps == len(rec.CHECKS):
+                self.output.write_text("preexisting", encoding="utf-8")
+            return "p"
+        with contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(FileExistsError):
+                rec.review(self.output, read=read)
+        self.assertTrue(self.output.exists())
+        self.assertEqual(self.output.read_text("utf-8"), "preexisting")
+
     def test_review_has_no_duplicate_case_ids_and_three_dpi_gates(self):
         ids = [x[0] for x in rec.CHECKS]
         self.assertEqual(len(ids), len(set(ids)))

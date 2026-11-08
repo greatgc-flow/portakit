@@ -15,6 +15,8 @@ Before citing any SHA, test count or CI result, re-read live GitHub: [main](http
 
 - Later the same day: MECE parallel defect hunt (5 slices, 5 peers; method and outcome in [issue #87](https://github.com/greatgc-flow/portakit/issues/87)). 6 confirmed defects fixed TDD with cross-peer review: PR #133 (case-insensitive single-root ZIP flatten), PR #134 (block plan when another state ID owns the destination; reject empty `--offline-dir`), PR #135 (cleanup only owned outputs; refuse modified context-menu payloads; keep GUI evidence on EOF). 3 candidates rejected as not mandated by SPEC.
 
+- Release: [v0.3.0](https://github.com/greatgc-flow/portakit/releases/tag/v0.3.0) published after Gates A-C (CI, live smoke in disposable roots plus live-windows-smoke dispatch, cc.fable change review; [notes](../release/RELEASE_NOTES_v0.3.0.md)); GitHub Actions pinned to latest release SHAs. Gate D approval: user. Source archive verified (`portakit.py` + `catalog.json`, `list` works).
+
 ## 2. Open items
 
 - Issues #25/#27/#36/#51/#87 unchanged; human GUI, vendor runtime and site acceptance remain final-user owned.

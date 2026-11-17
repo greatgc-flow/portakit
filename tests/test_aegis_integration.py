@@ -164,17 +164,25 @@ class AegisIntegrationTests(fixtures.InstallWorkspace):
         self.assertFalse((self.root / ".portakit-state.json").exists())
         self.assert_user_data_unchanged()
 
-    def test_saved_personal_selection_rejects_changed_aegis_source_or_digest(self):
+    def test_saved_personal_selection_locks_version_digest_and_destination(self):
         pins, _, _, known = kit.inventory()
         saved = self.base / "aegis-personal-kit.json"
-        saved.write_text(json.dumps(kit.make_kit("aegis-only", ["aegis"], pins, known)),
-                         encoding="utf-8")
-        self.assertEqual(kit.read_kit(saved, pins, known)["tools"], ["aegis"])
-        for field, value in (("url", self.tool["url"] + "?different-source=1"),
-                             ("sha256", "0" * 64)):
+        original = kit.make_kit("aegis-only", ["aegis"], pins, known)
+        saved.write_text(json.dumps(original), encoding="utf-8")
+        self.assertEqual(set(original["lockedPins"]["aegis"]),
+                         {"version", "sha256", "dest"})
+        self.assertEqual(kit.read_kit(saved, pins, known), original)
+        for field, value in (("version", self.tool["version"] + "-changed"),
+                             ("sha256", "0" * 64),
+                             ("dest", "aegis-changed")):
             with self.subTest(field=field):
                 changed = dict(pins, aegis=dict(pins["aegis"], **{field: value}))
                 with self.assertRaisesRegex(kit.KitError, "PIN_CHANGED for aegis"):
                     kit.read_kit(saved, changed, known)
+        # The existing kit schema locks content identity and destination, not
+        # the catalog's transport URL. Installer SHA verification still applies.
+        relocated = dict(pins, aegis=dict(
+            pins["aegis"], url=self.tool["url"] + "?different-source=1"))
+        self.assertEqual(kit.read_kit(saved, relocated, known), original)
         self.assertFalse((self.root / "aegis").exists())
         self.assert_user_data_unchanged()

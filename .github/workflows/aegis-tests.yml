@@ -39,12 +39,19 @@ jobs:
         with:
           persist-credentials: false
       - name: Run isolated function and menu contracts without real window actions
-        shell: ${{ matrix.engine }}
+        shell: pwsh
+        env:
+          AEGIS_TEST_ENGINE: ${{ matrix.engine }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $engineName = 'powershell.exe'
-          if ($PSVersionTable.PSVersion.Major -ge 6) { $engineName = 'pwsh.exe' }
-          $engine = Join-Path $PSHOME $engineName
+          if ($env:AEGIS_TEST_ENGINE -eq 'powershell') {
+            $engine = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+          } elseif ($env:AEGIS_TEST_ENGINE -eq 'pwsh') {
+            $engine = Join-Path $PSHOME 'pwsh.exe'
+          } else {
+            throw 'Unknown Aegis test engine'
+          }
+          if (-not [IO.File]::Exists($engine)) { throw ('Test engine is unavailable: ' + $engine) }
           $package = Join-Path $PWD 'tools/aegis'
           $evidence = Join-Path $env:RUNNER_TEMP ('aegis-' + [guid]::NewGuid().ToString('N'))
           [void][IO.Directory]::CreateDirectory($evidence)

@@ -68,9 +68,9 @@ class KitTests(unittest.TestCase):
         self.assertEqual(kit.read_kit(self.saved, self.pins, self.known), built)
 
     def test_all_tools_available_for_selection_but_not_for_install(self):
-        self.assertEqual(len(self.known), 151)
+        self.assertEqual(len(self.known), len(self.pins) + 27 + 105)
         statuses = [x["admission"] for x in self.known.values()]
-        self.assertEqual(statuses.count("PINNED_CATALOG"), 19)
+        self.assertEqual(statuses.count("PINNED_CATALOG"), len(self.pins))
         self.assertEqual(statuses.count("OS_BUILTIN"), 27)
         self.assertEqual(statuses.count("RESEARCH_ONLY"), 105)
         self.assertIn("secs4net", self.known)
@@ -360,7 +360,7 @@ class KitTests(unittest.TestCase):
     def test_create_cli_and_inventory_default_filter(self):
         code, output, error = self.run_command(["list"])
         self.assertEqual((code, error), (0, ""))
-        self.assertIn("TOTAL: 19", output)
+        self.assertIn("TOTAL: " + str(len(self.pins)), output)
         code, output, error = self.run_command(["list", "--all", "--category", "network"])
         self.assertEqual((code, error), (0, ""))
         self.assertIn("tcping\tRESEARCH_ONLY", output)

@@ -1,16 +1,31 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-10-21",
+  "asOf": "2026-11-18",
   "classification": "one primary domain for each unique tool; profiles remain cross-domain",
   "counts": {
-    "total": 108,
-    "pinned": 19,
+    "total": 109,
+    "pinned": 20,
     "builtIn": 27,
     "research": 62
   },
   "footprintContract": "verifiedCompressedBytes is present only for the original eight ZIP files tested in PR#14; additional vendor release size evidence is tracked separately; null is NOT a claim of tiny size.",
   "licensingContract": "No automatic downloading or packaging of research tools. Free use, internal redistribution and corporate OSS/EDR approval are separate per-vendor gates.",
   "tools": [
+    {
+      "id": "aegis",
+      "name": "Aegis window arranger",
+      "primary": "automation",
+      "source": "https://github.com/greatgc-flow/portakit",
+      "license": "MIT",
+      "workflow": "explicit desktop window layout, tier/group reflow and return to saved home",
+      "form": "portable-zip",
+      "priority": "P1",
+      "admission": "PINNED_CATALOG",
+      "verifiedCompressedBytes": null,
+      "sizeMethod": "NOT_MEASURED",
+      "corporateApproval": "REQUIRED",
+      "caveat": "Own versioned ZIP with commit-addressed URL and SHA-256 pin. Runtime targets Windows PowerShell 2.x independently of Python; actual PS2/CLR2 and production desktop acceptance remain NOT_RUN. Explicit same-host menu only; user settings live outside the managed program directory."
+    },
     {
       "id": "autohotkey",
       "name": "AutoHotkey v2",

@@ -13,6 +13,7 @@ Every file under `docs/` and `research/` appears here exactly once, either as an
 | Contract | [SPEC](SPEC.md) | Behavioral contract for the core CLI |
 | Contract | [DECISIONS](DECISIONS.md) | Ratified decisions, including 2026-11-08 retrospective ratification of merged post-2026-10-30 features |
 | User guides | [TOOLSETS](TOOLSETS.md) | Optional categorized toolsets, profiles, offline apply |
+| User guides | [AEGIS](AEGIS.md) | Optional window arranger, same-host menu, portable user data and offline installation |
 | User guides | [PERSONAL_KITS](PERSONAL_KITS.md) | Personal kit CLI and optional Tk picker |
 | User guides | [OFFLINE_ASSETS](OFFLINE_ASSETS.md) | Metadata-only offline asset list/export/verify |
 | User guides | [FOOTPRINT_AUDIT](FOOTPRINT_AUDIT.md) | Read-only installed logical-size audit |

@@ -10,3 +10,7 @@ __pycache__/
 *.swo
 *~
 .portakit-*
+
+# Local window-layout user settings and verification outputs
+**/aegis-data/
+/tools/aegis/test-output/

@@ -1,0 +1,5 @@
+# Runtime bytes are part of the reproducible Aegis archive hash.
+tools/aegis/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+assets/aegis/*.zip -text
+# The runtime's plain-text headings use seven '=' characters as underlines.
+tools/aegis/README_ko.txt conflict-marker-size=32

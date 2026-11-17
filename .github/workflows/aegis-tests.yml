@@ -1,0 +1,113 @@
+name: Aegis offline contracts
+
+on:
+  pull_request:
+    paths:
+      - tools/aegis/**
+      - assets/aegis/**
+      - scripts/build_aegis_package.py
+      - tests/test_aegis*.py
+      - .github/workflows/aegis-tests.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/aegis/**
+      - assets/aegis/**
+      - scripts/build_aegis_package.py
+      - tests/test_aegis*.py
+      - .github/workflows/aegis-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aegis-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-functions:
+    name: Function mocks / ${{ matrix.engine }}
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run isolated function and menu contracts without real window actions
+        shell: pwsh
+        env:
+          AEGIS_TEST_ENGINE: ${{ matrix.engine }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:AEGIS_TEST_ENGINE -eq 'powershell') {
+            $engine = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+          } elseif ($env:AEGIS_TEST_ENGINE -eq 'pwsh') {
+            $engine = Join-Path $PSHOME 'pwsh.exe'
+          } else {
+            throw 'Unknown Aegis test engine'
+          }
+          if (-not [IO.File]::Exists($engine)) { throw ('Test engine is unavailable: ' + $engine) }
+          $package = Join-Path $PWD 'tools/aegis'
+          $evidence = Join-Path $env:RUNNER_TEMP ('aegis-' + [guid]::NewGuid().ToString('N'))
+          [void][IO.Directory]::CreateDirectory($evidence)
+          $cases = @(
+            @{ Path='tests/Test-AegisV4.ps1'; Flag='-ReportPath'; Name='controller' },
+            @{ Path='tests/Test-StorageV4.ps1'; Flag='-ReportPath'; Name='storage' },
+            @{ Path='verification/Test-LayoutV4.ps1'; Flag='-OutputPath'; Name='layout' },
+            @{ Path='verification/Test-AlgorithmBoundaries.ps1'; Flag='-ReportPath'; Name='boundaries' },
+            @{ Path='tests/Test-AegisMenu.ps1'; Flag='-ReportPath'; Name='menu' }
+          )
+          foreach ($case in $cases) {
+            $report = Join-Path $evidence ($case.Name + '.clixml')
+            & $engine -NoLogo -NoProfile -NonInteractive -File (Join-Path $package $case.Path) $case.Flag $report
+            if ($LASTEXITCODE -ne 0) { throw ('Failed suite: ' + $case.Name) }
+            $result = Import-Clixml -LiteralPath $report
+            if ($result.Failed -ne 0 -or $result.Total -le 0) { throw ('Invalid suite evidence: ' + $case.Name) }
+          }
+          Write-Host 'Function/mock contracts passed. Actual PS2/CLR2 and real Windows app integration NOT_RUN.'
+      - name: Verify native adapter through managed Win32-shaped mocks
+        if: matrix.engine == 'pwsh'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $report = Join-Path $env:RUNNER_TEMP ('aegis-native-' + [guid]::NewGuid().ToString('N') + '.json')
+          & (Join-Path $PSHOME 'pwsh.exe') -NoLogo -NoProfile -NonInteractive -File tools/aegis/verification/Test-NativeAdapterMock.ps1 -ReportPath $report
+          if ($LASTEXITCODE -ne 0) { throw 'Native adapter mock suite failed' }
+          $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($result.Failed -ne 0 -or -not $result.AdapterNativeCallsMocked -or $result.ActualWindowsIntegrationExecuted) {
+            throw 'Native mock evidence is failing or unexpectedly claims real UI integration'
+          }
+
+  package-and-entrypoint:
+    name: Reproducible package and Linux entry guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Verify deterministic runtime artifact
+        run: |
+          python -I scripts/build_aegis_package.py --check
+          python -I -m unittest discover -s tests -p test_aegis_package.py -v
+      - name: Test entry-point guards on a non-Windows host
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The negative Arrange input test stays off Windows: even a guard
+          # regression cannot reach a real user's Windows desktop here.
+          $report = Join-Path $env:RUNNER_TEMP ('aegis-entry-' + [guid]::NewGuid().ToString('N') + '.clixml')
+          & (Join-Path $PSHOME 'pwsh') -NoLogo -NoProfile -NonInteractive -File tools/aegis/tests/Test-EntryPointV4.ps1 -ReportPath $report
+          if ($LASTEXITCODE -ne 0) { throw 'Entry-point contract suite failed' }
+          $result = Import-Clixml -LiteralPath $report
+          if ($result.Failed -ne 0 -or $result.Total -le 0 -or $result.WindowsIntegration -ne 'NOT_RUN') {
+            throw 'Entry-point evidence is failing or unexpectedly claims real UI integration'
+          }

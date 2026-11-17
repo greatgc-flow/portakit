@@ -23,7 +23,7 @@ class CatalogTests(fixtures.Workspace):
                                         "ripgrep", "fd", "fzf", "bat", "sd",
                                         "yq", "delta", "hyperfine", "7zr",
                                         "everything", "grepwin", "miller", "dasel", "7zip",
-                                        "tcpview", "psping"})
+                                        "tcpview", "psping", "aegis"})
         for tool in raw["tools"]:
             with self.subTest(id=tool["id"]):
                 for removed in ("kind", "repo", "tag", "asset", "github_url", "defaultConfig"):

@@ -1,0 +1,20 @@
+Aegis source provenance
+=======================
+Imported baseline: Aegis 4.0.3-ps2, offline review completed 2026-11-15.
+Baseline Aegis.ps1 SHA-256: 4ac6a1928d393e5f89ec82e5324658c9d80ce09f985eedfc3b5dc9cad0abfeb1
+Baseline verification: 226 product cases; 57 verification-tool cases; static PS2 target checks.
+Executed baseline environment: PowerShell 7.4.20 / .NET 8.0.31 / Linux.
+Actual PowerShell 2 / CLR2 and native Windows app acceptance: NOT_RUN.
+
+PortaKit integration: 4.1.0-ps2
+- Keep the existing native, policy, profile, layout and storage contracts.
+- Centralize product version and correct the report's old 4.0.2 string.
+- Use explicit typed hashtable sort keys after Windows PowerShell 5.1 exposed priority/order differences from PS7.
+- Add an explicit same-host interactive menu and portable external user data.
+- Package source-generated runtime bytes reproducibly; pin archive SHA-256 and immutable commit URL.
+- Keep real-application and actual PS2 measurements out of scope, with no export requirement.
+
+Build: python tools/aegis/dev_build.py
+Runtime ZIP: python -I scripts/build_aegis_package.py
+Check checked-in ZIP: python -I scripts/build_aegis_package.py --check
+The current PR/CI artifacts are authoritative for integration results; historical counts above are provenance only.

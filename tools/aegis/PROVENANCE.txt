@@ -9,6 +9,7 @@ Actual PowerShell 2 / CLR2 and native Windows app acceptance: NOT_RUN.
 PortaKit integration: 4.1.0-ps2
 - Keep the existing native, policy, profile, layout and storage contracts.
 - Centralize product version and correct the report's old 4.0.2 string.
+- Use explicit typed hashtable sort keys after Windows PowerShell 5.1 exposed priority/order differences from PS7.
 - Add an explicit same-host interactive menu and portable external user data.
 - Package source-generated runtime bytes reproducibly; pin archive SHA-256 and immutable commit URL.
 - Keep real-application and actual PS2 measurements out of scope, with no export requirement.

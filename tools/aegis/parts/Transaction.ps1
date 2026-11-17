@@ -327,7 +327,7 @@ function Invoke-AegisController {
                 # order afterward would reshuffle identical consecutive Reflows.
                 $nextOrder=0
                 if ($null -ne $layoutProfile) { foreach ($old in $layoutProfile.Slots) { $nextOrder=[Math]::Max($nextOrder,([int]$old.Order+1)) } }
-                $newParticipants=@($participants | Where-Object { -not $bindings.ByWindow.ContainsKey([string]$_.Id) } | Sort-Object RuleId,Id)
+                $newParticipants=@($participants | Where-Object { -not $bindings.ByWindow.ContainsKey([string]$_.Id) } | Sort-Object @{Expression={[string]$_.RuleId}},@{Expression={[string]$_.Id}})
                 foreach ($newParticipant in $newParticipants) { $newParticipant.LayoutOrder=$nextOrder;$nextOrder++ }
                 if (-not $ReleaseAbsent) {
                     foreach ($slot in $bindings.Reserved) {
@@ -449,7 +449,7 @@ function Invoke-AegisController {
                 $global:AegisLayoutProfile=$candidate
                 $journal=@{SchemaVersion=4;Entries=@();CreatedUtc=[DateTime]::UtcNow.ToString('o');TopologySignature=$run.TopologySignature}
                 $entries=New-Object System.Collections.ArrayList
-                $applyPlans=@($plans | Sort-Object @{Expression={[int]$_.Window.Tier};Descending=$true},@{Expression={[int]$_.Window.GroupPriority};Descending=$true},@{Expression={[int]$_.Window.Priority};Descending=$true},@{Expression={[int]$_.Window.LayoutOrder}},Id)
+                $applyPlans=@($plans | Sort-Object @{Expression={[int]$_.Window.Tier};Descending=$true},@{Expression={[int]$_.Window.GroupPriority};Descending=$true},@{Expression={[int]$_.Window.Priority};Descending=$true},@{Expression={[int]$_.Window.LayoutOrder}},@{Expression={[string]$_.Id}})
                 $stopWriting=$false
                 foreach ($plan in $applyPlans) {
                     if ($stopWriting) { [void]$items.Add((New-AegisOutcome $plan.Window 'Deferred' 'EarlierAsyncRequestPending' $plan));continue }

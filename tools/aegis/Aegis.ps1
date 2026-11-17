@@ -761,8 +761,9 @@ function New-AegisLayoutPlan {
     }
 
     $activeTiers=New-Object System.Collections.ArrayList; [long]$tierMinimumSum=0
+    # Explicit key expressions avoid legacy Sort-Object property adaptation of hashtables.
     foreach ($tier in @(3,2,1)) {
-        $tierEntries=@($eligible | Where-Object {$_.Tier -eq $tier} | Sort-Object @{Expression='GroupPriority';Descending=$true},GroupId,@{Expression='Priority';Descending=$true},LayoutOrder,Id)
+        $tierEntries=@($eligible | Where-Object {$_.Tier -eq $tier} | Sort-Object @{Expression={[int]$_['GroupPriority']};Descending=$true},@{Expression={[string]$_['GroupId']}},@{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[int]$_['LayoutOrder']}},@{Expression={[string]$_['Id']}})
         if ($tierEntries.Count -eq 0) { continue }
         # Leading business group/window establishes a floor; a lower demand cannot
         # inflate the floor and evict a more important tier.
@@ -789,10 +790,10 @@ function New-AegisLayoutPlan {
                 }
                 [void]$groupMap[$entry.GroupId].Entries.Add($entry)
             }
-            $orderedGroups=@($groupList.ToArray() | Sort-Object @{Expression='Priority';Descending=$true},Id)
+            $orderedGroups=@($groupList.ToArray() | Sort-Object @{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[string]$_['Id']}})
             $activeGroups=New-Object System.Collections.ArrayList; [long]$groupMinimumSum=0
             foreach ($group in $orderedGroups) {
-                $group.Entries=@($group.Entries.ToArray() | Sort-Object @{Expression='Priority';Descending=$true},LayoutOrder,Id)
+                $group.Entries=@($group.Entries.ToArray() | Sort-Object @{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[int]$_['LayoutOrder']}},@{Expression={[string]$_['Id']}})
                 $group.Minimum=[int]$group.Entries[0].RequiredHeight
                 [long]$next=$groupMinimumSum+$group.Minimum+[long]$gap*$activeGroups.Count
                 if ($next -gt $tierZone.Height) {
@@ -2047,7 +2048,7 @@ function Invoke-AegisController {
                 # order afterward would reshuffle identical consecutive Reflows.
                 $nextOrder=0
                 if ($null -ne $layoutProfile) { foreach ($old in $layoutProfile.Slots) { $nextOrder=[Math]::Max($nextOrder,([int]$old.Order+1)) } }
-                $newParticipants=@($participants | Where-Object { -not $bindings.ByWindow.ContainsKey([string]$_.Id) } | Sort-Object RuleId,Id)
+                $newParticipants=@($participants | Where-Object { -not $bindings.ByWindow.ContainsKey([string]$_.Id) } | Sort-Object @{Expression={[string]$_.RuleId}},@{Expression={[string]$_.Id}})
                 foreach ($newParticipant in $newParticipants) { $newParticipant.LayoutOrder=$nextOrder;$nextOrder++ }
                 if (-not $ReleaseAbsent) {
                     foreach ($slot in $bindings.Reserved) {
@@ -2169,7 +2170,7 @@ function Invoke-AegisController {
                 $global:AegisLayoutProfile=$candidate
                 $journal=@{SchemaVersion=4;Entries=@();CreatedUtc=[DateTime]::UtcNow.ToString('o');TopologySignature=$run.TopologySignature}
                 $entries=New-Object System.Collections.ArrayList
-                $applyPlans=@($plans | Sort-Object @{Expression={[int]$_.Window.Tier};Descending=$true},@{Expression={[int]$_.Window.GroupPriority};Descending=$true},@{Expression={[int]$_.Window.Priority};Descending=$true},@{Expression={[int]$_.Window.LayoutOrder}},Id)
+                $applyPlans=@($plans | Sort-Object @{Expression={[int]$_.Window.Tier};Descending=$true},@{Expression={[int]$_.Window.GroupPriority};Descending=$true},@{Expression={[int]$_.Window.Priority};Descending=$true},@{Expression={[int]$_.Window.LayoutOrder}},@{Expression={[string]$_.Id}})
                 $stopWriting=$false
                 foreach ($plan in $applyPlans) {
                     if ($stopWriting) { [void]$items.Add((New-AegisOutcome $plan.Window 'Deferred' 'EarlierAsyncRequestPending' $plan));continue }

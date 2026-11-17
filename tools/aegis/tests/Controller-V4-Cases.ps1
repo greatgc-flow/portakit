@@ -1016,3 +1016,32 @@ Invoke-AegisV4Case 'V82' 'Reports use the declared product version' {
         Assert-AegisV4 ($versionReport.Version -ceq (Get-AegisVersion)) 'Report version differs from the product declaration.'
     }
 }
+
+Invoke-AegisV4Case 'V83' 'Simultaneous new windows receive the same home order and geometry after reversed enumeration' {
+    $snapshots=New-Object System.Collections.ArrayList
+    foreach ($reverseOrder in @($false,$true)) {
+        Invoke-AegisV4Fixture {param($f)
+            $f.Rules=@(@{Id='editor';ProcessName='editor';Tier=2;GroupId='work';Priority=100;GroupPriority=100;GroupWeight=100;SizeMode='Exact';Width=400;Height=300;Include=$true})
+            $f.State.Windows=@{}
+            foreach ($windowId in @('101','102','103')) {
+                $window=New-AegisV4TestWindow $windowId 'editor' ([int]$windowId-101)
+                $window.Order=0;$window.LayoutOrder=0;$f.State.Windows[$windowId]=$window
+            }
+            $f.State.Order=@('101','102','103')
+            if ($reverseOrder) { $f.State.Order=@('103','102','101') }
+            $report=Invoke-AegisV4TestController $f Arrange
+            Assert-AegisV4 ($report.ExitCode -eq 0 -and $global:AegisLayoutProfile.Slots.Count -eq 3) 'Simultaneous new windows did not receive all homes.'
+            $snapshot=@{}
+            foreach ($slot in $global:AegisLayoutProfile.Slots) { $snapshot[[string]$slot.Identity.Id]=@{Order=$slot.Order;Rect=(Copy-AegisV4TestRect $slot.HomeRect)} }
+            $expectedOrder=0
+            foreach ($windowId in @('101','102','103')) {
+                Assert-AegisV4 ($snapshot[$windowId].Order -eq $expectedOrder) 'Enumeration order changed the persistent new-window order.'
+                $expectedOrder++
+            }
+            [void]$snapshots.Add($snapshot)
+        }
+    }
+    foreach ($windowId in @('101','102','103')) {
+        Assert-AegisV4 (Test-AegisV4TestRect $snapshots[0][$windowId].Rect $snapshots[1][$windowId].Rect) 'Enumeration order changed a new window home rectangle.'
+    }
+}

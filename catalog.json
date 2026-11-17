@@ -222,8 +222,8 @@
     {
       "id": "aegis",
       "version": "4.1.0-ps2",
-      "url": "https://raw.githubusercontent.com/greatgc-flow/portakit/b4ef144a0a975066b35cb81b498a130028a32b0e/assets/aegis/Aegis-4.1.0-ps2.zip",
-      "sha256": "0587a7ffc56bd9b7e065c236374a5a8f5fd6250fad7a6243c34becbaec903f37",
+      "url": "https://raw.githubusercontent.com/greatgc-flow/portakit/6546ddfef3528907de8c0df0bfe102d44f72d03f/assets/aegis/Aegis-4.1.0-ps2.zip",
+      "sha256": "272a0e46292cfa620c9dcb534db3195f0e67b21a1f3fb6df61d99c421bc56d37",
       "artifact": "zip",
       "dest": "aegis",
       "preserveOnUpdate": []

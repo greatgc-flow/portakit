@@ -278,8 +278,9 @@ function New-AegisLayoutPlan {
     }
 
     $activeTiers=New-Object System.Collections.ArrayList; [long]$tierMinimumSum=0
+    # Explicit key expressions avoid legacy Sort-Object property adaptation of hashtables.
     foreach ($tier in @(3,2,1)) {
-        $tierEntries=@($eligible | Where-Object {$_.Tier -eq $tier} | Sort-Object @{Expression='GroupPriority';Descending=$true},GroupId,@{Expression='Priority';Descending=$true},LayoutOrder,Id)
+        $tierEntries=@($eligible | Where-Object {$_.Tier -eq $tier} | Sort-Object @{Expression={[int]$_['GroupPriority']};Descending=$true},@{Expression={[string]$_['GroupId']}},@{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[int]$_['LayoutOrder']}},@{Expression={[string]$_['Id']}})
         if ($tierEntries.Count -eq 0) { continue }
         # Leading business group/window establishes a floor; a lower demand cannot
         # inflate the floor and evict a more important tier.
@@ -306,10 +307,10 @@ function New-AegisLayoutPlan {
                 }
                 [void]$groupMap[$entry.GroupId].Entries.Add($entry)
             }
-            $orderedGroups=@($groupList.ToArray() | Sort-Object @{Expression='Priority';Descending=$true},Id)
+            $orderedGroups=@($groupList.ToArray() | Sort-Object @{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[string]$_['Id']}})
             $activeGroups=New-Object System.Collections.ArrayList; [long]$groupMinimumSum=0
             foreach ($group in $orderedGroups) {
-                $group.Entries=@($group.Entries.ToArray() | Sort-Object @{Expression='Priority';Descending=$true},LayoutOrder,Id)
+                $group.Entries=@($group.Entries.ToArray() | Sort-Object @{Expression={[int]$_['Priority']};Descending=$true},@{Expression={[int]$_['LayoutOrder']}},@{Expression={[string]$_['Id']}})
                 $group.Minimum=[int]$group.Entries[0].RequiredHeight
                 [long]$next=$groupMinimumSum+$group.Minimum+[long]$gap*$activeGroups.Count
                 if ($next -gt $tierZone.Height) {

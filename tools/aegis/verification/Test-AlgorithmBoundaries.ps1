@@ -49,7 +49,7 @@ function Check-CloseoutGeometry {param($Plan,$Area,[int]$Count)
 }
 function Signature-Closeout {param($Plan)
     $parts=New-Object Collections.ArrayList
-    foreach ($item in @($Plan.Items | Sort-Object Id)) {
+    foreach ($item in @($Plan.Items | Sort-Object {[string]$_.Id})) {
         [void]$parts.Add(($item.Id+'|'+$item.Status+'|'+$item.Left+','+$item.Top+','+$item.Width+','+$item.Height))
     }
     return [string]::Join(';',[string[]]$parts.ToArray())

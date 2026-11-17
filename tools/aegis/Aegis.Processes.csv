@@ -1,0 +1,4 @@
+﻿Id,ProcessName,ClassName,Title,Tier,GroupId,Priority,GroupPriority,GroupWeight,SizeMode,Width,Height,Include
+monitor,procexp,,,3,monitoring,100,100,100,Preferred,500,420,true
+terminal,putty,,,2,work,100,100,100,Exact,800,600,true
+notes,notepad,,,1,tools,50,50,100,Preferred,360,280,true

@@ -435,7 +435,7 @@ def show_plan(kit, plan):
 def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     sub = parser.add_subparsers(dest="command", required=True)
-    lst = sub.add_parser("list", help="browse approved tools or all 151 research candidates")
+    lst = sub.add_parser("list", help="browse approved tools or the full research inventory")
     lst.add_argument("--all", action="store_true", help="also show built-in and unverified candidates")
     lst.add_argument("--category", help="filter by one MECE primary domain")
     create = sub.add_parser("create", help="create new portable personal kit and matching evidence log")

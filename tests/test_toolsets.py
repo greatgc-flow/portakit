@@ -65,7 +65,22 @@ class ToolsetTests(unittest.TestCase):
         ids = [item for group in categories.values() for item in group["tools"]]
         self.assertEqual(set(ids), set(catalog))
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(len(ids), 19)
+        self.assertEqual(len(ids), len(catalog))
+
+    def test_aegis_has_one_primary_and_only_category_derived_profile_membership(self):
+        catalog = toolsets.core.load_catalog(toolsets.core.DEFAULT_CATALOG)
+        categories, profiles = toolsets.load_manifest(self.manifest, catalog)
+        self.assertEqual([name for name, group in categories.items()
+                          if "aegis" in group["tools"]], ["automation"])
+        self.assertTrue(all("aegis" not in profile.get("tools", [])
+                            for profile in profiles.values()))
+        for name in ("automation", "engineering", "all-curated"):
+            with self.subTest(profile=name):
+                self.assertIn("aegis", [row["id"] for row in self.plan([name])["tools"]])
+        for name in ("essentials", "workstation", "lightweight", "minimal",
+                     "mes-support", "common", "os", "nw", "dev", "data", "diag"):
+            with self.subTest(profile=name):
+                self.assertNotIn("aegis", [row["id"] for row in self.plan([name])["tools"]])
 
     def test_v2_legacy_names_remain_frozen_without_unintended_additions(self):
         expected = {"common": ["notepad++", "winmerge"],

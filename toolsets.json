@@ -72,7 +72,8 @@
       "label": "Automation / 자동화",
       "description": "반복 실행, 측정, 스크립트와 파이프라인",
       "tools": [
-        "hyperfine"
+        "hyperfine",
+        "aegis"
       ]
     },
     {

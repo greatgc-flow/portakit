@@ -26,11 +26,11 @@ class PickerTests(unittest.TestCase):
 
     def test_union_and_mece_partition_is_current_not_hardcoded(self):
         rows = self.model.rows()
-        self.assertEqual(len(rows), 151)
+        self.assertEqual(len(rows), len(self.model.pins) + 27 + 105)
         self.assertEqual(len({x["id"] for x in rows}), len(rows))
         by_stage = {status: len(self.model.rows(status=status)) for status in
                     ("READY", "OS_ONLY", "RESEARCH_ONLY")}
-        self.assertEqual(by_stage, {"READY": 19, "OS_ONLY": 27,
+        self.assertEqual(by_stage, {"READY": len(self.model.pins), "OS_ONLY": 27,
                                     "RESEARCH_ONLY": 105})
         self.assertEqual(set(r["primary"] for r in rows),
                          set(self.model.categories))
@@ -116,7 +116,7 @@ class PickerTests(unittest.TestCase):
         self.model.add_preset("essentials")
         self.assertEqual(len(self.model.selected), 3)
         self.model.set_approved_only()
-        self.assertEqual(len(self.model.selected), 19)
+        self.assertEqual(set(self.model.selected), set(self.model.pins))
         self.assertEqual(self.model.summary()["pending"], 0)
         with self.assertRaisesRegex(picker.kit.KitError, "Unknown preset"):
             self.model.add_preset("no-such-profile")

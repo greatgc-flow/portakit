@@ -64,8 +64,14 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $canonical = Get-Content -Raw 'research/TOOLS_CANDIDATES_20261020.json' | ConvertFrom-Json
+          $intake = Get-Content -Raw 'research/INTAKE_ENTERPRISE_PORTABLE_20261025.json' | ConvertFrom-Json
+          $knownIds = @($canonical.tools.id) + @($intake.records |
+            Where-Object { $_.stage -eq 'NEW_RESEARCH_ONLY' } | ForEach-Object { $_.id })
+          $expectedCount = @($knownIds | Sort-Object -Unique).Count
           $list = @(python -I scripts/my_toolkit.py list --all)
-          if ($LASTEXITCODE -ne 0 -or $list[-1] -ne 'TOTAL: 151') {
+          if ($LASTEXITCODE -ne 0 -or $list.Count -ne ($expectedCount + 1) -or
+              $list[-1] -ne "TOTAL: $expectedCount") {
             throw 'Personal toolkit cannot browse the full research inventory'
           }
           $kit = Join-Path $env:RUNNER_TEMP 'portakit-ci-user-kit.json'

@@ -20,6 +20,17 @@ python -I portakit.py remove jq
 
 The default root is `portable`, relative to the current directory. No PATH edits, no shims.
 
+## Aegis window arranger (optional)
+
+`aegis` adds explicit desktop window arrangement, process-specific sizes, saved-home return, and tier/group reflow. Its standalone runtime targets Windows PowerShell 2.x; PortaKit installation and the selection-only picker still require Python 3.11+. Installation does not start or arrange windows.
+
+```powershell
+python -I portakit.py --archive "D:\Approved\Aegis-4.1.0-ps2.zip" install aegis
+.\portable\aegis\Start-Aegis.cmd
+```
+
+The menu keeps commands in one PowerShell host and saves user settings under sibling `portable\aegis-data`, outside the managed program directory. The sole primary category is `automation`, so existing `engineering` and `all-curated` category expansion includes it; direct default and legacy selections stay unchanged. Actual Windows PowerShell 2/CLR 2 and production-app acceptance remain `NOT_RUN`; source, algorithm, package and mock checks do not establish production reliability. See [Aegis usage, data preservation and validation scope](docs/AEGIS.md).
+
 ## Air-gapped local vendor archive installation (explicit opt-in)
 
 The normal `install` command still downloads a pinned HTTPS asset. On a **fully disconnected company PC**, stage the **original, byte-unchanged vendor .ZIP/.EXE files** from an approved external transfer first, then use **offline flags**. The existing independent SHA-256 catalog pin is verified again locally; no URL is contacted.
